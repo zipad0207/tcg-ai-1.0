@@ -338,16 +338,44 @@ class DuelEnv:
                 elif tag.startswith("RAMP_"):
                     player.max_mana = min(10, player.max_mana + int(tag.split("_")[1]))
 
-            # 直伤削弱法术
+            # 直伤削弱法术（优先打击敌方防守随从；若防守区无随从，则拦截打击敌方攻击随从）
             if card.atk_spell_val > 0:
-                opp_defs = [u for u in lane.defenders if u.owner == opp_id]
-                if opp_defs:
-                    opp_defs[0].current_dp = max(0, opp_defs[0].current_dp - card.atk_spell_val)
-                    if opp_defs[0].current_dp == 0:
-                        dead = opp_defs.pop(0)
-                        lane.defenders.remove(dead)
-                        self.players[opp_id].graveyard.append(dead.card)
-                        self._trigger_deathrattle(dead)
+                opp_targets = [u for u in lane.defenders if u.owner == opp_id]
+                if not opp_targets:
+                    opp_targets = [u for u in lane.attackers if u.owner == opp_id]
+                if opp_targets:
+                    target = opp_targets[0]
+                    target.current_dp = max(0, target.current_dp - card.atk_spell_val)
+                    if target.current_dp == 0:
+                        if target in lane.defenders:
+                            lane.defenders.remove(target)
+                        elif target in lane.attackers:
+                            lane.attackers.remove(target)
+                        self.players[opp_id].graveyard.append(target.card)
+                        self._trigger_deathrattle(target)
+
+            # 防御增益/护盾壁垒法术（增益己方防守随从；若该路无防守随从，则生成对应防守值的自然守护壁垒）
+            if card.def_spell_val > 0:
+                my_defs = [u for u in lane.defenders if u.owner == player.player_id]
+                if my_defs:
+                    my_defs[0].current_dp += card.def_spell_val
+                elif len(lane.defenders) < self.MAX_LANE_UNITS:
+                    shield_card = Card(
+                        id=998,
+                        name=f"{card.name}壁垒",
+                        card_type=CardType.MINION,
+                        cost=0,
+                        base_dp=card.def_spell_val,
+                        atk_spell_val=0,
+                        def_spell_val=0,
+                        tags=[]
+                    )
+                    lane.defenders.append(MinionInstance(
+                        card=shield_card,
+                        current_dp=card.def_spell_val,
+                        owner=player.player_id,
+                        ready_to_attack=False
+                    ))
 
     def _trigger_tags(self, card: Card, player: Player, lane_id: int, is_attack: bool):
         for tag in card.tags:
