@@ -1,4 +1,4 @@
-﻿import json
+import json
 import os
 import matplotlib.pyplot as plt
 
@@ -75,20 +75,104 @@ def plot_thesis_comparison(metrics_path, output_filename, is_tuned=False):
     plt.tight_layout()
     plt.savefig(output_filename, bbox_inches="tight")
     print(f"✅ 图表已导出至: {output_filename}")
-    plt.show()
+    plt.close()
+
+def plot_comprehensive_comparison(baseline_path="training_metrics_baseline.json", tuned_path="training_metrics_tuned.json", output_filename="figure_comparison.png"):
+    """绘制四合一学术全景对比图 (2x2 画布)"""
+    if not os.path.exists(baseline_path) or not os.path.exists(tuned_path):
+        print(f"❌ 数据文件缺失: {baseline_path} 或 {tuned_path}")
+        return
+
+    import numpy as np
+    with open(baseline_path, 'r', encoding='utf-8') as f:
+        b_data = json.load(f)
+    with open(tuned_path, 'r', encoding='utf-8') as f:
+        t_data = json.load(f)
+
+    fig = plt.figure(figsize=(16, 12), dpi=300)
+    gs = fig.add_gridspec(2, 2, hspace=0.32, wspace=0.25)
+
+    # 1. 左上：胜率直接对比
+    ax1 = fig.add_subplot(gs[0, 0])
+    stages = ['红方 (快攻/突破)', '蓝方 (防守/控制)']
+    x = np.arange(len(stages))
+    width = 0.32
+
+    b_rates = [b_data['p0_winrate'], b_data['p1_winrate']]
+    t_rates = [t_data['p0_winrate'], t_data['p1_winrate']]
+
+    bars1 = ax1.bar(x - width/2, b_rates, width, label='调优前 (Baseline)', color='#e74c3c', alpha=0.85, edgecolor='black', linewidth=0.8)
+    bars2 = ax1.bar(x + width/2, t_rates, width, label='调优后 (Tuned)', color='#2ecc71', alpha=0.85, edgecolor='black', linewidth=0.8)
+
+    ax1.axhline(50.0, color='#7f8c8d', linestyle='--', linewidth=1.5, label='50% 理论纳什均衡线')
+    ax1.set_ylabel('胜率 (%)', fontsize=12, fontweight='bold')
+    ax1.set_title('图 1: 调优前后对局胜率直接对比 (1000局 PPO 自博弈)', fontsize=13, pad=12, fontweight='bold')
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(stages, fontsize=11, fontweight='bold')
+    ax1.set_ylim(0, 80)
+    ax1.legend(loc='upper right', fontsize=10, framealpha=0.9)
+    ax1.grid(axis='y', linestyle=':', alpha=0.6)
+
+    for b in bars1:
+        h = b.get_height()
+        ax1.annotate(f'{h:.1f}%', xy=(b.get_x() + b.get_width()/2, h), xytext=(0, 4), textcoords='offset points', ha='center', va='bottom', fontsize=10, fontweight='bold')
+    for b in bars2:
+        h = b.get_height()
+        ax1.annotate(f'{h:.1f}%', xy=(b.get_x() + b.get_width()/2, h), xytext=(0, 4), textcoords='offset points', ha='center', va='bottom', fontsize=10, fontweight='bold')
+
+    # 2. 右上：失衡偏离度收敛效果
+    ax2 = fig.add_subplot(gs[0, 1])
+    phases = ['基准对照组 (Baseline)', '闭环调优组 (Tuned)']
+    deltas = [abs(b_data['p0_winrate'] - 50.0), abs(t_data['p0_winrate'] - 50.0)]
+    colors = ['#e67e22', '#27ae60']
+    bars_d = ax2.bar(phases, deltas, color=colors, width=0.45, edgecolor='black', linewidth=0.8)
+    ax2.set_ylabel('偏离理论平衡线幅度 |WinRate - 50%| (%)', fontsize=11, fontweight='bold')
+    ax2.set_title('图 2: 胜率失衡偏离度收敛效果 (|Δ - 50%|)', fontsize=13, pad=12, fontweight='bold')
+    ax2.set_ylim(0, 15)
+    ax2.grid(axis='y', linestyle=':', alpha=0.6)
+    for b in bars_d:
+        h = b.get_height()
+        ax2.annotate(f'±{h:.1f}%', xy=(b.get_x() + b.get_width()/2, h), xytext=(0, 4), textcoords='offset points', ha='center', va='bottom', fontsize=11, fontweight='bold')
+
+    # 3. 左下：基准阶段核心卡牌 Top 10
+    ax3 = fig.add_subplot(gs[1, 0])
+    b_top = list(reversed(sorted(b_data.get('card_play_count', {}).items(), key=lambda x: x[1], reverse=True)[:10]))
+    ax3.barh([x[0] for x in b_top], [x[1] for x in b_top], color='#3498db', alpha=0.85, edgecolor='black', linewidth=0.6)
+    ax3.set_xlabel('打出频次 (局数累积)', fontsize=11, fontweight='bold')
+    ax3.set_title('图 3: 基准阶段核心卡牌出场频次 Top 10 (失衡态)', fontsize=13, pad=12, fontweight='bold')
+    ax3.grid(axis='x', linestyle=':', alpha=0.6)
+
+    # 4. 右下：调优阶段核心卡牌 Top 10
+    ax4 = fig.add_subplot(gs[1, 1])
+    t_top = list(reversed(sorted(t_data.get('card_play_count', {}).items(), key=lambda x: x[1], reverse=True)[:10]))
+    ax4.barh([x[0] for x in t_top], [x[1] for x in t_top], color='#1abc9c', alpha=0.85, edgecolor='black', linewidth=0.6)
+    ax4.set_xlabel('打出频次 (局数累积)', fontsize=11, fontweight='bold')
+    ax4.set_title('图 4: 调优阶段核心卡牌出场频次 Top 10 (平衡态)', fontsize=13, pad=12, fontweight='bold')
+    ax4.grid(axis='x', linestyle=':', alpha=0.6)
+
+    plt.suptitle('TCG 卡牌自适应平衡系统：PPO 自博弈演化全景学术对比', fontsize=16, fontweight='bold', y=0.98)
+    plt.savefig(output_filename, bbox_inches='tight')
+    plt.close()
+    print(f"✅ 全景整合图表已导出至: {output_filename}")
 
 if __name__ == "__main__":
-    # 1. 导出基准对照组（调优前）图表
-    # 如果你的文件名不同，请替换为对应的 json 文件路径
+    # 1. 导出基准对照组图表
     plot_thesis_comparison(
         metrics_path="training_metrics_baseline.json", 
-        output_filename="figure_1_baseline.png", 
+        output_filename="figure_baseline.png", 
         is_tuned=False
     )
 
     # 2. 导出实验组（调优后）图表
     plot_thesis_comparison(
         metrics_path="training_metrics_tuned.json", 
-        output_filename="figure_2_tuned.png", 
+        output_filename="figure_tuned.png", 
         is_tuned=True
+    )
+
+    # 3. 导出四合一学术全景对比大图
+    plot_comprehensive_comparison(
+        baseline_path="training_metrics_baseline.json",
+        tuned_path="training_metrics_tuned.json",
+        output_filename="figure_comparison.png"
     )
