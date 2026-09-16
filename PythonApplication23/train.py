@@ -1,4 +1,4 @@
-﻿import os
+import os
 import json
 import random
 import signal
@@ -11,11 +11,15 @@ import torch.optim as optim
 from torch.distributions.categorical import Categorical
 import matplotlib.pyplot as plt
 
-# 导入沙盒环境与阵营枚举
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+# 导入沙盒环境、阵营枚举与神经网络模型
 from sandbox import DuelEnv, Faction
+from agent import CardNet
 
 # ==========================================
-# 0. 实验阶段配置 (新增: 动态识别 baseline/tuned)
+# 0. 实验阶段配置 (动态识别 baseline/tuned)
 # ==========================================
 parser = argparse.ArgumentParser(description="TCG PPO 自博弈训练流水线")
 parser.add_argument("--stage", type=str, default="tuned", choices=["baseline", "tuned"], 
@@ -47,34 +51,7 @@ METRICS_SAVE_PATH = f"training_metrics_{STAGE}.json"
 FIGURE_SAVE_PATH = f"figure_{STAGE}.png"
 
 # ==========================================
-# 2. 神经网络架构 (Actor-Critic)
-# ==========================================
-class CardNet(nn.Module):
-    def __init__(self, action_dim=29):
-        super(CardNet, self).__init__()
-        input_dim = 3 * 13 * 5
-        self.shared_fc = nn.Sequential(
-            nn.Linear(input_dim, 256),
-            nn.LayerNorm(256),
-            nn.ReLU(),
-            nn.Linear(256, 128),
-            nn.LayerNorm(128),
-            nn.ReLU()
-        )
-        self.actor = nn.Linear(128, action_dim)
-        self.critic = nn.Linear(128, 1)
-
-    def forward(self, obs: torch.Tensor, mask: torch.Tensor = None):
-        flattened = obs.view(obs.size(0), -1)
-        feat = self.shared_fc(flattened)
-        logits = self.actor(feat)
-        value = self.critic(feat)
-        if mask is not None:
-            logits = torch.where(mask > 0.5, logits, torch.full_like(logits, -1e8))
-        return logits, value
-
-# ==========================================
-# 3. 经验回放缓冲区 (Buffer)
+# 2. 经验回放缓冲区 (Buffer)
 # ==========================================
 class RolloutBuffer:
     def __init__(self):
@@ -83,9 +60,10 @@ class RolloutBuffer:
     def clear(self):
         self.states, self.actions, self.masks = [], [], []
         self.log_probs, self.rewards, self.dones, self.values = [], [], [], []
+        self.acting_players = []
 
 # ==========================================
-# 4. PPO 优化与更新器
+# 3. PPO 优化与更新器
 # ==========================================
 class PPOTrainer:
     def __init__(self, action_dim=29):
@@ -104,7 +82,14 @@ class PPOTrainer:
             log_prob = dist.log_prob(action)
         return action.item(), log_prob.item(), value.item()
 
-    def update(self):
+    def get_value(self, obs: np.ndarray, mask: np.ndarray):
+        state_t = torch.FloatTensor(obs).unsqueeze(0).to(DEVICE)
+        mask_t = torch.FloatTensor(mask).unsqueeze(0).to(DEVICE)
+        with torch.no_grad():
+            _, value = self.policy(state_t, mask_t)
+        return value.item()
+
+    def update(self, last_val: float = 0.0):
         states = torch.FloatTensor(np.array(self.buffer.states)).to(DEVICE)
         actions = torch.LongTensor(self.buffer.actions).to(DEVICE)
         masks = torch.FloatTensor(np.array(self.buffer.masks)).to(DEVICE)
@@ -112,12 +97,17 @@ class PPOTrainer:
         rewards = self.buffer.rewards
         dones = self.buffer.dones
         values = self.buffer.values
+        acting_players = self.buffer.acting_players
 
         advantages = []
         gae = 0.0
-        values = values + [0.0]
+        values = values + [last_val]
         for t in reversed(range(len(rewards))):
-            delta = rewards[t] + GAMMA * values[t + 1] * (1.0 - dones[t]) - values[t]
+            # 零和博弈交替回合价值反转判定: 若发生玩家换边，对手预估价值符号取反
+            is_switch = (t + 1 < len(acting_players) and acting_players[t] != acting_players[t + 1])
+            next_v = -values[t + 1] if is_switch else values[t + 1]
+
+            delta = rewards[t] + GAMMA * next_v * (1.0 - dones[t]) - values[t]
             gae = delta + GAMMA * GAE_LAMBDA * (1.0 - dones[t]) * gae
             advantages.insert(0, gae)
 
@@ -216,10 +206,11 @@ def auto_generate_plot():
 
     plt.tight_layout()
     plt.savefig(FIGURE_SAVE_PATH, bbox_inches="tight")
+    plt.close(fig)
     print(f"✅ 图表已导出至: {FIGURE_SAVE_PATH}")
 
 # ==========================================
-# 6. 训练与指标统计主入口
+# 5. 训练与指标统计主入口
 # ==========================================
 def main():
     print(f"[系统] 当前运行阶段: {STAGE.upper()} | 运算设备: {DEVICE}")
@@ -260,12 +251,13 @@ def main():
         ep_len = 0
 
         while not done:
+            acting_player = env.current_player
             mask = env.get_action_mask()
             action, log_prob, val = trainer.select_action(obs, mask)
 
             if action != env.action_space_size - 1:
                 hand_idx = action // 4
-                curr_player = env.players[env.current_player]
+                curr_player = env.players[acting_player]
                 if hand_idx < len(curr_player.hand):
                     c_name = curr_player.hand[hand_idx].name
                     metrics["card_play_count"][c_name] = metrics["card_play_count"].get(c_name, 0) + 1
@@ -279,13 +271,19 @@ def main():
             trainer.buffer.rewards.append(reward)
             trainer.buffer.dones.append(done)
             trainer.buffer.values.append(val)
+            trainer.buffer.acting_players.append(acting_player)
 
             obs = next_obs
             ep_len += 1
             step_accum += 1
 
             if step_accum >= ROLLOUT_STEPS:
-                trainer.update()
+                if done:
+                    last_val = 0.0
+                else:
+                    next_mask = env.get_action_mask()
+                    last_val = trainer.get_value(obs, next_mask)
+                trainer.update(last_val=last_val)
                 step_accum = 0
 
         metrics["total_episodes"] += 1

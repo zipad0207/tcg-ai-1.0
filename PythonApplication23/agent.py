@@ -1,38 +1,44 @@
-﻿import torch
+import torch
 import torch.nn as nn
-from torch.distributions import Categorical
-import numpy as np
+from torch.distributions.categorical import Categorical
 
-class TCGActorCritic(nn.Module):
-    # 默认值已经同步为你升级后的 7 分制/7手牌 版本
-    def __init__(self, obs_shape=(3, 13, 5), action_dim=29):
-        super(TCGActorCritic, self).__init__()
-        
-        # 严格计算扁平化维度，确保是 195
-        input_size = obs_shape[0] * obs_shape[1] * obs_shape[2] 
-        
-        # 共享特征提取层
-        self.shared_net = nn.Sequential(
-            nn.Linear(input_size, 256),
+class CardNet(nn.Module):
+    """
+    TCG 智能体 Actor-Critic 策略与价值网络 (权威统一架构)
+    输入尺寸: 3 * 13 * 5 = 195
+    动作空间: 29 (7张手牌 * 4种打出位置 + 1个结束回合动作)
+    """
+    def __init__(self, action_dim=29, obs_shape=(3, 13, 5)):
+        super(CardNet, self).__init__()
+        input_dim = obs_shape[0] * obs_shape[1] * obs_shape[2]
+        self.shared_fc = nn.Sequential(
+            nn.Linear(input_dim, 256),
+            nn.LayerNorm(256),
             nn.ReLU(),
             nn.Linear(256, 128),
+            nn.LayerNorm(128),
             nn.ReLU()
         )
-        
-        self.actor_head = nn.Linear(128, action_dim)
-        self.critic_head = nn.Linear(128, 1)
+        self.actor = nn.Linear(128, action_dim)
+        self.critic = nn.Linear(128, 1)
 
-    def forward(self, obs, action_mask=None):
-        batch_size = obs.size(0)
-        flat_obs = obs.view(batch_size, -1).float()
-        
-        features = self.shared_net(flat_obs)
-        value = self.critic_head(features)
-        logits = self.actor_head(features)
-        
-        if action_mask is not None:
-            HUGE_NEG = -1e8
-            logits = logits + (1.0 - action_mask) * HUGE_NEG
-            
+    def forward(self, obs: torch.Tensor, mask: torch.Tensor = None):
+        flattened = obs.view(obs.size(0), -1).float()
+        feat = self.shared_fc(flattened)
+        logits = self.actor(feat)
+        value = self.critic(feat)
+        if mask is not None:
+            logits = torch.where(mask > 0.5, logits, torch.full_like(logits, -1e8))
+        return logits, value
+
+    def get_action_and_value(self, obs: torch.Tensor, mask: torch.Tensor = None, deterministic: bool = False):
+        logits, value = self.forward(obs, mask)
         dist = Categorical(logits=logits)
-        return dist, value
+        if deterministic:
+            action = torch.argmax(logits, dim=-1)
+        else:
+            action = dist.sample()
+        return action, dist.log_prob(action), dist.entropy(), value
+
+# 兼容旧命名别名
+TCGActorCritic = CardNet

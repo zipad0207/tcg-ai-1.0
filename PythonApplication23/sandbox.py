@@ -1,4 +1,4 @@
-﻿import os
+import os
 import json
 import random
 from dataclasses import dataclass, field
@@ -161,24 +161,28 @@ class DuelEnv:
 
         curr = self.players[self.current_player]
         for idx, card in enumerate(curr.hand):
+            if idx >= self.MAX_HAND_SIZE:
+                break
             if card.cost <= curr.mana:
                 base_idx = idx * 4
                 is_atk_only = "ATTACK_ONLY" in card.tags
+                # 纯法术（非衍生召唤类）不占用随从格子空间
+                is_spell = (card.card_type == CardType.SPELL and not any(t.startswith("SPAWN_") for t in card.tags))
 
                 # 左路进攻区 / 防守区容量判定
                 l_atks = sum(1 for u in self.lanes[0].attackers if u.owner == curr.player_id)
                 l_defs = sum(1 for u in self.lanes[0].defenders if u.owner == curr.player_id)
-                if l_atks < self.MAX_LANE_UNITS:
+                if is_spell or l_atks < self.MAX_LANE_UNITS:
                     mask[base_idx + 0] = 1.0
-                if not is_atk_only and l_defs < self.MAX_LANE_UNITS:
+                if not is_atk_only and (is_spell or l_defs < self.MAX_LANE_UNITS):
                     mask[base_idx + 1] = 1.0
 
                 # 右路进攻区 / 防守区容量判定
                 r_atks = sum(1 for u in self.lanes[1].attackers if u.owner == curr.player_id)
                 r_defs = sum(1 for u in self.lanes[1].defenders if u.owner == curr.player_id)
-                if r_atks < self.MAX_LANE_UNITS:
+                if is_spell or r_atks < self.MAX_LANE_UNITS:
                     mask[base_idx + 2] = 1.0
-                if not is_atk_only and r_defs < self.MAX_LANE_UNITS:
+                if not is_atk_only and (is_spell or r_defs < self.MAX_LANE_UNITS):
                     mask[base_idx + 3] = 1.0
 
         return mask
@@ -186,6 +190,7 @@ class DuelEnv:
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, dict]:
         prev_p0_score = self.players[0].score
         prev_p1_score = self.players[1].score
+        acting_player = self.current_player  # 记录当前执行动作的玩家
 
         done = False
         if action == self.action_space_size - 1:
@@ -213,7 +218,8 @@ class DuelEnv:
             elif self.players[1].score >= self.WIN_SCORE:
                 r0 -= 10.0
 
-        step_reward = r0 if self.current_player == 0 else -r0
+        # 准确根据行动方 acting_player 返回奖励，避免换边轮换后将正向收益逆转为负惩罚
+        step_reward = r0 if acting_player == 0 else -r0
         return self.get_observation(), step_reward, done, {}
 
     def _play_card(self, hand_idx: int, lane_id: int, is_attack: bool):
@@ -239,7 +245,6 @@ class DuelEnv:
                     if tag.startswith("FORTIFY_"):
                         bonus = int(tag.split("_")[1])
                         instance.current_dp += bonus
-                        card.base_dp = instance.current_dp
                 lane.defenders.append(instance)
 
             self._trigger_tags(card, player, lane_id, is_attack)
@@ -249,13 +254,19 @@ class DuelEnv:
             opp_id = 1 - player.player_id
 
             if "SACRIFICE_1_KILL_1" in card.tags:
-                my_defs = [u for u in lane.defenders if u.owner == player.player_id]
-                opp_defs = [u for u in lane.defenders if u.owner == opp_id]
-                if my_defs and opp_defs:
-                    sac = my_defs.pop(0)
-                    tgt = opp_defs.pop(0)
-                    lane.defenders.remove(sac)
-                    lane.defenders.remove(tgt)
+                my_units = [u for u in lane.defenders if u.owner == player.player_id] + [u for u in lane.attackers if u.owner == player.player_id]
+                opp_units = [u for u in lane.defenders if u.owner == opp_id] + [u for u in lane.attackers if u.owner == opp_id]
+                if my_units and opp_units:
+                    sac = my_units[0]
+                    tgt = opp_units[0]
+                    if sac in lane.defenders:
+                        lane.defenders.remove(sac)
+                    elif sac in lane.attackers:
+                        lane.attackers.remove(sac)
+                    if tgt in lane.defenders:
+                        lane.defenders.remove(tgt)
+                    elif tgt in lane.attackers:
+                        lane.attackers.remove(tgt)
                     player.graveyard.append(sac.card)
                     self.players[opp_id].graveyard.append(tgt.card)
                     self._trigger_deathrattle(sac)
@@ -387,8 +398,6 @@ class DuelEnv:
                     self.players[curr_p].score += total_award
                     if self.players[curr_p].score >= self.WIN_SCORE:
                         return True
-                else:
-                    def_unit.card.base_dp = min(def_unit.card.base_dp, def_unit.current_dp)
             else:
                 # 空场突破
                 self.players[curr_p].score += total_award
@@ -451,7 +460,7 @@ class DuelEnv:
             obs[1, i, 3] = 1.0 if "RUSH" in card.tags else 0.0
             obs[1, i, 4] = 1.0 if any(t.startswith("DEGRADE") for t in card.tags) else 0.0
 
-        # 场面驻守特征
+        # 场面驻守特征: 完整编码战场 4 个区域 (己方进攻、敌方防守、己方防守、敌方蓄势)
         for lane_idx, lane in self.lanes.items():
             slot_offset = lane_idx * 6
             # 己方进攻区
@@ -464,5 +473,13 @@ class DuelEnv:
             for j, u in enumerate(opp_defs[:3]):
                 obs[2, slot_offset + 3 + j, 0] = u.current_dp / 10.0
                 obs[2, slot_offset + 3 + j, 2] = 1.0
+            # 己方防守区 (补全: 通道3)
+            my_defs = [u for u in lane.defenders if u.owner == curr.player_id]
+            for j, u in enumerate(my_defs[:3]):
+                obs[2, slot_offset + j, 3] = u.current_dp / 10.0
+            # 敌方蓄势进攻区 (补全: 通道4)
+            opp_atks = [u for u in lane.attackers if u.owner == opp.player_id]
+            for j, u in enumerate(opp_atks[:3]):
+                obs[2, slot_offset + j, 4] = u.current_dp / 10.0
 
         return obs

@@ -1,16 +1,16 @@
-﻿import os
+import os
+import re
+import sys
 import json
 import shutil
 from openai import OpenAI
 
-DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "sk-61e6de3893aa45a7b62905a9aa66219b")
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-client = OpenAI(
-    api_key=DEEPSEEK_API_KEY,
-    base_url="https://api.deepseek.com"
-)
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
 
-MODEL_NAME = "deepseek-flash"
+MODEL_NAME = "deepseek-chat"
 
 CONFIG_FILE = "cards_config.json"
 METRICS_FILE = "training_metrics.json"
@@ -24,20 +24,19 @@ def load_json(filepath: str) -> dict:
         return json.load(f)
 
 def clean_json_response(raw_text: str) -> str:
-    text = raw_text.strip()
-    if text.startswith("```json"):
-        text = text[7:]
-    elif text.startswith("```"):
-        text = text[3:]
-    if text.endswith("```"):
-        text = text[:-3]
-    return text.strip()
+    """提取大模型返回文本中的合法 JSON 对象，防御 Markdown 格式与思考文本干扰"""
+    match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw_text, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    match = re.search(r"(\{.*\})", raw_text, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    return raw_text.strip()
 
-def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict) -> str:
-    # 预计算胜率
+def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client: OpenAI) -> str:
     total = max(1, metrics_data.get("total_episodes", 250))
-    p0_wins = metrics_data.get("p0_wins", 19)
-    p1_wins = metrics_data.get("p1_wins", 231)
+    p0_wins = metrics_data.get("p0_wins", 100)
+    p1_wins = metrics_data.get("p1_wins", 150)
     p0_rate = (p0_wins / total) * 100
     p1_rate = (p1_wins / total) * 100
 
@@ -54,7 +53,16 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict) -> str
 ### 2. 核心机制特性与设计规则：
 1. **蓄势规则**：随从怪兽打入进攻区后需要“蓄势一回合”（不能当回合冲锋），除非自带 "RUSH"（突袭）词条。
 2. **阻挡机制**：防守怪兽提供站场阈值阻挡，进攻怪蓄势后同路合击突破，总战力 > 防守怪战力即可击穿并获得 1 分（先达 7 分获胜）。
-3. **已支持的核心词条系统（只能从以下词条中衍生，绝不能编造沙盒解析不了的词条）**：
+3. **支持的合法属性字段（严格限制，严禁使用 atk/hp 等未定义字段）**：
+   - `id`: 卡牌唯一标识
+   - `name`: 卡牌名称
+   - `card_type`: "MINION" 或 "SPELL"
+   - `cost`: 施法消耗法力
+   - `base_dp`: 随从基础战力/阻挡阈值 (SPELL 则为 0)
+   - `atk_spell_val`: 直伤法术削弱值 (无则为 0)
+   - `def_spell_val`: 增益法术防御值 (无则为 0)
+   - `tags`: 词条列表 (仅限已支持词条)
+4. **已支持的核心词条系统（只能从以下词条中衍生，绝不能编造沙盒解析不了的词条）**：
    - `RUSH`：突袭，当下回合可立刻发起冲锋。
    - `DEGRADE_X`：削弱，冲锋碰撞前永久扣除目标防守怪 X 点 DP 上限。
    - `FORTIFY_X`：坚守，打入防守区时立即增加自身 X 点 DP。
@@ -73,18 +81,16 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict) -> str
 ---
 ### 你的核心任务：
 
-任务一：根据对局遥测数据（胜率偏离度与高频卡牌分布），仅对既有卡牌进行精准的数值微调（包括 cost、atk、hp、原有 keyword 数值）。
+任务一：根据对局遥测数据（胜率偏离度与高频卡牌分布），仅对既有卡牌进行精准的数值微调（包括 cost, base_dp, atk_spell_val, def_spell_val, tags 数值）。
 任务二：严格保持现有卡牌的名称与总数量不变，禁止新增卡牌或删除已有卡牌。
-任务三：削弱出场率畸高且胜率贡献过大的强势卡，小幅增强弱势阵营核心单卡，使双方理论胜率收敛至 45%~55% 区间。
-
-
+任务三：削弱出场率畸高且胜率贡献过大的强势阵营核心卡，增强弱势阵营核心单卡，使双方理论胜率收敛至 45%~55% 纳什均衡区间。
 
 ---
 ### 格式输出硬性约束（至关重要）：
 必须**严格只输出合法且可以直接解析的纯 JSON 字符串**（结构必须与原 cards_config.json 完全一致，包含 Red, Blue, Green, Neutral 四个 Key），严禁夹带任何引言、中文解释、注释或额外文本。
 """
 
-    print(f"🤖 正在调用 [{MODEL_NAME}] 读取训练战报，执行自适应数值微调与卡池扩写...")
+    print(f"🤖 正在调用 [{MODEL_NAME}] 读取训练战报，执行自适应数值微调...")
     response = client.chat.completions.create(
         model=MODEL_NAME,
         messages=[
@@ -96,6 +102,18 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict) -> str
     return response.choices[0].message.content
 
 def main():
+    if not DEEPSEEK_API_KEY:
+        print("⚠️ [安全提示] 未检测到 DEEPSEEK_API_KEY 环境变量！")
+        print("为保证密钥安全，已移除源码中的硬编码 Key。请先配置环境变量：")
+        print("  Windows PowerShell: $env:DEEPSEEK_API_KEY=\"你的API_KEY\"")
+        print("  Linux / macOS:     export DEEPSEEK_API_KEY=\"你的API_KEY\"")
+        return
+
+    client = OpenAI(
+        api_key=DEEPSEEK_API_KEY,
+        base_url="https://api.deepseek.com"
+    )
+
     if not os.path.exists(CONFIG_FILE):
         print(f"❌ 找不到基础卡池配置文件: {CONFIG_FILE}")
         return
@@ -104,12 +122,12 @@ def main():
     current_cards = load_json(CONFIG_FILE)
     metrics_data = load_json(METRICS_FILE)
     
-    # 容错：如果刚清空环境还没产生 metrics，给一套刚跑出的失衡默认值
+    # 容错：如果刚清空环境还没产生 metrics，给一套默认值
     if not metrics_data:
         metrics_data = {
-            "total_episodes": 250,
-            "p0_wins": 19,
-            "p1_wins": 231,
+            "total_episodes": 1000,
+            "p0_wins": 401,
+            "p1_wins": 599,
             "card_play_count": {"石像鬼": 182, "大块头": 140, "藤甲兵": 160}
         }
 
@@ -118,7 +136,7 @@ def main():
     print(f"📦 已备份当前卡池至: {BACKUP_FILE}")
 
     # 3. 提交 API 请求
-    raw_output = run_deepseek_balance_and_expand(metrics_data, current_cards)
+    raw_output = run_deepseek_balance_and_expand(metrics_data, current_cards, client)
     cleaned_json = clean_json_response(raw_output)
 
     # 4. 解析写入
@@ -126,11 +144,10 @@ def main():
         new_card_pool = json.loads(cleaned_json)
         with open(EXPANDED_FILE, "w", encoding="utf-8") as f:
             json.dump(new_card_pool, f, indent=2, ensure_ascii=False)
-        print(f"🚀 成功重构并扩充卡池！已保存至 {EXPANDED_FILE}")
+        print(f"🚀 成功自适应微调卡池！已保存至 {EXPANDED_FILE}")
 
-        # 统计扩写后的卡牌规模
         total_cards = sum(len(cards) for cards in new_card_pool.values())
-        print(f"📊 当前卡池总规模已扩充至: {total_cards} 张卡！")
+        print(f"📊 当前卡池总规模: {total_cards} 张卡")
         for faction, cards in new_card_pool.items():
             print(f"   └─ {faction}: {len(cards)} 张")
 
