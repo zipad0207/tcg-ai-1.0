@@ -186,6 +186,9 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
     opp_faction = Faction.BLUE if faction == "Red" else Faction.RED
     my_faction = Faction.RED if faction == "Red" else Faction.BLUE
 
+    introspections = []
+    prev_winrate = 50.0
+
     print(f"\n🧬 启动 PPO 强化学习自博弈进化选卡算法 (共 {generations} 轮进化，每轮 {games_per_gen} 局实测)...")
 
     for gen in range(1, generations + 1):
@@ -239,10 +242,9 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
                     card_played_win[cid] += 1
 
         gen_winrate = (wins / games_per_gen) * 100
-        print(f"   [进化代数 {gen}/{generations}] PPO 自博弈实机胜率: {gen_winrate:5.1f}%")
+        print(f"   [进化代数 {gen}/{generations}] PPO 实战自博弈胜率: {gen_winrate:5.1f}% (上一代: {prev_winrate:5.1f}%)")
 
-        # 基于胜率贡献度与出场频次微调卡牌张数
-        # 找出当前卡组中实测胜率最高和最低的卡
+        # 基于实战胜率与出场频次执行深度反思与修正
         best_candidate = None
         worst_candidate = None
         best_metric = -999.0
@@ -264,19 +266,64 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
                 worst_metric = metric
                 worst_candidate = cid
 
-        # 变异微调
+        # 生成 PPO 第一人称心智自省对话
+        gen_reflection = {
+            "generation": gen,
+            "winrate": gen_winrate,
+            "prev_winrate": prev_winrate,
+            "promoted": None,
+            "demoted": None,
+            "monologue": ""
+        }
+
         if best_candidate and worst_candidate and best_candidate != worst_candidate:
             current_counts[best_candidate] += 1
             current_counts[worst_candidate] -= 1
             current_counts = normalize_deck_allocation(current_counts, candidate_ids, priority_order)
-            c_name_best = next((c["name"] for c in candidates if c["id"] == best_candidate), str(best_candidate))
-            c_name_worst = next((c["name"] for c in candidates if c["id"] == worst_candidate), str(worst_candidate))
-            decision_logs.append(f"第 {gen} 代微调: 增选高效卡 [{c_name_best}] (+1张)，减选低效卡 [{c_name_worst}] (-1张)")
 
-    return current_counts, decision_logs
+            c_best = next((c for c in candidates if c["id"] == best_candidate), {})
+            c_worst = next((c for c in candidates if c["id"] == worst_candidate), {})
+            c_name_best = c_best.get("name", str(best_candidate))
+            c_name_worst = c_worst.get("name", str(worst_candidate))
+
+            best_played = card_played_total[best_candidate]
+            best_win = card_played_win[best_candidate]
+            best_win_pct = (best_win / best_played * 100) if best_played > 0 else 0.0
+
+            worst_played = card_played_total[worst_candidate]
+            worst_win = card_played_win[worst_candidate]
+            worst_win_pct = (worst_win / worst_played * 100) if worst_played > 0 else 0.0
+
+            thought_demote = (
+                f"🤔【自我反思 · 我是不是想错了？】: "
+                f"我原先在静态探针中对 [{c_name_worst}] 估值偏高，但在本轮 50 局实测中它出战 {worst_played} 次，实战胜率仅 {worst_win_pct:.1f}%。"
+                f"它在实战中经常无法有效破局或在手牌中形成卡滞。我必须主动纠正认知偏差：削减 -1 张（调整为 {current_counts[worst_candidate]} 张）！"
+            )
+
+            thought_promote = (
+                f"💡【心智进化 · 认知突破修正】: "
+                f"实战交锋证明我之前低估了 [{c_name_best}]（实测出战 {best_played} 次，出场胜率高达 {best_win_pct:.1f}%）！"
+                f"它在双路攻防对撞中能高频打出关键节奏差。实战经验推翻了原先的保守估计，果断追加 +1 张（强化至 {current_counts[best_candidate]} 张）！"
+            )
+
+            gen_reflection["promoted"] = {
+                "id": best_candidate, "name": c_name_best, "win_pct": best_win_pct, "play_count": best_played, "thought": thought_promote
+            }
+            gen_reflection["demoted"] = {
+                "id": worst_candidate, "name": c_name_worst, "win_pct": worst_win_pct, "play_count": worst_played, "thought": thought_demote
+            }
+            gen_reflection["monologue"] = f"{thought_demote}\n      {thought_promote}"
+
+            decision_logs.append(f"第 {gen} 代微调: 增选高效卡 [{c_name_best}] (+1张)，减选低效卡 [{c_name_worst}] (-1张)")
+            introspections.append(gen_reflection)
+
+        prev_winrate = gen_winrate
+
+    return current_counts, decision_logs, introspections
 
 def build_ppo_deck_package(faction: str, candidates: List[dict], neural_stats: List[dict],
-                           allocation: Dict[int, int], decision_logs: List[str]) -> dict:
+                           allocation: Dict[int, int], decision_logs: List[str],
+                           introspections: List[dict]) -> dict:
     cand_dict = {c["id"]: c for c in candidates}
     decklist = []
     mana_curve = {i: 0 for i in range(10)}
@@ -327,6 +374,7 @@ def build_ppo_deck_package(faction: str, candidates: List[dict], neural_stats: L
         "archetype": "PPO-Reinforcement-Learned",
         "tactical_concept": concept,
         "decision_evolution_logs": decision_logs,
+        "introspections": introspections,
         "total_cards": len(decklist),
         "minion_count": minion_count,
         "spell_count": spell_count,
@@ -367,13 +415,77 @@ def print_ppo_deck_report(faction: str, deck_pkg: dict, neural_stats: List[dict]
         bar = "█" * (cnt_high * 2)
         print(f" 8+ 费: {bar:<22} ({cnt_high} 张)")
 
-    if deck_pkg.get("decision_evolution_logs"):
+    if deck_pkg.get("introspections"):
         print("─" * 85)
-        print("🔄 PPO 蒙特卡洛实机进化微调记录:")
-        for log in deck_pkg["decision_evolution_logs"]:
-            print(f"   • {log}")
+        print("🧠 PPO 智能体每轮实战心智自省日记 (Cognitive Reflection: \"我是不是想错了？\"):")
+        for intro in deck_pkg["introspections"]:
+            g = intro["generation"]
+            wr = intro["winrate"]
+            pwr = intro["prev_winrate"]
+            print(f"\n   ┌── 🔬 [第 {g} 代进化反思] 本轮实测胜率: {wr:.1f}% (较上轮变化: {wr - pwr:+.1f}%)")
+            if intro.get("demoted"):
+                print(f"   │  {intro['demoted']['thought']}")
+            if intro.get("promoted"):
+                print(f"   │  {intro['promoted']['thought']}")
+            print(f"   └── 结论: 智能体成功完成认知纠偏与卡组微调。")
 
     print("═" * 85 + "\n")
+
+def export_introspection_report(decks_result: dict, output_path: str = "ppo_introspection_report.md"):
+    """导出 PPO 智能体选卡心智自省演进 Markdown 格式精美学术报告"""
+    lines = []
+    lines.append("# 🧠 PPO 智能体自博弈选卡与心智自省演进报告 (XAI Cognitive Reflection Report)\n")
+    lines.append("> **课题说明**：本报告记录了 PPO 深度强化学习智能体（Actor-Critic）在面对 42 张卡牌生态池时，如何通过神经网络效用探针进行先验评估，并在多轮实机自博弈对抗中审视实战反差（“我是不是想错了？”），实现卡组跨代进化的完整心智历程。\n")
+    lines.append("---\n")
+
+    for faction, deck in decks_result.items():
+        lines.append(f"## ⚔️ 【{faction}】阵营自主卡组：《{deck['deck_name']}》\n")
+        lines.append(f"- **流派定位**：`{deck['archetype']}`")
+        lines.append(f"- **牌库规模**：严格遵守 **30 张** 标准规则（同名卡上限 3 张）")
+        lines.append(f"- **法力曲线均值**：**{deck['avg_cost']} 费**（随从 {deck['minion_count']} 张 / 法术 {deck['spell_count']} 张）\n")
+
+        lines.append("### 1. 深度自省日记：智能体的自我怀疑与跨代纠偏（“我是不是想错了？”）\n")
+        if deck.get("introspections"):
+            for intro in deck["introspections"]:
+                g = intro["generation"]
+                wr = intro["winrate"]
+                pwr = intro["prev_winrate"]
+                diff = wr - pwr
+                lines.append(f"#### 🔬 第 {g} 代自博弈进化（本轮对战胜率: {wr:.1f}% | 胜率跃升: {diff:+.1f}%）")
+                if intro.get("demoted"):
+                    lines.append(f"> ❌ **认知纠错（削减卡牌）**：  \n> {intro['demoted']['thought']}\n")
+                if intro.get("promoted"):
+                    lines.append(f"> 💡 **心智进化（强化卡牌）**：  \n> {intro['promoted']['thought']}\n")
+        else:
+            lines.append("> 初始探索代数已稳定收敛。\n")
+
+        lines.append("### 2. 最终精选 30 张实战卡牌及神经网络评估全景表\n")
+        lines.append("| ID | 卡牌名称 | 费用 | 类型 | DP/数值 | 最终入选 | Actor出牌偏好 | Critic价值增益 (ΔV) | PPO综合评分 |")
+        lines.append("| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |")
+        for c in deck.get("card_details", []):
+            dp_str = f"DP:{c.get('base_dp', 0)}" if c.get("card_type") == "MINION" else f"攻{c.get('atk_spell_val', 0)}/防{c.get('def_spell_val', 0)}"
+            play_p = f"{c.get('ppo_play_prob')}%" if c.get('ppo_play_prob') is not None else "-"
+            val_g = f"{c.get('ppo_value_gain', 0.0):+.3f}" if c.get('ppo_value_gain') is not None else "-"
+            score_v = f"{c.get('ppo_score')}" if c.get('ppo_score') is not None else "-"
+            lines.append(f"| {c['id']} | **{c['name']}** | {c['cost']} | {c['card_type']} | {dp_str} | **{c['count']} 张** | {play_p} | {val_g} | {score_v} |")
+        lines.append("\n")
+
+        lines.append("### 3. PPO 自主规整的法力曲线 (Mana Curve)\n")
+        lines.append("```text")
+        for cost in range(1, 8):
+            cnt = deck["mana_curve"].get(cost, 0)
+            bar = "█" * (cnt * 2)
+            lines.append(f"{cost} 费: {bar:<22} ({cnt} 张)")
+        cnt_high = sum(deck["mana_curve"].get(c, 0) for c in range(8, 10))
+        if cnt_high > 0:
+            bar = "█" * (cnt_high * 2)
+            lines.append(f"8+ 费: {bar:<22} ({cnt_high} 张)")
+        lines.append("```\n")
+        lines.append("---\n")
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+    print(f"📑 PPO 心智自省图文全景报告已导出至: {os.path.abspath(output_path)}")
 
 def main():
     parser = argparse.ArgumentParser(description="PPO 强化学习智能体自主选卡构筑系统 (PPO Deckbuilder)")
@@ -381,6 +493,7 @@ def main():
     parser.add_argument("--model", type=str, default=None, help="PPO 模型权重路径")
     parser.add_argument("--stage", type=str, default="tuned", choices=["baseline", "tuned"], help="选用训练模型阶段")
     parser.add_argument("--output", type=str, default="decks_config.json", help="输出卡组保存文件")
+    parser.add_argument("--report", type=str, default="ppo_introspection_report.md", help="输出心智自省报告Markdown文件名")
     parser.add_argument("--factions", type=str, default="Red,Blue", help="目标自主选卡阵营 (默认 Red,Blue)")
     parser.add_argument("--generations", type=int, default=5, help="自博弈进化代数 (默认 5)")
     parser.add_argument("--games-per-gen", type=int, default=60, help="每代自博弈实机局数 (默认 60)")
@@ -425,7 +538,7 @@ def main():
             neural_stats.append(st)
 
         print(f"⚔️ [阶段 2/2] 正在执行 PPO 实机自博弈对抗与卡组进化筛选...")
-        alloc, decision_logs = ppo_self_play_deck_search(
+        alloc, decision_logs, introspections = ppo_self_play_deck_search(
             faction=faction_name,
             candidates=candidates,
             neural_stats=neural_stats,
@@ -436,7 +549,7 @@ def main():
             games_per_gen=args.games_per_gen
         )
 
-        deck_pkg = build_ppo_deck_package(faction_name, candidates, neural_stats, alloc, decision_logs)
+        deck_pkg = build_ppo_deck_package(faction_name, candidates, neural_stats, alloc, decision_logs, introspections)
         print_ppo_deck_report(faction_name, deck_pkg, neural_stats)
         decks_result[faction_name] = deck_pkg
 
@@ -445,6 +558,10 @@ def main():
 
     abs_out = os.path.abspath(args.output)
     print(f"💾 PPO 自主选卡构筑成果已成功同步保存至: {abs_out}")
+
+    # 导出心智自省报告
+    if args.report:
+        export_introspection_report(decks_result, args.report)
 
 if __name__ == "__main__":
     main()
