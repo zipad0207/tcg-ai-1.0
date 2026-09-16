@@ -131,7 +131,6 @@ class PPOTrainer:
         actions = torch.LongTensor(self.buffer.actions).to(DEVICE)
         masks = torch.FloatTensor(np.array(self.buffer.masks)).to(DEVICE)
         old_log_probs = torch.FloatTensor(self.buffer.log_probs).to(DEVICE)
-        old_values = torch.FloatTensor(self.buffer.values).to(DEVICE)
 
         # 计算 GAE 优势函数与回报目标 (针对回合交替自博弈)
         rewards = self.buffer.rewards
@@ -253,7 +252,7 @@ def generate_brawl_plots(metrics: dict):
                 fA_wins = r1.get(f"{fA}_wins", 0) + r2.get(f"{fA}_wins", 0)
                 matrix[i, j] = (fA_wins / total_games) * 100 if total_games > 0 else 50.0
 
-    im = ax2.imshow(matrix, cmap="RdYlGn", vmin=35, vmax=65)
+    ax2.imshow(matrix, cmap="RdYlGn", vmin=35, vmax=65)
     ax2.set_xticks(range(3))
     ax2.set_yticks(range(3))
     ax2.set_xticklabels(["对手: 赤红", "对手: 蔚蓝", "对手: 翠绿"], fontsize=9.5)
@@ -418,7 +417,6 @@ def main():
 
         p0_won = (env.players[0].score >= env.WIN_SCORE)
         winner_faction = name0 if p0_won else name1
-        loser_faction = name1 if p0_won else name0
 
         # 阵营战报
         metrics["faction_stats"][name0]["matches"] += 1

@@ -56,7 +56,7 @@ def run_simulation(episodes: int = 500, decks_path: str = "decks_config.json", c
                 p1_name = decks_cfg[p1_faction].get("deck_name", p1_name)
 
     print("=" * 80)
-    print(f"🔬 AI 构筑卡组竞技场对抗评测 (Monte Carlo Simulation)")
+    print("🔬 AI 构筑卡组竞技场对抗评测 (Monte Carlo Simulation)")
     print(f"{p0_tag} 卡组: 《{p0_name}》 (30张)")
     print(f"{p1_tag} 卡组: 《{p1_name}》 (30张)")
     print(f"📊 评测总轮数: {episodes} 场 | 运算设备: {device}")

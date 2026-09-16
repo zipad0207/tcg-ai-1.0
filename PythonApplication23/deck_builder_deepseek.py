@@ -3,7 +3,7 @@ import re
 import sys
 import json
 import argparse
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List
 from openai import OpenAI
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -319,7 +319,7 @@ def print_deck_profile(faction: str, deck_info: dict):
     print(f"🃏 【{faction}】AI 竞技卡组发布: 《{deck_info['deck_name']}》")
     print(f"📌 流派定位: {deck_info['archetype']} | 平均费用: {deck_info['avg_cost']} 费 | 构成: 随从 {deck_info['minion_count']} 张 / 法术 {deck_info['spell_count']} 张")
     print("─" * 80)
-    print(f"💡 构筑战术设计理念:")
+    print("💡 构筑战术设计理念:")
     print(f"   {deck_info['tactical_concept']}")
     if deck_info.get("key_combos"):
         print("🔗 核心战术配合 (Key Combos):")
@@ -335,7 +335,6 @@ def print_deck_profile(faction: str, deck_info: dict):
     
     print("─" * 80)
     print("📊 法力曲线分布 (Mana Curve):")
-    max_count = max(deck_info["mana_curve"].values()) if deck_info["mana_curve"].values() else 1
     for cost in range(1, 8):
         cnt = deck_info["mana_curve"].get(cost, 0)
         bar = "█" * (cnt * 2)

@@ -2,7 +2,6 @@ import os
 import sys
 import argparse
 import torch
-import numpy as np
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -98,7 +97,7 @@ def evaluate():
     # 查找模型
     model_path = find_model_path(args.model, args.stage)
     if not model_path:
-        print(f"❌ 未找到可用的权重文件！请先运行 train.py 进行训练。")
+        print("❌ 未找到可用的权重文件！请先运行 train.py 进行训练。")
         return
 
     # 动态匹配卡池文件
@@ -225,7 +224,7 @@ def evaluate():
     html_file = export_html_replay(snapshots, winner, output_path=args.html)
     abs_html = os.path.abspath(html_file)
     print(f"\n🌐 交互式战报回放网页已生成: file:///{abs_html.replace(os.sep, '/')}")
-    print(f"💡 提示：双击该文件或在浏览器中打开，即可享受类似正式 TCG 游戏的动态播控回放！")
+    print("💡 提示：双击该文件或在浏览器中打开，即可享受类似正式 TCG 游戏的动态播控回放！")
 
 if __name__ == "__main__":
     evaluate()

@@ -2,12 +2,10 @@ import os
 import sys
 import json
 import argparse
-import time
-import copy
 import random
 import torch
 import numpy as np
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Tuple
 from collections import Counter
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -182,8 +180,6 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
 
     current_counts = normalize_deck_allocation(current_counts, candidate_ids, priority_order)
     decision_logs = []
-
-    opp_faction = Faction.BLUE if faction == "Red" else Faction.RED
     my_faction = Faction.RED if faction == "Red" else Faction.BLUE
 
     introspections = []
@@ -363,9 +359,9 @@ def build_ppo_deck_package(faction: str, candidates: List[dict], neural_stats: L
         })
 
     avg_cost = round(total_mana / max(1, len(decklist)), 2)
-    deck_name = f"赤红·PPO特训突破流" if faction == "Red" else f"蔚蓝·PPO特训要塞流"
+    deck_name = "赤红·PPO特训突破流" if faction == "Red" else "蔚蓝·PPO特训要塞流"
     concept = (
-        f"由 PPO 强化学习智能体自主经过神经网络效用评估与实机对战进化遴选所得。"
+        "由 PPO 强化学习智能体自主经过神经网络效用评估与实机对战进化遴选所得。"
         f"全套构筑最大化 PPO 决策置信度与状态价值增益 (ΔV)，平均费用 {avg_cost} 费。"
     )
 
@@ -427,7 +423,7 @@ def print_ppo_deck_report(faction: str, deck_pkg: dict, neural_stats: List[dict]
                 print(f"   │  {intro['demoted']['thought']}")
             if intro.get("promoted"):
                 print(f"   │  {intro['promoted']['thought']}")
-            print(f"   └── 结论: 智能体成功完成认知纠偏与卡组微调。")
+            print("   └── 结论: 智能体成功完成认知纠偏与卡组微调。")
 
     print("═" * 85 + "\n")
 
@@ -441,7 +437,7 @@ def export_introspection_report(decks_result: dict, output_path: str = "ppo_intr
     for faction, deck in decks_result.items():
         lines.append(f"## ⚔️ 【{faction}】阵营自主卡组：《{deck['deck_name']}》\n")
         lines.append(f"- **流派定位**：`{deck['archetype']}`")
-        lines.append(f"- **牌库规模**：严格遵守 **30 张** 标准规则（同名卡上限 3 张）")
+        lines.append("- **牌库规模**：严格遵守 **30 张** 标准规则（同名卡上限 3 张）")
         lines.append(f"- **法力曲线均值**：**{deck['avg_cost']} 费**（随从 {deck['minion_count']} 张 / 法术 {deck['spell_count']} 张）\n")
 
         lines.append("### 1. 深度自省日记：智能体的自我怀疑与跨代纠偏（“我是不是想错了？”）\n")
@@ -537,7 +533,7 @@ def main():
             st = evaluate_card_neural_utility(model, device, c, f_enum, args.cards, samples=20)
             neural_stats.append(st)
 
-        print(f"⚔️ [阶段 2/2] 正在执行 PPO 实机自博弈对抗与卡组进化筛选...")
+        print("⚔️ [阶段 2/2] 正在执行 PPO 实机自博弈对抗与卡组进化筛选...")
         alloc, decision_logs, introspections = ppo_self_play_deck_search(
             faction=faction_name,
             candidates=candidates,

@@ -76,7 +76,7 @@ def simulate_card_in_faction(card_info: dict, faction_name: str, model: CardNet,
 
     for _ in range(episodes):
         env = DuelEnv(p0_faction=f_enum, p1_faction=opp_enum, cards_path=CARDS_PATH)
-        obs = env.reset()
+        env.reset()
         env.current_player = 0
         p0 = env.players[0]
 
@@ -124,7 +124,6 @@ def simulate_card_in_faction(card_info: dict, faction_name: str, model: CardNet,
 def get_faction_comment(card: dict, faction: str, score: float, tier: str, win_impact: float) -> str:
     tags = card.get("tags", [])
     cost = card["cost"]
-    name = card["name"]
 
     if "DISCARD_2" in tags:
         return f"【{faction}严重陷阱】虽有高身材，但强制弃2张手牌直接破产，胜率拉低{abs(win_impact):.1f}%，坚决0张！"

@@ -1,6 +1,5 @@
 import os
 import json
-import random
 import signal
 import sys
 import argparse

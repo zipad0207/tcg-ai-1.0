@@ -1,4 +1,3 @@
-import os
 import json
 
 def get_faction_meta(faction_val, player_id):

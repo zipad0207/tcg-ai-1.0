@@ -4,7 +4,7 @@ import sys
 import json
 import time
 import argparse
-from typing import Dict, List, Any
+from typing import Dict, List
 from collections import Counter
 import torch
 import numpy as np
@@ -189,7 +189,7 @@ def run_post_print_benchmark(cards_path: str, all_printed_cards: Dict[str, List[
     model_file = find_model_path()
 
     print("\n" + "═" * 85)
-    print(f"⚡ 启动【印后即时数值平衡实测 (Post-Printing 1000-Game Benchmark)】")
+    print("⚡ 启动【印后即时数值平衡实测 (Post-Printing 1000-Game Benchmark)】")
     print(f"📦 实测卡池: {cards_path} | 对战规模: {episodes} 局 | 运算加速: {device}")
     if model_file:
         print(f"🧠 决策权重: {model_file}")
@@ -337,7 +337,7 @@ def run_post_print_benchmark(cards_path: str, all_printed_cards: Dict[str, List[
     }
     with open("training_metrics_post_print.json", "w", encoding="utf-8") as mf:
         json.dump(metrics_export, mf, indent=2, ensure_ascii=False)
-    print(f"📈 印后对战遥测数据已保存至: training_metrics_post_print.json\n")
+    print("📈 印后对战遥测数据已保存至: training_metrics_post_print.json\n")
 
 
 def main():
@@ -400,7 +400,7 @@ def main():
     all_design_notes = []
 
     for f_name, f_count, f_theme in factions_to_process:
-        print(f"\n" + "─" * 70)
+        print("\n" + "─" * 70)
         print(f"🤖 正在调用 [{MODEL_NAME}] 印刷阵营: 【{f_name}】 (目标: {f_count} 张)...")
         print(f"🎯 设计特色主题: {f_theme}")
 
@@ -461,7 +461,7 @@ def main():
     print(f"🔒 原基准卡池 {base_path} 处于只读保护，未受影响。")
 
     # 统计卡池总数
-    print(f"\n📊 扩充后卡池总规模统计:")
+    print("\n📊 扩充后卡池总规模统计:")
     total_cards = sum(len(cards) for cards in expanded_pool.values())
     print(f"   总卡牌数: {total_cards} 张")
     for f, c_list in expanded_pool.items():

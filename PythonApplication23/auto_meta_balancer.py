@@ -26,9 +26,6 @@ import json
 import random
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.distributions.categorical import Categorical
 import matplotlib.pyplot as plt
 
 if sys.platform == "win32":
@@ -37,8 +34,7 @@ if sys.platform == "win32":
     except Exception:
         pass
 
-from sandbox import DuelEnv, Faction, Card, CardType
-from agent import CardNet
+from sandbox import DuelEnv, Faction
 
 CARDS_FILE = "cards_config.json"
 DECKS_FILE = "decks_config.json"
@@ -269,7 +265,6 @@ def step2_run_6000_brawl(prebuilt_decks: dict):
         all_lengths.append(ep_len)
 
         p0_won = (env.players[0].score >= env.WIN_SCORE)
-        winner_faction = name0 if p0_won else name1
 
         metrics["faction_stats"][name0]["matches"] += 1
         metrics["faction_stats"][name1]["matches"] += 1
@@ -342,7 +337,7 @@ def step3_generate_academic_plot(metrics: dict):
     ax1.axhline(50.0, color="#7f8c8d", linestyle="--", linewidth=1.5, label="50% 理论黄金平衡线")
     ax1.set_ylim(0, 100)
     ax1.set_ylabel("阵营综合胜率 (%)", fontsize=11, fontweight="bold")
-    ax1.set_title(f"三大阵营 6000+ 局混战均衡胜率收敛图", fontsize=12, pad=12, fontweight="bold")
+    ax1.set_title("三大阵营 6000+ 局混战均衡胜率收敛图", fontsize=12, pad=12, fontweight="bold")
     ax1.legend(loc="upper right")
 
     for bar, count in zip(bars, play_counts):
@@ -368,7 +363,7 @@ def step3_generate_academic_plot(metrics: dict):
                 fA_wins = r1.get(f"{fA}_wins", 0) + r2.get(f"{fA}_wins", 0)
                 matrix[i, j] = (fA_wins / total_games) * 100 if total_games > 0 else 50.0
 
-    im = ax2.imshow(matrix, cmap="RdYlGn", vmin=35, vmax=65)
+    ax2.imshow(matrix, cmap="RdYlGn", vmin=35, vmax=65)
     ax2.set_xticks(range(3))
     ax2.set_yticks(range(3))
     ax2.set_xticklabels(["对手: 赤红", "对手: 蔚蓝", "对手: 翠绿"], fontsize=9.5)

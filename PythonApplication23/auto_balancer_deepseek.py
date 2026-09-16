@@ -2,7 +2,6 @@ import os
 import re
 import sys
 import json
-import shutil
 from openai import OpenAI
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -195,7 +194,7 @@ def main():
             
         print(f"🚀 成功自适应微调卡池！已保存至: {args.output}")
         if os.path.exists("cards_config_baseline.json"):
-            print(f"🔒 用户基准卡池 cards_config_baseline.json 始终处于受保护只读状态。")
+            print("🔒 用户基准卡池 cards_config_baseline.json 始终处于受保护只读状态。")
 
         total_cards = sum(len(cards) for cards in new_card_pool.values())
         print(f"📊 当前卡池总规模: {total_cards} 张卡")
