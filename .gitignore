@@ -28,3 +28,6 @@ ENV/
 # IDE Configs
 .vscode/
 pyrightconfig.json
+
+# Logs
+*.log

@@ -107,46 +107,51 @@ def simulate_card_in_faction(card_info: dict, faction_name: str, model: CardNet,
         "v_gain": avg_v_gain
     }
 
-def get_faction_comment(card: dict, faction: str, score: float, tier: str, win_impact: float) -> str:
-    tags = card.get("tags", [])
-    cost = card["cost"]
-
-    if "DISCARD_2" in tags:
-        return f"【{faction}严重陷阱】虽有高身材，但强制弃2张手牌直接破产，胜率拉低{abs(win_impact):.1f}%，坚决0张！"
-    if "SACRIFICE_1_KILL_1" in tags and cost >= 4:
-        return f"【{faction}卡手亏牌】费用极高且需牺牲场面随从，逆风根本开不出来，严重拖累胜率。"
-    if "RUSH" in tags and "DRAW_1" in tags:
-        return f"【{faction}绝对幻神】突袭解场兼具过牌补手牌！完美抢回主动权，胜率净增+{win_impact:.1f}%，无脑满编3张！"
-    if "RUSH" in tags and "DEGRADE_1" in tags:
-        return f"【{faction}破阵利器】突袭打乱敌方攻防节奏并削弱DP，抢节奏神卡，胜率净增+{win_impact:.1f}%！"
-    if "SPAWN_1_1" in tags:
-        return f"【{faction}场面核心】单卡提供双重铺场频率，完美契合攻防对撞机制，实测胜率超90%的进攻支柱！"
-    if "DRAW_2" in tags and "DISCARD_1" in tags:
-        if faction == "Red":
-            return "【快攻强力润滑】1费过2加速倾泻手牌，前期抢死对手的利器；快攻构筑推荐带满。"
-        else:
-            return "【资源过牌】高效滤抽组件，但在控制套牌中弃牌存在微小风险，视手牌充裕度带1~2张。"
-    if "DRAW_1" in tags and cost <= 2:
-        return f"【{faction}扎实拼图】2费标准身材还自带抽牌，不亏手牌的优质节奏基石，构筑万金油。"
-    if "FORTIFY_3" in tags or ("FORTIFY_2" in tags and cost >= 6):
-        return f"【{faction}高费叹息墙】超高护甲防线，但在面对快攻时费用过高容易被卡死在手里，属于环境对策卡。"
-    if "DEATH_DRAW_1" in tags and cost == 1:
-        return f"【{faction}先锋核心】1费站场倒下不亏卡，为后续攻势源源不断续航，快攻必带。"
-    if "RAMP_1" in tags:
-        return f"【{faction}跳费引擎】翠绿体系的命脉，先手跳费能让你提前打出高费大哥。"
-    if cost >= 7:
-        return f"【{faction}终结核弹】单卡制胜手段，但极度依赖前期跳费与法力储备，没有跳费容易卡手到死。"
-
-    if tier in ["S+", "S"]:
-        return f"【{faction}天梯必备】综合契合度处于顶级水平，PPO智能体第一优先级选牌！"
-    elif tier == "A":
-        return f"【{faction}主力中坚】身材扎实且效果契合该卡组定位，推荐编入2~3张。"
-    elif tier == "B":
-        return f"【{faction}合格拼图】常规过渡组件，按费用曲线合理填充1~2张即可。"
-    elif tier == "C":
-        return f"【{faction}平庸备选】缺乏主动破局手段，在卡组中表现平平，有更好卡牌时先考虑替换。"
-    else:
-        return f"【{faction}低效避坑】费用偏高或机制负收益，实测负贡献频发，建议放弃。"
+def get_real_ai_comments(faction: str, evaluated_list: list) -> dict:
+    import os
+    import json
+    import re
+    from openai import OpenAI
+    print(f"    [AI] 正在为 {len(evaluated_list)} 张 {faction} 候选卡牌生成真实 DeepSeek 实战锐评...")
+    
+    key = os.environ.get("DEEPSEEK_API_KEY", "")
+    if not key:
+        try:
+            import winreg
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment") as env_key:
+                key, _ = winreg.QueryValueEx(env_key, "DEEPSEEK_API_KEY")
+        except Exception:
+            pass
+    if not key:
+        print("    [WARN] 缺少 DEEPSEEK_API_KEY，使用降级简评。")
+        return {item["id"]: f"对胜率影响为 {item.get('win_impact', 0)}%" for item in evaluated_list}
+        
+    client = OpenAI(api_key=key, base_url="https://api.deepseek.com")
+    
+    prompt = f"你是一名资深的 TCG 职业选手。请为【{faction}】阵营的以下候选卡牌，根据胜率影响(win_impact)分别给出一句犀利、一针见血的实战点评（单句不要超过30个字）：\n\n"
+    for item in evaluated_list:
+        prompt += f"卡牌名: {item['name']}, 费用: {item['cost']}, 属性/词条: {item.get('tags', [])}, 胜率影响: {item.get('win_impact', 0):.1f}%\n"
+    
+    prompt += "\n请严格只返回如下合法 JSON 格式，不要包含任何 markdown 或多余文本：\n{\"卡牌名\": \"点评短句\", ...}"
+    
+    try:
+        res = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.5
+        )
+        content = res.choices[0].message.content
+        match = re.search(r"(\{.*\})", content, re.DOTALL)
+        if match:
+            parsed = json.loads(match.group(1))
+            ret = {}
+            for item in evaluated_list:
+                ret[item["id"]] = parsed.get(item["name"], f"实战表现对胜率的影响为 {item.get('win_impact', 0):.1f}%")
+            return ret
+    except Exception as e:
+        print(f"    [ERR] DeepSeek调用异常: {e}")
+        
+    return {item["id"]: f"实战表现对胜率的影响为 {item.get('win_impact', 0):.1f}%" for item in evaluated_list}
 
 def evaluate_faction_pool(target_faction: str, faction_cards: list, neutral_cards: list, model: CardNet, device: torch.device):
     """
@@ -270,7 +275,11 @@ def evaluate_faction_pool(target_faction: str, faction_cards: list, neutral_card
         item["tier_name"] = tier_name
         item["rec_count"] = rec_count
         item["tier_class"] = tier_class
-        item["comment"] = get_faction_comment(item, target_faction, score, tier, win_impact)
+
+    # 批量请求大模型生成点评
+    ai_comments = get_real_ai_comments(target_faction, evaluated_list)
+    for item in evaluated_list:
+        item["comment"] = ai_comments.get(item["id"], f"胜率贡献为 {item.get('win_impact', 0):.1f}%")
 
     evaluated_list.sort(key=lambda x: x["score"], reverse=True)
     return evaluated_list

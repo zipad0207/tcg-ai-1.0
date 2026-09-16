@@ -28,137 +28,39 @@ FIGURE_SAVE_PATH = "figure_brawl.png"
 TOTAL_EPISODES = 6000  # 6000+ 局大规模测试
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def step1_tune_cards_and_decks():
-    print("[1/4] 正在执行三大阵营卡牌数值与卡组微调...")
+def step1_tune_cards_and_decks(iteration: int = 0):
+    import subprocess
+    print(f"\n[{iteration+1}/MAX] 正在调用 DeepSeek 进行第 {iteration+1} 轮真实数值与卡组微调 (请耐心等待)...")
     
-    # 1. 微调卡牌数值
-    with open(CARDS_FILE, "r", encoding="utf-8") as f:
-        cards_data = json.load(f)
+    metrics_file = "training_metrics_baseline.json" if iteration == 0 else "training_metrics_brawl.json"
+    
+    # 1. 调用 LLM 进行真实卡牌数值平衡
+    print("  [正在呼叫 DeepSeek] 分析胜率数据并重构卡池...")
+    subprocess.run([
+        sys.executable, "auto_balancer_deepseek.py", 
+        "--metrics", metrics_file, 
+        "--cards", "cards_config_baseline.json" if iteration == 0 else "cards_config.json", 
+        "--output", "cards_config_tuned.json"
+    ], check=True)
+    
+    # 2. 调用 LLM 进行 30 张卡组合规构筑
+    print("  [正在呼叫 DeepSeek] 为三大阵营构筑 30 张实战套牌...")
+    subprocess.run([
+        sys.executable, "deck_builder_deepseek.py", 
+        "--cards", "cards_config.json", 
+        "--output", DECKS_FILE, 
+        "--factions", "Red,Blue,Green"
+    ], check=True)
 
-    # 赤红微调
-    for c in cards_data.get("Red", []):
-        if c["id"] == 109:  # 破阵狂徒
-            c["base_dp"] = 2
-        elif c["id"] == 108:  # 裂甲掷斧手
-            c["tags"] = ["RUSH"]
-        elif c["id"] == 111:  # 赤红掠袭者
-            c["tags"] = ["RUSH"]
-        elif c["id"] == 100:  # 赤红突击手
-            c["tags"] = []
-
-    # 翠绿微调
-    for c in cards_data.get("Green", []):
-        if c["id"] == 301:  # 树人
-            c["base_dp"] = 3
-        elif c["id"] == 302:  # 剧毒花
-            c["base_dp"] = 2
-        elif c["id"] == 307:  # 芽苗祭司
-            c["base_dp"] = 3
-        elif c["id"] == 304:  # 森林之狼
-            c["cost"] = 3
-            c["base_dp"] = 3
-        elif c["id"] == 309:  # 翡翠幼龙
-            c["cost"] = 4
-        elif c["id"] == 308:  # 翡翠巨熊
-            c["cost"] = 5
-
-    # 蔚蓝微调
-    for c in cards_data.get("Blue", []):
-        if c["id"] == 201:  # 盾兵
-            c["base_dp"] = 2
-        elif c["id"] == 200:  # 蔚蓝卫士
-            c["base_dp"] = 3
-        elif c["id"] == 207:  # 霜盾见习官
-            c["base_dp"] = 2
-        elif c["id"] == 209:  # 寒晶护壁
-            c["def_spell_val"] = 3
-
-    with open(CARDS_FILE, "w", encoding="utf-8") as f:
-        json.dump(cards_data, f, indent=2, ensure_ascii=False)
-    print("  [OK] cards_config.json 数值微调完成！")
-
-    # 2. 优化重构三大阵营 30 张成熟卡组
+    # 3. 加载新构筑好的卡组返回供环境仿真使用
     with open(DECKS_FILE, "r", encoding="utf-8") as f:
         decks_data = json.load(f)
+    
+    red_decklist = decks_data["Red"]["decklist"]
+    blue_decklist = decks_data["Blue"]["decklist"]
+    green_decklist = decks_data["Green"]["decklist"]
 
-    # 翠绿卡组优化：补充低费随从
-    # 原先 4.2 费 -> 降至约 2.7 费
-    # 候选: 902假人(1费), 302剧毒花(2费), 300萌芽(2费), 900商人(2费), 905斥候(2费), 301树人(3费), 307祭司(3费), 904盾卫(3费), 304狼(4费), 309幼龙(5费), 305巨树(7费), 310巨龙(9费)
-    green_allocation = {
-        902: 3,  # 训练假人 (1费) * 3
-        905: 3,  # 佣兵斥候 (2费 突袭过牌) * 3
-        900: 3,  # 商人 (2费 站场过牌) * 3
-        302: 3,  # 剧毒花 (2费 削弱对撞) * 3
-        300: 2,  # 翠绿萌芽 (2费 跳费) * 2
-        301: 3,  # 树人 (3费 3DP护甲) * 3
-        307: 3,  # 芽苗祭司 (3费 跳费) * 3
-        904: 2,  # 拾荒盾卫 (3费 护甲亡语过牌) * 2
-        309: 2,  # 翡翠幼龙 (5费 突袭亡语水晶) * 2
-        305: 2,  # 远古巨树 (7费 8DP护甲大树) * 2
-        310: 2   # 灭世翡翠巨龙 (9费 11DP核弹突袭) * 2
-    } # 3+3+3+3+2+3+3+2+2+2+2 = 28 + 2(假人/恩泽) -> 补充2张
-    green_allocation[311] = 2  # 世界树恩泽 (4费) * 2
-    # 总计刚好 30 张！
-
-    green_decklist = []
-    for cid, cnt in green_allocation.items():
-        green_decklist.extend([cid] * cnt)
-    assert len(green_decklist) == 30, f"Green deck count is {len(green_decklist)}"
-
-    # 蔚蓝卡组优化：强化前期防御
-    blue_allocation = {
-        201: 3,  # 盾兵 (1费 护甲) * 3
-        902: 3,  # 训练假人 (1费) * 3
-        903: 2,  # 酒馆密账 (1费 抽2弃1) * 2
-        200: 3,  # 蔚蓝卫士 (2费 护甲) * 3
-        207: 3,  # 霜盾见习官 (2费 支援) * 3
-        209: 3,  # 寒晶护壁 (2费 护盾过牌) * 3
-        900: 3,  # 商人 (2费 站场过牌) * 3
-        905: 3,  # 佣兵斥候 (2费 突袭过牌) * 3
-        208: 2,  # 壁垒工匠 (3费 护甲2) * 2
-        904: 2,  # 拾荒盾卫 (3费 护甲亡语) * 2
-        205: 2,  # 藤甲兵 (4费 护甲2) * 2
-        211: 1   # 蔚蓝要塞 (6费 护甲3) * 1
-    }
-    blue_decklist = []
-    for cid, cnt in blue_allocation.items():
-        blue_decklist.extend([cid] * cnt)
-    assert len(blue_decklist) == 30, f"Blue deck count is {len(blue_decklist)}"
-
-    # 赤红卡组优化：调整费用曲线
-    red_allocation = {
-        100: 3,  # 赤红突击手 (1费 亡语抽1) * 3
-        103: 2,  # 射线 (1费 攻2法术) * 2
-        902: 3,  # 训练假人 (1费) * 3
-        903: 2,  # 酒馆密账 (1费 抽2弃1) * 2
-        107: 3,  # 集结号手 (2费 铺场) * 3
-        108: 3,  # 裂甲掷斧手 (2费 突袭削弱) * 3
-        900: 3,  # 商人 (2费 站场抽1) * 3
-        905: 2,  # 佣兵斥候 (2费 突袭抽1) * 2
-        101: 2,  # 红色小队长 (3费 铺场) * 2
-        109: 2,  # 破阵狂徒 (3费 突袭削弱) * 2 (由3降至2)
-        904: 2,  # 拾荒盾卫 (3费) * 2
-        111: 3   # 赤红掠袭者 (5费 突袭抢分) * 3
-    }
-    red_decklist = []
-    for cid, cnt in red_allocation.items():
-        red_decklist.extend([cid] * cnt)
-    assert len(red_decklist) == 30, f"Red deck count is {len(red_decklist)}"
-
-    decks_data["Green"]["decklist"] = green_decklist
-    decks_data["Green"]["total_cards"] = 30
-    decks_data["Green"]["avg_cost"] = round(float(np.mean([3 if cid >= 300 else 2 for cid in green_decklist])), 1)
-
-    decks_data["Blue"]["decklist"] = blue_decklist
-    decks_data["Blue"]["total_cards"] = 30
-
-    decks_data["Red"]["decklist"] = red_decklist
-    decks_data["Red"]["total_cards"] = 30
-
-    with open(DECKS_FILE, "w", encoding="utf-8") as f:
-        json.dump(decks_data, f, indent=2, ensure_ascii=False)
-    print("  [OK] decks_config.json 三大 30 张成熟套牌调优重构完成！")
-
+    print("  [OK] DeepSeek 真实数值与卡组调优圆满完成！")
     return {"Red": red_decklist, "Blue": blue_decklist, "Green": green_decklist}
 
 def step2_run_6000_brawl(prebuilt_decks: dict):
@@ -399,13 +301,30 @@ def step4_update_readme(metrics: dict):
 
     print(f"  当前混战胜率: 红 {r_wr:.1f}% ({r_m}局) | 蓝 {b_wr:.1f}% ({b_m}局) | 绿 {g_wr:.1f}% ({g_m}局)")
 
+MAX_ITERATIONS = 3
+
 def main():
-    # 步骤 1: 调优
-    decks = step1_tune_cards_and_decks()
+    print("=" * 65)
+    print(f"启动 TCG-AI 深度多轮自博弈迭代 (计划 {MAX_ITERATIONS} 轮)")
+    print("=" * 65)
+    
+    metrics = None
+    for iteration in range(MAX_ITERATIONS):
+        print(f"\n[{iteration+1}/{MAX_ITERATIONS}] 轮次开始 ===========================================")
+        # 步骤 1: 调优
+        decks = step1_tune_cards_and_decks(iteration)
 
-    # 步骤 2: 跑 6000 局
-    metrics = step2_run_6000_brawl(decks)
+        # 步骤 2: 跑 6000 局
+        metrics = step2_run_6000_brawl(decks)
+        
+        # 记录当前胜率
+        r_wr = metrics["faction_stats"]["Red"]["winrate"]
+        b_wr = metrics["faction_stats"]["Blue"]["winrate"]
+        g_wr = metrics["faction_stats"]["Green"]["winrate"]
+        print(f"  [本轮结果] 红 {r_wr:.1f}% | 蓝 {b_wr:.1f}% | 绿 {g_wr:.1f}%")
 
+    print("\n[最终收敛] 所有迭代完成，开始生成数据大屏与文档...")
+    
     # 步骤 3: 画图
     step3_generate_academic_plot(metrics)
 
@@ -413,9 +332,9 @@ def main():
     step4_update_readme(metrics)
 
     # 步骤 5: 同步刷新天梯评级表
-    print("\n[5/5] 正在同步更新天梯评级表 (card_tier_table.md & HTML)...")
+    print("\n正在同步更新天梯评级表 (card_tier_table.md & HTML)...")
     os.system(f'"{sys.executable}" generate_hearthstone_tier_table.py')
-    print("\n混战训练与验证完成。")
+    print("\n深度进化与混战训练验证全部圆满完成。")
 
 if __name__ == "__main__":
     main()

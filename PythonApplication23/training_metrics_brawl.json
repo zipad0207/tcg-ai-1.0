@@ -2,117 +2,97 @@
   "total_episodes": 6000,
   "faction_stats": {
     "Red": {
-      "matches": 4033,
-      "wins": 1841,
-      "winrate": 45.65
+      "matches": 4009,
+      "wins": 2419,
+      "winrate": 60.34
     },
     "Blue": {
-      "matches": 3950,
-      "wins": 2225,
-      "winrate": 56.33
+      "matches": 3936,
+      "wins": 2359,
+      "winrate": 59.93
     },
     "Green": {
-      "matches": 4017,
-      "wins": 1934,
-      "winrate": 48.15
-    }
-  },
-  "non_mirror_stats": {
-    "Red": {
-      "matches": 2723,
-      "wins": 1186,
-      "winrate": 43.56
-    },
-    "Blue": {
-      "matches": 2602,
-      "wins": 1551,
-      "winrate": 59.61
-    },
-    "Green": {
-      "matches": 2641,
-      "wins": 1246,
-      "winrate": 47.18
+      "matches": 4055,
+      "wins": 1222,
+      "winrate": 30.14
     }
   },
   "matchups": {
-    "Blue_vs_Red": {
-      "total": 681,
-      "Blue_wins": 292,
-      "Red_wins": 389
-    },
-    "Green_vs_Blue": {
-      "total": 624,
-      "Green_wins": 129,
-      "Blue_wins": 495
-    },
     "Red_vs_Blue": {
-      "total": 661,
-      "Red_wins": 133,
-      "Blue_wins": 528
-    },
-    "Green_vs_Green": {
-      "total": 688,
-      "p0_first_wins": 356,
-      "p1_second_wins": 332,
-      "faction_winrate": 50.0
+      "total": 674,
+      "Red_wins": 208,
+      "Blue_wins": 466
     },
     "Blue_vs_Blue": {
-      "total": 674,
-      "p0_first_wins": 348,
-      "p1_second_wins": 326,
-      "faction_winrate": 50.0
+      "total": 622,
+      "p0_first_wins": 173,
+      "p1_second_wins": 449,
+      "winrate": 50.0
     },
-    "Green_vs_Red": {
-      "total": 698,
-      "Green_wins": 228,
-      "Red_wins": 470
+    "Green_vs_Green": {
+      "total": 671,
+      "p0_first_wins": 217,
+      "p1_second_wins": 454,
+      "winrate": 50.0
+    },
+    "Green_vs_Blue": {
+      "total": 652,
+      "Green_wins": 58,
+      "Blue_wins": 594
     },
     "Blue_vs_Green": {
-      "total": 636,
-      "Blue_wins": 236,
-      "Green_wins": 400
+      "total": 712,
+      "Blue_wins": 497,
+      "Green_wins": 215
     },
-    "Red_vs_Red": {
-      "total": 655,
-      "p0_first_wins": 341,
-      "p1_second_wins": 314,
-      "faction_winrate": 50.0
+    "Blue_vs_Red": {
+      "total": 654,
+      "Blue_wins": 180,
+      "Red_wins": 474
     },
     "Red_vs_Green": {
-      "total": 683,
-      "Red_wins": 194,
-      "Green_wins": 489
+      "total": 657,
+      "Red_wins": 443,
+      "Green_wins": 214
+    },
+    "Red_vs_Red": {
+      "total": 666,
+      "p0_first_wins": 235,
+      "p1_second_wins": 431,
+      "winrate": 50.0
+    },
+    "Green_vs_Red": {
+      "total": 692,
+      "Green_wins": 64,
+      "Red_wins": 628
     }
   },
   "card_play_count": {
-    "盾兵": 6375,
+    "训练假人": 15989,
+    "盾兵": 5108,
     "幸运币": 6000,
-    "红色小队长": 3316,
-    "训练假人": 17085,
-    "裂甲掷斧手": 5232,
-    "赤红突击手": 5619,
-    "拾荒盾卫": 10042,
-    "商人": 15572,
-    "霜盾见习官": 6011,
-    "酒馆密账": 7536,
-    "佣兵斥候": 13873,
-    "射线": 3610,
-    "集结号手": 4934,
-    "壁垒工匠": 3783,
-    "破阵狂徒": 3324,
-    "藤甲兵": 3683,
-    "蔚蓝卫士": 6023,
-    "剧毒花": 4786,
-    "寒晶护壁": 5973,
-    "芽苗祭司": 4515,
-    "翡翠幼龙": 2895,
-    "远古巨树": 2271,
-    "蔚蓝要塞": 1587,
-    "树人": 4588,
-    "翠绿萌芽": 3275,
-    "世界树恩泽": 2860,
-    "赤红掠袭者": 4471,
-    "灭世翡翠巨龙": 1958
+    "商人": 15234,
+    "弓箭手": 4971,
+    "蔚蓝卫士": 4949,
+    "红色小队长": 5015,
+    "自爆": 5004,
+    "雇佣兵": 15236,
+    "石像鬼": 4556,
+    "射线": 5357,
+    "切割者": 5218,
+    "火铳手": 4774,
+    "大块头": 4088,
+    "藤甲兵": 4777,
+    "荆棘缠绕": 5439,
+    "树人": 5307,
+    "翠绿萌芽": 5176,
+    "远古巨树": 4709,
+    "森林之狼": 5244,
+    "剧毒花": 5457,
+    "狂暴生长": 5399,
+    "防御！": 5048,
+    "赤红突击手": 5137,
+    "掠夺者": 3802
   },
-  "avg_steps": 41.18
+  "avg_steps": 43.95
 }
