@@ -8,7 +8,18 @@ from openai import OpenAI
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
+def get_api_key() -> str:
+    key = os.environ.get("DEEPSEEK_API_KEY", "")
+    if not key and sys.platform == "win32":
+        try:
+            import winreg
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment") as env_key:
+                key, _ = winreg.QueryValueEx(env_key, "DEEPSEEK_API_KEY")
+        except Exception:
+            pass
+    return key
+
+DEEPSEEK_API_KEY = get_api_key()
 
 MODEL_NAME = "deepseek-flash"
 

@@ -162,7 +162,20 @@ python train.py --stage baseline --episodes 1000
 python train.py --stage tuned --episodes 1000
 ```
 
-### 6. 执行 LLM 闭环数值自动平衡
+### 6. 执行独立创新印卡工坊 (Card Designer & Expander)
+彻底将**新卡创意设计/印卡扩充**与**既有数值平衡调优**解耦分离：
+```bash
+cd PythonApplication23
+
+# 为绿色林野阵营印刷 2 张高费巨龙与幼龙守护者卡牌
+python card_printer_deepseek.py --faction Green --count 2 --theme "远古翡翠巨龙与幼龙守护者"
+
+# 为红方印刷 2 张低费突袭与直伤突破卡牌
+python card_printer_deepseek.py --faction Red --count 2 --theme "低费自爆突袭突破兵"
+```
+
+### 7. 执行 LLM 闭环数值自动平衡
+针对既有卡牌进行手术级微调（不改动卡池规模与卡牌概念）：
 ```bash
 cd PythonApplication23
 
@@ -188,10 +201,12 @@ python auto_balancer_deepseek.py
     ├── eval_play.py                     # AI 实时对抗评估与对局复盘入口
     ├── visualizer.py                    # 终端双路 ASCII 棋盘与 HTML5 战报生成引擎
     ├── battle_replay.html               # 现代暗黑拟态交互式对局回放网页
-    ├── auto_balancer_deepseek.py        # DeepSeek 闭环数据驱动卡牌自适应平衡器
+    ├── card_printer_deepseek.py         # 独立创新印卡工坊 (卡牌扩充设计与机制组装)
+    ├── auto_balancer_deepseek.py        # 独立数值调优平衡器 (基于对局遥测的数值收敛)
     ├── plot_experiments.py              # 学术对比图表生成器 (含四合一对比大图)
     ├── cards_config_baseline.json       # 基准卡池配置 (只读保护，用户自定义失衡态)
     ├── cards_config_tuned.json          # 调优卡池配置 (DeepSeek 闭环优化后达到均衡态)
+    ├── cards_config_expanded.json       # 扩充卡池文件 (印卡工坊新卡生成产物)
     ├── cards_config.json                # 当前沙盒默认读取卡池
     ├── training_metrics_baseline.json   # 基准对照组 1000 局遥测数据 (31.2% vs 68.8%)
     ├── training_metrics_tuned.json      # 调优组 1000 局遥测数据 (46.1% vs 53.9%)
