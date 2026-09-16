@@ -24,6 +24,8 @@ from agent import CardNet
 parser = argparse.ArgumentParser(description="TCG PPO 自博弈训练流水线")
 parser.add_argument("--stage", type=str, default="tuned", choices=["baseline", "tuned"], 
                     help="设置当前训练阶段: baseline(基准) 或 tuned(调优后)")
+parser.add_argument("--brawl", action="store_true", 
+                    help="开启三大阵营 (Red/Blue/Green) 多卡组随机自由混战模式")
 parser.add_argument("--episodes", type=int, default=1000,
                     help="训练总对局轮数 (默认 1000)")
 parser.add_argument("--cards", type=str, default=None,
@@ -217,6 +219,13 @@ def auto_generate_plot():
 # 5. 训练与指标统计主入口
 # ==========================================
 def main():
+    if args.brawl:
+        print("⚔️ 检测到 --brawl 标志，无缝启动三大阵营自由混战训练模式！")
+        import train_brawl
+        train_brawl.TOTAL_EPISODES = args.episodes
+        train_brawl.main()
+        return
+
     print(f"[系统] 当前运行阶段: {STAGE.upper()} | 运算设备: {DEVICE}")
     cards_file = args.cards if args.cards else ("cards_config_baseline.json" if STAGE == "baseline" and os.path.exists("cards_config_baseline.json") else ("cards_config_tuned.json" if STAGE == "tuned" and os.path.exists("cards_config_tuned.json") else "cards_config.json"))
     print(f"📦 [卡池加载] 阶段: {STAGE.upper()} | 锁定卡池文件: {cards_file}")
