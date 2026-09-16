@@ -47,20 +47,34 @@ def clean_json_response(raw_text: str) -> str:
 
 def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client: OpenAI, history_metrics: dict = None) -> str:
     total = max(1, metrics_data.get("total_episodes", 1000))
-    p0_wins = metrics_data.get("p0_wins", 500)
-    p1_wins = metrics_data.get("p1_wins", 500)
-    p0_rate = (p0_wins / total) * 100
-    p1_rate = (p1_wins / total) * 100
+    
+    if "faction_stats" in metrics_data:
+        # 三大阵营混战模式
+        stats_lines = []
+        for f, s in metrics_data["faction_stats"].items():
+            stats_lines.append(f"- 【{f}】阵营: 胜率 {s['winrate']:.1f}% ({s['wins']} 胜 / {s['matches']} 场)")
+        data_section = "\n".join(stats_lines)
+        if "matchups" in metrics_data:
+            data_section += f"\n- 两两交手战报: {json.dumps(metrics_data['matchups'], ensure_ascii=False)}"
+        target_section = f"""当前三大阵营综合胜率为：
+- 🔴 赤红 (Red): {metrics_data['faction_stats']['Red']['winrate']:.1f}%
+- 🔵 蔚蓝 (Blue): {metrics_data['faction_stats']['Blue']['winrate']:.1f}%
+- 🟢 翠绿 (Green): {metrics_data['faction_stats']['Green']['winrate']:.1f}%
+请仔细结合对战数据与交手情况，挑选 2~3 张最关键的单卡进行精准数值微调（例如适度增强胜率略低阵营的前中期战力/解场，或微调胜率偏高阵营的身材），力求三大阵营综合胜率全部稳定在 48%~52% 黄金竞技平衡区间。"""
+    else:
+        # 传统双人模式
+        p0_wins = metrics_data.get("p0_wins", 500)
+        p1_wins = metrics_data.get("p1_wins", 500)
+        p0_rate = (p0_wins / total) * 100
+        p1_rate = (p1_wins / total) * 100
+        data_section = f"- 红方胜率 (P0 - 快攻冲锋): {p0_rate:.1f}% ({p0_wins} 胜)\n- 蓝方胜率 (P1 - 控制防守): {p1_rate:.1f}% ({p1_wins} 胜)"
+        target_section = f"当前红方胜率为 {p0_rate:.1f}%，蓝方胜率为 {p1_rate:.1f}%。请挑选 2~3 张最关键的卡牌进行微调，力求双方胜率接近 50% 的完美平衡线。"
 
     history_section = ""
     if history_metrics and history_metrics != metrics_data:
-        h_total = max(1, history_metrics.get("total_episodes", 1000))
-        h_p0 = (history_metrics.get("p0_wins", 500) / h_total) * 100
-        h_p1 = (history_metrics.get("p1_wins", 500) / h_total) * 100
         history_section = f"""
 ### 历史对局参考：
-- 上一阶段：红方胜率 {h_p0:.1f}% vs 蓝方胜率 {h_p1:.1f}%
-- 当前阶段：红方胜率 {p0_rate:.1f}% vs 蓝方胜率 {p1_rate:.1f}%
+{json.dumps(history_metrics.get("faction_stats", history_metrics), ensure_ascii=False, indent=2)}
 """
 
     prompt = f"""
@@ -69,8 +83,7 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
 
 ### 1. 训练对局数据:
 - 总训练对局: {total} 局
-- 红方胜率 (P0 - 快攻冲锋): {p0_rate:.1f}% ({p0_wins} 胜)
-- 蓝方胜率 (P1 - 控制防守): {p1_rate:.1f}% ({p1_wins} 胜)
+{data_section}
 - 卡牌使用频次统计: {json.dumps(metrics_data.get("card_play_count", {}), ensure_ascii=False)}
 {history_section}
 ### 2. 核心机制特性与设计规则：
@@ -105,13 +118,13 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
 ---
 ### 调整要求（必须遵循以下专家指导原则）：
 1. **战术平衡指导**：
-   - **赤红 (Red)**：如果胜率过高，建议削弱 `RUSH` 或低费铺场卡的生存能力；如果胜率过低，建议强化前期突袭节奏。
-   - **蔚蓝 (Blue)**：关注 `FORTIFY`（坚守）词条的费用收益比。不要让低费的高防随从过于变态而卡死快攻，但也要保证后期的防守反击能力。
-   - **翠绿 (Green)**：重点干预！跳费大怪体系（Ramp）如果在混战中胜率极低（如低于 40%），请务必降低其低费抗压随从的费用，或者增加核心高费大哥的生存能力 (如增加 `FORTIFY` 属性)，否则前期极易崩盘。
-2. **目标胜率平抑**：当前红方胜率为 {p0_rate:.1f}%，蓝方胜率为 {p1_rate:.1f}%。请结合历史对局趋势，仅挑选 2~3 张最关键的卡牌进行微调：
-   - 适度回调调整过度的卡牌；
-   - 避免大幅改动其他平衡卡，力求三大阵营胜率均接近 50% 的完美平衡线。
-3. **数据完整性**：严格保持现有卡牌名称与数量完全一致，绝对不要新增或删除卡牌。
+   - **赤红 (Red)**：如果胜率偏低（如 40%~45%），建议微调增强前中期突袭随从战力或降低关键直伤/牺牲解场法术费用；如果胜率过高则适度回调。
+   - **蔚蓝 (Blue)**：关注 `FORTIFY`（坚守）词条的费用收益比，避免前期防守过度绝对化。
+   - **翠绿 (Green)**：如果跳费巨龙过于强势，可微调其后期大哥的战力；如果偏弱则改善前期生存。
+2. **目标胜率平抑**：
+   {target_section}
+   仅挑选 2~3 张最关键的卡牌进行审慎微调，严禁大范围修改成熟平衡卡。
+3. **数据完整性**：严格保持现有卡牌名称与数量完全一致（全量包含 Red 12 张, Blue 12 张, Green 12 张, Neutral 6 张），绝对不要新增或删除卡牌 ID。
 4. **格式要求**：必须只输出合法且可直接解析的纯 JSON 字符串，不要包含任何解释文本或 Markdown 标记。
 """
 
@@ -126,15 +139,26 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
     )
     return response.choices[0].message.content
 
+def resolve_path(p):
+    if not p or os.path.exists(p):
+        return p
+    alt1 = os.path.join("PythonApplication23", p)
+    if os.path.exists(alt1):
+        return alt1
+    alt2 = os.path.join(os.path.dirname(__file__), os.path.basename(p))
+    if os.path.exists(alt2):
+        return alt2
+    return p
+
 def main():
     parser = argparse.ArgumentParser(description="TCG 卡牌数值自动平衡调优工具")
-    parser.add_argument("--cards", type=str, default=None, 
+    parser.add_argument("--cards", type=str, default="cards_config.json", 
                         help="输入的卡池 JSON 文件")
-    parser.add_argument("--metrics", type=str, default=None, 
+    parser.add_argument("--metrics", type=str, default="training_metrics_brawl.json", 
                         help="输入的训练战报 JSON 文件")
     parser.add_argument("--output", type=str, default="cards_config_tuned.json", 
                         help="输出调优卡池文件路径")
-    parser.add_argument("--history", type=str, default="training_metrics_baseline.json", 
+    parser.add_argument("--history", type=str, default=None, 
                         help="基准/历史战报文件路径")
     args = parser.parse_args()
 
@@ -147,22 +171,10 @@ def main():
         base_url="https://api.deepseek.com"
     )
 
-    # 推断输入卡池与战报路径
-    if args.cards:
-        cards_file = args.cards
-    elif os.path.exists("cards_config_tuned.json") and os.path.exists("training_metrics_tuned.json"):
-        cards_file = "cards_config_tuned.json"
-    else:
-        cards_file = "cards_config_baseline.json" if os.path.exists("cards_config_baseline.json") else "cards_config.json"
-
-    if args.metrics:
-        metrics_file = args.metrics
-    elif os.path.exists("training_metrics_tuned.json"):
-        metrics_file = "training_metrics_tuned.json"
-    else:
-        metrics_file = "training_metrics_baseline.json" if os.path.exists("training_metrics_baseline.json") else "training_metrics.json"
-
-    history_file = args.history if (args.history and os.path.exists(args.history) and args.history != metrics_file) else None
+    cards_file = resolve_path(args.cards)
+    metrics_file = resolve_path(args.metrics)
+    output_file = resolve_path(args.output)
+    history_file = resolve_path(args.history) if args.history else None
 
     if not os.path.exists(cards_file):
         print(f"找不到卡池配置文件: {cards_file}")
@@ -182,12 +194,12 @@ def main():
 
     try:
         new_card_pool = json.loads(cleaned_json)
-        with open(args.output, "w", encoding="utf-8") as f:
+        with open(output_file, "w", encoding="utf-8") as f:
             json.dump(new_card_pool, f, indent=2, ensure_ascii=False)
-        with open("cards_config.json", "w", encoding="utf-8") as f:
+        with open(cards_file, "w", encoding="utf-8") as f:
             json.dump(new_card_pool, f, indent=2, ensure_ascii=False)
             
-        print(f"已完成卡池微调，保存至: {args.output}")
+        print(f"已完成卡池微调，保存至: {output_file} 并同步到 {cards_file}")
 
         total_cards = sum(len(cards) for cards in new_card_pool.values())
         print(f"当前卡池规模: {total_cards} 张")

@@ -46,98 +46,6 @@ def get_faction_pool(card_database: dict, faction: str) -> List[dict]:
     n_cards = card_database.get("Neutral", [])
     return f_cards + n_cards
 
-def heuristic_deck_build(faction: str, pool: List[dict]) -> dict:
-    """默认基于预设规则构建推荐卡组"""
-    pool_dict = {c["id"]: c for c in pool}
-    counts: Dict[int, int] = {c["id"]: 0 for c in pool}
-
-    if faction == "Red":
-        # 红方快攻偏好：低费随从、衍生小怪、自爆、突袭
-        name = "赤红·裂甲爆燃突袭流"
-        archetype = "Swarm Aggro & Sacrifice"
-        concept = "前期依靠突击手、号手铺场，配合射线抢占先手；中期利用自爆与以小换大摧毁防线，利用突袭抢分。"
-        combos = [
-            "集结号手 (2费生1/1) + 自爆 (2费)：牺牲小兵清除敌方大怪",
-            "裂甲掷斧手 (2费突袭破甲) + 射线 (1费直伤)：快速击穿防线",
-            "赤红突击手 (1费亡语抽卡) + 酒馆密账 (1费抽2弃1)：维持手牌续航"
-        ]
-        priority = [
-            (100, 3), # 赤红突击手
-            (107, 3), # 集结号手
-            (108, 3), # 裂甲掷斧手
-            (103, 3), # 射线
-            (101, 3), # 红色小队长
-            (102, 2), # 自爆
-            (104, 2), # 切割者
-            (109, 2), # 破阵狂徒
-            (110, 2), # 血祭爆燃
-            (111, 2), # 赤红掠袭者
-            (903, 2), # 酒馆密账
-            (905, 2), # 佣兵斥候
-            (105, 1), # 掠夺者
-        ]
-    elif faction == "Blue":
-        # 蓝方控制流偏好：高坚守、支援光环、法术延阻、高防随从
-        name = "蔚蓝·晶壁坚垒反制流"
-        archetype = "Fortress Control & Support"
-        concept = "依托坚守属性将防守区打造为高战力壁垒，配合支援光环提供战力，中后期出动石像鬼与蔚蓝要塞推进。"
-        combos = [
-            "盾兵/霜盾见习官 + 壁垒工匠：叠加强力坚守与支援光环",
-            "防御！+ 寒晶护壁：兼具防御提升与抽牌",
-            "蔚蓝要塞 (6费坚守3+支援1) + 石像鬼 (8DP)：中后期高防与站场配合"
-        ]
-        priority = [
-            (201, 3), # 盾兵
-            (200, 3), # 蔚蓝卫士
-            (207, 3), # 霜盾见习官
-            (208, 3), # 壁垒工匠
-            (203, 3), # 防御！
-            (209, 3), # 寒晶护壁
-            (202, 2), # 弓箭手
-            (205, 2), # 藤甲兵
-            (206, 2), # 火铳手
-            (210, 2), # 冰封禁制
-            (204, 2), # 石像鬼
-            (211, 2), # 蔚蓝要塞
-        ]
-    else: # Green
-        name = "翡翠·古树巨龙跳费流"
-        archetype = "Pure Ramp & Giant Colossus"
-        concept = "专注前期跳费提升法力上限，中后期召唤远古巨树、翡翠巨熊与巨龙，利用高战力与突袭推进。"
-        combos = [
-            "翠绿萌芽 + 芽苗祭司：连续跳费进入大怪阶段",
-            "狂暴生长 + 翡翠幼龙：冲锋试探，阵亡返还法力",
-            "世界树恩泽 + 灭世翡翠巨龙 (11DP突袭)：高费突袭突破"
-        ]
-        priority = [
-            (300, 3), # 翠绿萌芽
-            (307, 3), # 芽苗祭司
-            (311, 3), # 世界树恩泽
-            (308, 3), # 翡翠巨熊
-            (301, 2), # 树人
-            (302, 2), # 剧毒花
-            (303, 2), # 狂暴生长
-            (304, 2), # 森林之狼
-            (305, 2), # 远古巨树
-            (306, 2), # 荆棘缠绕
-            (309, 2), # 翡翠幼龙
-            (310, 2), # 灭世翡翠巨龙
-            (900, 2), # 商人
-        ]
-
-    for cid, count in priority:
-        if cid in pool_dict:
-            counts[cid] = min(MAX_COPIES_PER_CARD, count)
-
-    # 严格校验总数至 30
-    counts = normalize_counts(counts, pool)
-    return {
-        "deck_name": name,
-        "archetype": archetype,
-        "tactical_concept": concept,
-        "key_combos": combos,
-        "card_allocation": counts
-    }
 
 def normalize_counts(counts: Dict[int, int], pool: List[dict]) -> Dict[int, int]:
     """严格规范化卡牌数量为 30 张，且每张卡 0~3 张"""
@@ -219,8 +127,7 @@ def build_prompt_for_deck(faction: str, pool: List[dict]) -> str:
 
 def call_deepseek_deckbuild(faction: str, pool: List[dict]) -> dict:
     if not DEEPSEEK_API_KEY:
-        print(f"未检测到 DEEPSEEK_API_KEY，使用默认预设规则构建 {faction} 卡组...")
-        return heuristic_deck_build(faction, pool)
+        raise ValueError(f"未检测到 DEEPSEEK_API_KEY，无法构建 {faction} 卡组。请先配置环境变量。")
 
     print(f"调用 DeepSeek 生成 {faction} 阵营卡组...")
     client = OpenAI(
@@ -257,8 +164,8 @@ def call_deepseek_deckbuild(faction: str, pool: List[dict]) -> dict:
         return parsed
 
     except Exception as e:
-        print(f"接口调用或解析异常: {e}，使用默认规则生成...")
-        return heuristic_deck_build(faction, pool)
+        print(f"DeepSeek 构筑异常: {e}")
+        raise e
 
 def generate_deck_details(deck_data: dict, pool: List[dict]) -> dict:
     pool_dict = {c["id"]: c for c in pool}
@@ -354,8 +261,7 @@ def main():
                         help="输出卡组保存文件 (默认 decks_config.json)")
     parser.add_argument("--factions", type=str, default="Red,Blue",
                         help="目标构建阵营 (默认 Red,Blue，支持 Red,Blue,Green)")
-    parser.add_argument("--heuristic", action="store_true",
-                        help="直接使用纯启发式专家算法，不调用 LLM")
+
     args = parser.parse_args()
 
     cards_db = load_json(args.cards)
@@ -380,10 +286,7 @@ def main():
             print(f"未找到阵营 {faction} 的可用卡池。")
             continue
 
-        if args.heuristic:
-            raw_deck = heuristic_deck_build(faction, pool)
-        else:
-            raw_deck = call_deepseek_deckbuild(faction, pool)
+        raw_deck = call_deepseek_deckbuild(faction, pool)
 
         deck_info = generate_deck_details(raw_deck, pool)
         print_deck_profile(faction, deck_info)

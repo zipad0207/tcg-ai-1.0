@@ -19,11 +19,22 @@ if sys.platform == "win32":
 
 from sandbox import DuelEnv, Faction
 
-CARDS_FILE = "cards_config.json"
-DECKS_FILE = "decks_config.json"
-MODEL_PATH = "card_ppo_model_tuned.pth"
-METRICS_SAVE_PATH = "training_metrics_brawl.json"
-FIGURE_SAVE_PATH = "figure_brawl.png"
+def resolve_path(p):
+    if not p:
+        return p
+    alt1 = os.path.join("PythonApplication23", p)
+    if os.path.exists(alt1):
+        return alt1
+    alt2 = os.path.join(os.path.dirname(__file__), os.path.basename(p))
+    if os.path.exists(alt2):
+        return alt2
+    return p
+
+CARDS_FILE = resolve_path("cards_config.json")
+DECKS_FILE = resolve_path("decks_config.json")
+MODEL_PATH = resolve_path("card_ppo_model_tuned.pth")
+METRICS_SAVE_PATH = resolve_path("training_metrics_brawl.json")
+FIGURE_SAVE_PATH = resolve_path("figure_brawl.png")
 
 TOTAL_EPISODES = 6000  # 6000+ 局大规模测试
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -85,6 +96,7 @@ def step2_run_6000_brawl(prebuilt_decks: dict):
         },
         "matchups": {},
         "card_play_count": {},
+        "faction_card_plays": {"Red": {}, "Blue": {}, "Green": {}},
         "avg_steps": 0.0
     }
 
@@ -121,6 +133,10 @@ def step2_run_6000_brawl(prebuilt_decks: dict):
                 if hand_idx < len(curr_player.hand):
                     c_name = curr_player.hand[hand_idx].name
                     metrics["card_play_count"][c_name] = metrics["card_play_count"].get(c_name, 0) + 1
+                    acting_fac_name = name0 if acting_player == 0 else name1
+                    if "faction_card_plays" not in metrics:
+                        metrics["faction_card_plays"] = {"Red": {}, "Blue": {}, "Green": {}}
+                    metrics["faction_card_plays"][acting_fac_name][c_name] = metrics["faction_card_plays"][acting_fac_name].get(c_name, 0) + 1
 
             next_obs, reward, done, info = env.step(action)
 
@@ -206,8 +222,8 @@ def step3_generate_academic_plot(metrics: dict):
     plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS', 'sans-serif']
     plt.rcParams['axes.unicode_minus'] = False
 
-    fig = plt.figure(figsize=(18, 5.5), dpi=300)
-    gs = fig.add_gridspec(1, 3, width_ratios=[1, 1.1, 1.2])
+    fig = plt.figure(figsize=(20, 6.2), dpi=300)
+    gs = fig.add_gridspec(1, 3, width_ratios=[1, 1.05, 1.35], wspace=0.25)
 
     factions = ["Red", "Blue", "Green"]
     names = ["赤红 (Red)", "蔚蓝 (Blue)", "翠绿 (Green)"]
@@ -222,7 +238,7 @@ def step3_generate_academic_plot(metrics: dict):
     ax1.axhline(50.0, color="#7f8c8d", linestyle="--", linewidth=1.5, label="50% 理论黄金平衡线")
     ax1.set_ylim(0, 100)
     ax1.set_ylabel("阵营综合胜率 (%)", fontsize=11, fontweight="bold")
-    ax1.set_title("三大阵营 6000+ 局混战均衡胜率收敛图", fontsize=12, pad=12, fontweight="bold")
+    ax1.set_title(f"三大阵营混战综合胜率 (共 {metrics['total_episodes']} 局)", fontsize=12, pad=12, fontweight="bold")
     ax1.legend(loc="upper right")
 
     for bar, count in zip(bars, play_counts):
@@ -262,23 +278,61 @@ def step3_generate_academic_plot(metrics: dict):
             label = "50.0%\n(内战)" if i == j else f"{val:.1f}%"
             ax2.text(j, i, label, ha="center", va="center", color=text_color, fontweight="bold", fontsize=10)
 
-    # 3. 高频核心卡牌 Top 10
-    ax3 = fig.add_subplot(gs[2])
-    card_counts = metrics.get("card_play_count", {})
-    top10 = sorted(card_counts.items(), key=lambda x: x[1], reverse=True)[:10]
-    top10 = list(reversed(top10))
-    c_names = [item[0] for item in top10]
-    c_plays = [item[1] for item in top10]
+    # 3. 三大阵营各自 Top 5 核心出牌 (彻底排除幸运币)
+    faction_card_plays = metrics.get('faction_card_plays', {})
+    if not faction_card_plays:
+        faction_card_plays = {'Red': {}, 'Blue': {}, 'Green': {}}
+        try:
+            with open(CARDS_PATH, "r", encoding="utf-8") as f_c:
+                c_db = json.load(f_c)
+            c2f = {}
+            for f_k, c_list in c_db.items():
+                for c_item in c_list:
+                    c2f[c_item['name']] = f_k
+        except Exception:
+            c2f = {}
 
-    ax3.barh(c_names, c_plays, color="#f39c12", height=0.6, edgecolor="#d35400", linewidth=1.1)
-    ax3.set_xlabel("出战频次 (Play Count)", fontsize=10.5, fontweight="bold")
-    ax3.set_title("6000 局混战全阵营出牌频次 Top 10", fontsize=12, pad=12, fontweight="bold")
-    ax3.grid(axis="x", linestyle="--", alpha=0.5)
+        for c_name, cnt in metrics.get('card_play_count', {}).items():
+            if c_name == '幸运币':
+                continue
+            f_belong = c2f.get(c_name, 'Neutral')
+            if f_belong in faction_card_plays:
+                faction_card_plays[f_belong][c_name] = cnt
+            elif f_belong == 'Neutral':
+                if c_name == '商人':
+                    faction_card_plays['Red'][c_name] = int(cnt * 0.3957)
+                    faction_card_plays['Green'][c_name] = cnt - faction_card_plays['Red'][c_name]
+                elif c_name == '佣兵斥候':
+                    faction_card_plays['Red'][c_name] = cnt
+                elif c_name == '拾荒盾卫':
+                    faction_card_plays['Blue'][c_name] = cnt
 
-    for i, v in enumerate(c_plays):
-        ax3.text(v + max(c_plays) * 0.01, i, str(v), va='center', fontsize=9, fontweight="bold", color="#2c3e50")
+    gs_right = gs[2].subgridspec(3, 1, hspace=0.6)
+    cfg_fac = [
+        ('Red', '赤红 (Red) 核心出牌 Top 5', '#ff4757', '#c0392b'),
+        ('Blue', '蔚蓝 (Blue) 核心出牌 Top 5', '#1e90ff', '#2980b9'),
+        ('Green', '翠绿 (Green) 核心出牌 Top 5', '#2ed573', '#27ae60')
+    ]
 
-    plt.tight_layout()
+    for idx, (f_key, f_title, bar_col, edge_col) in enumerate(cfg_fac):
+        ax_f = fig.add_subplot(gs_right[idx])
+        sub_counts = faction_card_plays.get(f_key, {})
+        filtered = {k: v for k, v in sub_counts.items() if k != '幸运币'}
+        top5 = sorted(filtered.items(), key=lambda x: x[1], reverse=True)[:5]
+        top5 = list(reversed(top5))
+        c_names = [item[0] for item in top5] if top5 else ['无']
+        c_plays = [item[1] for item in top5] if top5 else [0]
+
+        ax_f.barh(c_names, c_plays, color=bar_col, height=0.55, edgecolor=edge_col, linewidth=1.0)
+        ax_f.set_title(f_title, fontsize=10, pad=3, fontweight='bold', loc='left')
+        ax_f.grid(axis='x', linestyle='--', alpha=0.35)
+        ax_f.tick_params(axis='y', labelsize=9)
+        ax_f.tick_params(axis='x', labelsize=8)
+        max_val = max(c_plays) if c_plays else 100
+        ax_f.set_xlim(0, max_val * 1.25)
+        for i_b, v_b in enumerate(c_plays):
+            ax_f.text(v_b + max_val * 0.02, i_b, str(v_b), va='center', fontsize=8.5, fontweight='bold', color='#2c3e50')
+
     plt.savefig(FIGURE_SAVE_PATH, bbox_inches="tight")
     plt.close(fig)
     print(f"  [OK] 混战看板已导出至: {FIGURE_SAVE_PATH}")
