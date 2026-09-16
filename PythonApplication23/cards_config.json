@@ -9,6 +9,7 @@
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
+        "RUSH",
         "DEATH_DRAW_1"
       ]
     },
@@ -17,7 +18,7 @@
       "name": "红色小队长",
       "card_type": "MINION",
       "cost": 3,
-      "base_dp": 4,
+      "base_dp": 3,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -28,7 +29,7 @@
       "id": 102,
       "name": "自爆",
       "card_type": "SPELL",
-      "cost": 2,
+      "cost": 1,
       "base_dp": 0,
       "atk_spell_val": 0,
       "def_spell_val": 0,
@@ -41,9 +42,9 @@
       "id": 103,
       "name": "射线",
       "card_type": "SPELL",
-      "cost": 1,
+      "cost": 2,
       "base_dp": 0,
-      "atk_spell_val": 2,
+      "atk_spell_val": 3,
       "def_spell_val": 0,
       "tags": []
     },
@@ -56,7 +57,7 @@
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "DEGRADE_2"
+        "DEGRADE_1"
       ]
     },
     {
@@ -64,7 +65,7 @@
       "name": "掠夺者",
       "card_type": "MINION",
       "cost": 5,
-      "base_dp": 4,
+      "base_dp": 5,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -75,12 +76,12 @@
       "id": 106,
       "name": "大块头",
       "card_type": "MINION",
-      "cost": 5,
+      "cost": 6,
       "base_dp": 10,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "DISCARD_2"
+        "DISCARD_1"
       ]
     }
   ],
@@ -89,20 +90,20 @@
       "id": 200,
       "name": "蔚蓝卫士",
       "card_type": "MINION",
-      "cost": 2,
-      "base_dp": 2,
+      "cost": 3,
+      "base_dp": 3,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "FORTIFY_2"
+        "FORTIFY_1"
       ]
     },
     {
       "id": 201,
       "name": "盾兵",
       "card_type": "MINION",
-      "cost": 1,
-      "base_dp": 1,
+      "cost": 2,
+      "base_dp": 2,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -114,7 +115,7 @@
       "name": "弓箭手",
       "card_type": "MINION",
       "cost": 3,
-      "base_dp": 3,
+      "base_dp": 2,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -128,7 +129,7 @@
       "cost": 2,
       "base_dp": 0,
       "atk_spell_val": 0,
-      "def_spell_val": 2,
+      "def_spell_val": 3,
       "tags": []
     },
     {
@@ -136,7 +137,7 @@
       "name": "石像鬼",
       "card_type": "MINION",
       "cost": 6,
-      "base_dp": 9,
+      "base_dp": 8,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": []
@@ -145,7 +146,7 @@
       "id": 205,
       "name": "藤甲兵",
       "card_type": "MINION",
-      "cost": 4,
+      "cost": 5,
       "base_dp": 4,
       "atk_spell_val": 0,
       "def_spell_val": 0,
@@ -162,7 +163,7 @@
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "SUPPORT_ATK_2"
+        "SUPPORT_ATK_1"
       ]
     }
   ],
@@ -188,60 +189,60 @@
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "DEATH_MANA_1"
+        "FORTIFY_1"
       ]
     },
     {
       "id": 302,
-      "name": "德鲁伊",
+      "name": "剧毒花",
       "card_type": "MINION",
-      "cost": 4,
-      "base_dp": 5,
+      "cost": 2,
+      "base_dp": 1,
       "atk_spell_val": 0,
       "def_spell_val": 0,
-      "tags": []
+      "tags": [
+        "DEGRADE_2"
+      ]
     },
     {
       "id": 303,
-      "name": "奥数聪明",
+      "name": "狂暴生长",
       "card_type": "SPELL",
       "cost": 3,
       "base_dp": 0,
       "atk_spell_val": 0,
-      "def_spell_val": 0,
-      "tags": [
-        "DRAW_2"
-      ]
+      "def_spell_val": 3,
+      "tags": []
     },
     {
       "id": 304,
-      "name": "野蛮生长",
-      "card_type": "SPELL",
-      "cost": 5,
-      "base_dp": 0,
-      "atk_spell_val": 0,
-      "def_spell_val": 0,
-      "tags": [
-        "RAMP_2"
-      ]
-    },
-    {
-      "id": 305,
-      "name": "始祖龙",
+      "name": "森林之狼",
       "card_type": "MINION",
-      "cost": 8,
-      "base_dp": 13,
+      "cost": 4,
+      "base_dp": 4,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": []
     },
     {
-      "id": 306,
-      "name": "死神的化身",
+      "id": 305,
+      "name": "远古巨树",
       "card_type": "MINION",
-      "cost": 10,
-      "base_dp": 16,
+      "cost": 7,
+      "base_dp": 8,
       "atk_spell_val": 0,
+      "def_spell_val": 0,
+      "tags": [
+        "FORTIFY_2"
+      ]
+    },
+    {
+      "id": 306,
+      "name": "荆棘缠绕",
+      "card_type": "SPELL",
+      "cost": 2,
+      "base_dp": 0,
+      "atk_spell_val": 2,
       "def_spell_val": 0,
       "tags": []
     }
@@ -251,7 +252,7 @@
       "id": 900,
       "name": "商人",
       "card_type": "MINION",
-      "cost": 2,
+      "cost": 3,
       "base_dp": 2,
       "atk_spell_val": 0,
       "def_spell_val": 0,
@@ -264,7 +265,7 @@
       "name": "雇佣兵",
       "card_type": "MINION",
       "cost": 3,
-      "base_dp": 5,
+      "base_dp": 4,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": []

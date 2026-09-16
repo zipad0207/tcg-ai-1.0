@@ -64,12 +64,17 @@ class DuelEnv:
     MAX_HAND_SIZE = 7
     MAX_LANE_UNITS = 3
     MAX_TURNS = 100
+    MAX_COPIES_PER_CARD = 3  # 方案 B：同名卡严格上限 3 张
+    DECK_SIZE = 30           # 标准卡组规模 30 张
 
-    def __init__(self, p0_faction: Faction = Faction.RED, p1_faction: Faction = Faction.BLUE, cards_path: str = "cards_config.json"):
+    def __init__(self, p0_faction: Faction = Faction.RED, p1_faction: Faction = Faction.BLUE, 
+                 cards_path: str = "cards_config.json", p0_decklist=None, p1_decklist=None):
         self.cards_path = cards_path
         self.card_database = self._load_card_database()
         self.p0_faction = p0_faction
         self.p1_faction = p1_faction
+        self.p0_decklist = p0_decklist
+        self.p1_decklist = p1_decklist
 
         # 动作空间：7张手牌 * 4种打出位置 + 1个结束回合动作 = 29
         self.action_space_size = self.MAX_HAND_SIZE * 4 + 1
@@ -97,31 +102,71 @@ class DuelEnv:
                 db[card.id] = card
         return db
 
-    def _build_deck(self, faction: Faction) -> List[Card]:
-        faction_pool = [c for c in self.card_database.values() if c.id // 100 == (1 if faction == Faction.RED else 2 if faction == Faction.BLUE else 3)]
+    def _clone_card(self, c: Card) -> Card:
+        return Card(
+            id=c.id,
+            name=c.name,
+            card_type=c.card_type,
+            cost=c.cost,
+            base_dp=c.base_dp,
+            atk_spell_val=c.atk_spell_val,
+            def_spell_val=c.def_spell_val,
+            tags=list(c.tags)
+        )
+
+    def _build_deck(self, faction: Faction, custom_decklist: Optional[List[int]] = None) -> List[Card]:
+        """
+        构建对战牌库：
+        1. 若提供了 custom_decklist (如 AI 或玩家自主挑选的卡牌 ID 列表)，直接装配；
+        2. 否则从可用卡池构建，严格遵守【同名卡上限最多 3 张】的标准 TCG 规则。
+        """
+        if custom_decklist:
+            deck = []
+            for cid in custom_decklist:
+                if cid in self.card_database:
+                    c = self.card_database[cid]
+                    deck.append(self._clone_card(c))
+            if len(deck) == self.DECK_SIZE:
+                random.shuffle(deck)
+                return deck
+
+        faction_code = 1 if faction == Faction.RED else 2 if faction == Faction.BLUE else 3
+        faction_pool = [c for c in self.card_database.values() if c.id // 100 == faction_code]
         neutral_pool = [c for c in self.card_database.values() if c.id // 100 == 9]
         all_pool = faction_pool + neutral_pool
 
+        if not all_pool:
+            return []
+
+        card_counts: Dict[int, int] = {}
         deck = []
-        while len(deck) < 30:
+
+        # 候选池：仅保留未达到携带上限 (<= 3 张) 的卡牌，随机抽取装配
+        pool_candidates = list(all_pool)
+        while len(deck) < self.DECK_SIZE and pool_candidates:
+            picked = random.choice(pool_candidates)
+            c_count = card_counts.get(picked.id, 0)
+            if c_count < self.MAX_COPIES_PER_CARD:
+                deck.append(self._clone_card(picked))
+                card_counts[picked.id] = c_count + 1
+                if card_counts[picked.id] >= self.MAX_COPIES_PER_CARD:
+                    pool_candidates.remove(picked)
+            else:
+                if picked in pool_candidates:
+                    pool_candidates.remove(picked)
+
+        # 安全垫底：如果可用卡池总卡牌数不足 30（如初期卡池过小），循环填满
+        while len(deck) < self.DECK_SIZE and all_pool:
             picked = random.choice(all_pool)
-            deck.append(Card(
-                id=picked.id,
-                name=picked.name,
-                card_type=picked.card_type,
-                cost=picked.cost,
-                base_dp=picked.base_dp,
-                atk_spell_val=picked.atk_spell_val,
-                def_spell_val=picked.def_spell_val,
-                tags=list(picked.tags)
-            ))
+            deck.append(self._clone_card(picked))
+
         random.shuffle(deck)
         return deck
 
     def reset(self) -> np.ndarray:
         self.players = {
-            0: Player(player_id=0, faction=self.p0_faction, deck=self._build_deck(self.p0_faction)),
-            1: Player(player_id=1, faction=self.p1_faction, deck=self._build_deck(self.p1_faction))
+            0: Player(player_id=0, faction=self.p0_faction, deck=self._build_deck(self.p0_faction, self.p0_decklist)),
+            1: Player(player_id=1, faction=self.p1_faction, deck=self._build_deck(self.p1_faction, self.p1_decklist))
         }
         self.lanes = {
             0: Lane(lane_id=0),

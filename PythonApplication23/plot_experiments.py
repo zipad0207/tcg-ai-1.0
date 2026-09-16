@@ -1,6 +1,10 @@
+import sys
 import json
 import os
 import matplotlib.pyplot as plt
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 # 配置中文字体，防止学术图表乱码
 plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS', 'sans-serif']
@@ -109,7 +113,7 @@ def plot_comprehensive_comparison(baseline_path="training_metrics_baseline.json"
     ax1.set_title('图 1: 调优前后对局胜率直接对比 (1000局 PPO 自博弈)', fontsize=13, pad=12, fontweight='bold')
     ax1.set_xticks(x)
     ax1.set_xticklabels(stages, fontsize=11, fontweight='bold')
-    ax1.set_ylim(0, 80)
+    ax1.set_ylim(0, 100)
     ax1.legend(loc='upper right', fontsize=10, framealpha=0.9)
     ax1.grid(axis='y', linestyle=':', alpha=0.6)
 
@@ -128,7 +132,8 @@ def plot_comprehensive_comparison(baseline_path="training_metrics_baseline.json"
     bars_d = ax2.bar(phases, deltas, color=colors, width=0.45, edgecolor='black', linewidth=0.8)
     ax2.set_ylabel('偏离理论平衡线幅度 |WinRate - 50%| (%)', fontsize=11, fontweight='bold')
     ax2.set_title('图 2: 胜率失衡偏离度收敛效果 (|Δ - 50%|)', fontsize=13, pad=12, fontweight='bold')
-    ax2.set_ylim(0, 15)
+    max_d = max(deltas) if deltas else 15
+    ax2.set_ylim(0, max(25.0, max_d * 1.25))
     ax2.grid(axis='y', linestyle=':', alpha=0.6)
     for b in bars_d:
         h = b.get_height()

@@ -24,3 +24,7 @@ ENV/
 # Sensitive configs
 .env
 *.pth
+
+# IDE Configs
+.vscode/
+pyrightconfig.json

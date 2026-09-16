@@ -24,6 +24,8 @@ from agent import CardNet
 parser = argparse.ArgumentParser(description="TCG PPO 自博弈训练流水线")
 parser.add_argument("--stage", type=str, default="tuned", choices=["baseline", "tuned"], 
                     help="设置当前训练阶段: baseline(基准) 或 tuned(调优后)")
+parser.add_argument("--episodes", type=int, default=1000,
+                    help="训练总对局轮数 (默认 1000)")
 args = parser.parse_args()
 STAGE = args.stage
 
@@ -43,7 +45,7 @@ MAX_GRAD_NORM = 0.5
 ROLLOUT_STEPS = 1024     
 BATCH_SIZE = 128         
 UPDATE_EPOCHS = 4        
-TOTAL_EPISODES = 1000    
+TOTAL_EPISODES = args.episodes    
 
 # 动态保存路径：彻底防止数据覆盖
 MODEL_SAVE_PATH = f"card_ppo_model_{STAGE}.pth"
@@ -214,7 +216,9 @@ def auto_generate_plot():
 # ==========================================
 def main():
     print(f"[系统] 当前运行阶段: {STAGE.upper()} | 运算设备: {DEVICE}")
-    env = DuelEnv(p0_faction=Faction.RED, p1_faction=Faction.BLUE)
+    cards_file = "cards_config_baseline.json" if STAGE == "baseline" and os.path.exists("cards_config_baseline.json") else ("cards_config_tuned.json" if STAGE == "tuned" and os.path.exists("cards_config_tuned.json") else "cards_config.json")
+    print(f"📦 [卡池加载] 阶段: {STAGE.upper()} | 锁定卡池文件: {cards_file}")
+    env = DuelEnv(p0_faction=Faction.RED, p1_faction=Faction.BLUE, cards_path=cards_file)
     trainer = PPOTrainer(action_dim=env.action_space_size)
 
     metrics = {
@@ -232,6 +236,9 @@ def main():
         with open(METRICS_SAVE_PATH, "w", encoding="utf-8") as f:
             json.dump(metrics, f, indent=2, ensure_ascii=False)
         print(f"📊 [指标持久化] 训练战报已同步写入: {METRICS_SAVE_PATH}")
+        if STAGE == "baseline":
+            with open("training_metrics.json", "w", encoding="utf-8") as f:
+                json.dump(metrics, f, indent=2, ensure_ascii=False)
 
     def handle_sigint(sig, frame):
         print("\n🛑 捕获中断信号，正在保存当前权重与战报数据...")
