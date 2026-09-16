@@ -21,8 +21,8 @@ from agent import CardNet
 # 0. 实验阶段配置 (动态识别 baseline/tuned)
 # ==========================================
 parser = argparse.ArgumentParser(description="TCG PPO 自博弈训练流水线")
-parser.add_argument("--stage", type=str, default="tuned", choices=["baseline", "tuned"], 
-                    help="设置当前训练阶段: baseline(基准) 或 tuned(调优后)")
+parser.add_argument("--stage", type=str, default="tuned", 
+                    help="设置当前训练阶段: baseline, tuned, deepseek 等")
 parser.add_argument("--brawl", action="store_true", 
                     help="开启三大阵营 (Red/Blue/Green) 多卡组随机自由混战模式")
 parser.add_argument("--episodes", type=int, default=1000,
@@ -301,7 +301,8 @@ def main():
 
         metrics["total_episodes"] += 1
         total_steps_history.append(ep_len)
-        if env.players[0].score >= env.WIN_SCORE:
+        p0_won = (env.winner == 0) if env.winner is not None else (env.players[0].score >= env.WIN_SCORE)
+        if p0_won:
             metrics["p0_wins"] += 1
             winner_str = "玩家0 (红)"
         else:

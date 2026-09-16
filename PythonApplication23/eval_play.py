@@ -90,6 +90,8 @@ def evaluate():
     parser.add_argument("--p1", "--f1", dest="p1_faction", type=str, default="Blue", choices=["Red", "Blue", "Green"],
                         help="后手 P1 阵营 (默认 Blue)")
     parser.add_argument("--html", type=str, default="battle_replay.html", help="导出网页回放文件名")
+    parser.add_argument("--tactical", action="store_true", default=True, help="启用阵营战术策略引导 (消除旧模型防守抑制偏差，默认开启)")
+    parser.add_argument("--no-tactical", dest="tactical", action="store_false", help="禁用战术引导，使用纯网络原始输出")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -167,6 +169,31 @@ def evaluate():
 
         with torch.no_grad():
             logits, val = model(state_t, mask_t)
+
+            if args.tactical:
+                opp_id = 1 - curr_p
+                for idx, card in enumerate(p_obj.hand):
+                    if idx >= env.MAX_HAND_SIZE:
+                        break
+                    for lane_id in [0, 1]:
+                        def_slot = idx * 4 + (1 if lane_id == 0 else 3)
+                        if mask[def_slot] > 0.5:
+                            bonus = 0.0
+                            # 1. 词条加成：FORTIFY 坚守在防守区获得额外生命/DP
+                            for tag in card.tags:
+                                if tag.startswith("FORTIFY_"):
+                                    bonus += float(tag.split("_")[1]) * 0.8
+                            # 2. 战场威胁感知：同路有敌方蓄势冲锋部队，防守拦截收益巨大
+                            enemy_threat = sum(u.current_dp for u in env.lanes[lane_id].attackers if u.owner == opp_id)
+                            if enemy_threat > 0:
+                                bonus += 1.2
+                            # 3. 阵营战术风格倾向：蔚蓝(防守控制)天然重视驻防，翠绿面对威胁时优先护脸
+                            if p_obj.faction == Faction.BLUE:
+                                bonus += 0.8
+                            elif p_obj.faction == Faction.GREEN and enemy_threat > 0:
+                                bonus += 0.5
+                            logits[0, def_slot] += bonus
+
             action = torch.argmax(logits, dim=-1).item()
 
         action_desc = format_action_desc(env, action)
@@ -178,8 +205,13 @@ def evaluate():
             gained = env.players[curr_p].score - prev_score
             s0 = env.players[0].score
             s1 = env.players[1].score
+            bonus_score_pts = info.get("bonus_score_pts", getattr(env, "last_bonus_score_pts", 0))
             if gained > 0:
-                result_log = f"⚔️ 冲锋突破！{f_name} 本回合斩获 +{gained} 分！| 实时比分 -> {p0_tag} {s0} : {s1} {p1_tag}"
+                if bonus_score_pts > 0:
+                    base_pts = gained - bonus_score_pts
+                    result_log = f"⚔️ 冲锋突破！{f_name} 本回合斩获 +{gained} 分 (基础{base_pts}分 + 词条额外加成{bonus_score_pts}分)！| 实时比分 -> {p0_tag} {s0} : {s1} {p1_tag}"
+                else:
+                    result_log = f"⚔️ 冲锋突破！{f_name} 本回合斩获 +{gained} 分！| 实时比分 -> {p0_tag} {s0} : {s1} {p1_tag}"
             else:
                 result_log = f"🛡️ 防线阻挡/蓄势完成 | 实时比分 -> {p0_tag} {s0} : {s1} {p1_tag}"
 
@@ -214,7 +246,8 @@ def evaluate():
         snap = pack_snapshot(env, acting_turn, curr_p, action_desc, result_log)
         snapshots.append(snap)
 
-    winner = f"{p0_tag} ({p0_style})" if env.players[0].score >= env.WIN_SCORE else f"{p1_tag} ({p1_style})"
+    winner_idx = env.winner if env.winner is not None else (0 if env.players[0].score >= env.WIN_SCORE else 1)
+    winner = f"{p0_tag} ({p0_style})" if winner_idx == 0 else f"{p1_tag} ({p1_style})"
     print("\n" + "="*80)
     print(f"🏁 对局结算完毕！获胜方: 【{winner}】")
     print(f"最终比分: {p0_tag} {env.players[0].score} : {env.players[1].score} {p1_tag} (总回合数: {env.turn_count} 轮)")

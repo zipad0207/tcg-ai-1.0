@@ -54,7 +54,8 @@ def simulate_card_in_faction(card_info: dict, faction_name: str, model: CardNet,
         tags=card_info.get("tags", [])
     )
 
-    f_enum = Faction.RED if faction_name == "Red" else (Faction.BLUE if faction_name == "Blue" else Faction.RED)
+    f_map = {"Red": Faction.RED, "Blue": Faction.BLUE, "Green": Faction.GREEN}
+    f_enum = f_map.get(faction_name, Faction.RED)
     opp_enum = Faction.BLUE if f_enum == Faction.RED else Faction.RED
 
     actor_probs = []
@@ -168,28 +169,10 @@ def evaluate_faction_pool(target_faction: str, faction_cards: list, neutral_card
         tags = c.get("tags", [])
         is_neutral = (c["id"] >= 900)
 
-        # 针对不同阵营的战术契合度调整
-        affinity = 0.0
-        if target_faction == "Red": # 赤红快攻突破
-            if cost <= 2: affinity += 0.08
-            if "RUSH" in tags: affinity += 0.12
-            if "SPAWN_1_1" in tags: affinity += 0.10
-            if "DEATH_DRAW_1" in tags: affinity += 0.08
-            if "DISCARD_2" in tags: affinity -= 0.30
-            if cost >= 6: affinity -= 0.15
-        elif target_faction == "Blue": # 蔚蓝防守反击
-            if "FORTIFY_1" in tags or "FORTIFY_2" in tags or "FORTIFY_3" in tags: affinity += 0.10
-            if "DRAW_1" in tags: affinity += 0.08
-            if c.get("def_spell_val", 0) > 0: affinity += 0.04
-            if cost >= 6 and "FORTIFY_3" not in tags: affinity -= 0.12
-        elif target_faction == "Green": # 翠绿跳费与大哥
-            if "RAMP_1" in tags: affinity += 0.14
-            if cost >= 7: affinity += 0.08
-            if "DEATH_MANA_1" in tags: affinity += 0.10
+        # 纯神经网络效用评估 (Actor偏好 50% + Critic估值增益 50%)
+        raw_val = (p_act * 0.50) + (v_gain * 0.50)
 
-        raw_val = (p_act * 0.40) + (v_gain * 0.40) + (affinity * 0.30)
-
-        # 模拟在该卡组中的携带率与胜率贡献
+        # 记录各卡评估中间数据
         evaluated_list.append({
             "id": c["id"],
             "name": c["name"],
@@ -211,37 +194,34 @@ def evaluate_faction_pool(target_faction: str, faction_cards: list, neutral_card
     min_raw = min(e["raw_val"] for e in evaluated_list)
     max_raw = max(e["raw_val"] for e in evaluated_list)
 
+    # 读取真实卡组构筑配置 (消除随机假数据)
+    deck_alloc = {}
+    if os.path.exists(DECKS_CONFIG_PATH):
+        try:
+            with open(DECKS_CONFIG_PATH, "r", encoding="utf-8") as df:
+                decks_cfg = json.load(df)
+            if target_faction in decks_cfg and "card_allocation" in decks_cfg[target_faction]:
+                deck_alloc = {int(k): v for k, v in decks_cfg[target_faction]["card_allocation"].items()}
+        except Exception:
+            pass
+
     for item in evaluated_list:
         norm = 38.0 + (item["raw_val"] - min_raw) / (max_raw - min_raw + 1e-6) * (98.0 - 38.0)
         score = round(norm, 1)
         item["score"] = score
 
-        # 核心指标 1: 构筑携带比例 (Deck Inclusion Rate %)
-        # 强卡高频带 2~3 张，弱卡带 0~1 张
-        if score >= 90.0:
-            pick_rate = round(75.0 + random.uniform(5.0, 15.0), 1)
-        elif score >= 80.0:
-            pick_rate = round(55.0 + random.uniform(5.0, 15.0), 1)
-        elif score >= 70.0:
-            pick_rate = round(35.0 + random.uniform(5.0, 15.0), 1)
-        elif score >= 60.0:
-            pick_rate = round(15.0 + random.uniform(5.0, 15.0), 1)
+        # 核心指标 1: 真实构筑携带比例 (Deck Inclusion Rate %)
+        # 满编 3 张即 100%，2 张 66.7%，1 张 33.3%，未入选 0%
+        cid = item["id"]
+        if deck_alloc:
+            copies = deck_alloc.get(cid, 0)
+            pick_rate = round(copies / 3.0 * 100.0, 1)
         else:
-            pick_rate = round(max(0.0, random.uniform(0.5, 6.0)), 1)
+            pick_rate = round(min(100.0, max(0.0, item["actor_prob"] * 100.0)), 1)
         item["pick_rate"] = pick_rate
 
-        # 核心指标 2: 对胜率的影响 ΔWR = 胜率 - 50%
-        # 高分正向提胜率，低分拉低胜率
-        if score >= 90.0:
-            win_impact = round(random.uniform(12.0, 18.5), 1)
-        elif score >= 80.0:
-            win_impact = round(random.uniform(5.0, 11.5), 1)
-        elif score >= 70.0:
-            win_impact = round(random.uniform(0.5, 4.8), 1)
-        elif score >= 60.0:
-            win_impact = round(random.uniform(-4.5, 0.0), 1)
-        else:
-            win_impact = round(random.uniform(-19.0, -8.0), 1)
+        # 核心指标 2: 对胜率的影响 ΔWR = 基于状态价值与评分的确定性映射 (彻底移除 random.uniform 伪造数据)
+        win_impact = round((score - 68.0) * 0.45, 1)
         item["win_impact"] = win_impact
 
         # 梯队划分

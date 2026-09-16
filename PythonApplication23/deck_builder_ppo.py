@@ -231,7 +231,7 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
                 obs, _, done, _ = env.step(act)
 
             my_player_idx = 0 if my_faction == Faction.RED else 1
-            is_win = env.players[my_player_idx].score >= env.WIN_SCORE
+            is_win = (env.winner == my_player_idx) if env.winner is not None else (env.players[my_player_idx].score >= env.WIN_SCORE)
             if is_win:
                 wins += 1
                 for cid in played_this_game:

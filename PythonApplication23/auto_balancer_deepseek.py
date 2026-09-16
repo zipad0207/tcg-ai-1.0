@@ -116,15 +116,12 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
 {json.dumps(cards_data, indent=2, ensure_ascii=False)}
 
 ---
-### 调整要求（必须遵循以下专家指导原则）：
-1. **战术平衡指导**：
-   - **赤红 (Red)**：如果胜率偏低（如 40%~45%），建议微调增强前中期突袭随从战力或降低关键直伤/牺牲解场法术费用；如果胜率过高则适度回调。
-   - **蔚蓝 (Blue)**：关注 `FORTIFY`（坚守）词条的费用收益比，避免前期防守过度绝对化。
-   - **翠绿 (Green)**：如果跳费巨龙过于强势，可微调其后期大哥的战力；如果偏弱则改善前期生存。
-2. **目标胜率平抑**：
-   {target_section}
-   仅挑选 2~3 张最关键的卡牌进行审慎微调，严禁大范围修改成熟平衡卡。
-3. **数据完整性**：严格保持现有卡牌名称与数量完全一致（全量包含 Red 12 张, Blue 12 张, Green 12 张, Neutral 6 张），绝对不要新增或删除卡牌 ID。
+### 调整要求：
+1. **自主数据分析与平衡目标**：
+   请完全基于上述训练对局数据（阵营胜率、两两交手战报、单卡使用频次）以及核心游戏规则，自主深入分析导致失衡的根本原因，挑选 2~3 张最关键的单卡进行精准数值微调，力求各阵营胜率稳定在 48%~52% 黄金竞技平衡线。
+2. **微调原则**：
+   单卡微调应审慎克制（例如费用 ±1，随从战力 ±1~2 点，或适度调整词条参数），严禁大范围推倒重构成熟卡牌。
+3. **数据完整性**：严格保持输入卡池中的所有阵营、卡牌名称、ID 与结构完全一致，仅修改所选 2~3 张卡牌的 cost/base_dp/atk_spell_val/def_spell_val/tags 属性数值，绝对不要新增、删除或重命名卡牌 ID。
 4. **格式要求**：必须只输出合法且可直接解析的纯 JSON 字符串，不要包含任何解释文本或 Markdown 标记。
 """
 
@@ -196,10 +193,8 @@ def main():
         new_card_pool = json.loads(cleaned_json)
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(new_card_pool, f, indent=2, ensure_ascii=False)
-        with open(cards_file, "w", encoding="utf-8") as f:
-            json.dump(new_card_pool, f, indent=2, ensure_ascii=False)
             
-        print(f"已完成卡池微调，保存至: {output_file} 并同步到 {cards_file}")
+        print(f"已完成卡池微调，已保存至: {output_file}")
 
         total_cards = sum(len(cards) for cards in new_card_pool.values())
         print(f"当前卡池规模: {total_cards} 张")

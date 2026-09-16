@@ -1,4 +1,5 @@
 import json
+import os
 
 def get_faction_meta(faction_val, player_id):
     f_str = str(faction_val).lower()
@@ -102,7 +103,7 @@ def format_terminal_board(turn_count, acting_player, p0, p1, lanes, action_desc,
 
 def export_html_replay(snapshots, winner_info, output_path="battle_replay.html"):
     """
-    导出双路对战 HTML5 回放网页
+    导出双路对战 HTML5 回放网页 (紧凑单屏自适应版)
     """
     json_data = json.dumps(snapshots, ensure_ascii=False)
     
@@ -111,34 +112,36 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TCG-AI 对局回放看板</title>
+  <title>TCG-AI 对局全景回放看板</title>
   <style>
     :root {{
       --bg-dark: #0b0f19;
-      --card-bg: rgba(22, 30, 46, 0.85);
+      --card-bg: rgba(22, 30, 46, 0.88);
       --panel-border: rgba(255, 255, 255, 0.08);
       --red-team: #ff4757;
       --red-glow: rgba(255, 71, 87, 0.4);
       --blue-team: #1e90ff;
       --blue-glow: rgba(30, 144, 255, 0.4);
+      --green-team: #2ed573;
+      --green-glow: rgba(46, 213, 115, 0.4);
       --gold: #ffa502;
-      --green: #2ed573;
       --text-main: #f1f2f6;
       --text-dim: #a4b0be;
     }}
     * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-    body {{
+    html, body {{
+      height: 100vh;
+      max-height: 100vh;
       background: radial-gradient(circle at 50% 20%, #151e33 0%, var(--bg-dark) 100%);
       color: var(--text-main);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
-      min-height: 100vh;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
-      padding: 16px;
-      overflow-x: hidden;
+      padding: 6px 12px;
     }}
 
-    /* 顶部导航与比分板 */
+    /* 顶部导航与比分板 (紧凑条) */
     header {{
       display: flex;
       justify-content: space-between;
@@ -146,49 +149,61 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
       background: var(--card-bg);
       backdrop-filter: blur(12px);
       border: 1px solid var(--panel-border);
-      border-radius: 12px;
-      padding: 12px 24px;
-      margin-bottom: 16px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      border-radius: 8px;
+      padding: 4px 12px;
+      margin-bottom: 5px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      flex-shrink: 0;
     }}
     .title-area h1 {{
-      font-size: 1.25rem;
+      font-size: 0.92rem;
       font-weight: 700;
       letter-spacing: 0.5px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }}
     .title-area p {{
-      font-size: 0.8rem;
+      font-size: 0.68rem;
       color: var(--text-dim);
-      margin-top: 2px;
+      margin-top: 1px;
     }}
     .match-status {{
-      text-align: center;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }}
     .turn-badge {{
-      background: rgba(255,255,255,0.1);
-      padding: 4px 16px;
-      border-radius: 20px;
-      font-size: 0.9rem;
+      background: rgba(255,255,255,0.08);
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.78rem;
       font-weight: bold;
       color: var(--gold);
     }}
+    #winnerBanner {{
+      font-size: 0.78rem;
+      font-weight: bold;
+    }}
 
-    /* 主战场网格 */
+    /* 主战场网格 (100vh 约束) */
     .arena {{
       display: grid;
-      grid-template-columns: 1fr 340px;
-      gap: 16px;
+      grid-template-columns: 1fr 290px;
+      gap: 8px;
       flex: 1;
+      min-height: 0;
+      overflow: hidden;
     }}
 
     /* 战局主视窗 */
     .battle-field-container {{
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 5px;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
     }}
 
     /* 玩家状态条 */
@@ -198,117 +213,152 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
       align-items: center;
       background: var(--card-bg);
       border: 1px solid var(--panel-border);
-      border-radius: 10px;
-      padding: 10px 18px;
-      transition: all 0.3s;
+      border-radius: 6px;
+      padding: 3px 10px;
+      min-height: 28px;
+      flex-shrink: 0;
+      transition: all 0.2s;
     }}
-    .player-strip.blue {{ border-left: 5px solid var(--blue-team); }}
-    .player-strip.red {{ border-left: 5px solid var(--red-team); }}
-    .player-name {{ font-weight: bold; font-size: 1rem; display: flex; align-items: center; gap: 8px; }}
-    .player-name.blue {{ color: var(--blue-team); text-shadow: 0 0 10px var(--blue-glow); }}
-    .player-name.red {{ color: var(--red-team); text-shadow: 0 0 10px var(--red-glow); }}
+    .player-strip.blue {{ border-left: 4px solid var(--blue-team); }}
+    .player-strip.red {{ border-left: 4px solid var(--red-team); }}
+    .player-strip.green {{ border-left: 4px solid var(--green-team); }}
+
+    .player-name {{
+      font-weight: bold;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }}
+    .player-name.blue {{ color: var(--blue-team); text-shadow: 0 0 8px var(--blue-glow); }}
+    .player-name.red {{ color: var(--red-team); text-shadow: 0 0 8px var(--red-glow); }}
+    .player-name.green {{ color: var(--green-team); text-shadow: 0 0 8px var(--green-glow); }}
 
     .resource-group {{
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 10px;
     }}
     .mana-container {{
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
     }}
     .mana-crystal {{
-      width: 14px;
-      height: 18px;
+      width: 9px;
+      height: 12px;
       background: rgba(255,255,255,0.15);
       clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-      transition: all 0.2s;
     }}
     .mana-crystal.active {{
       background: #00d2d3;
-      box-shadow: 0 0 8px #00d2d3;
+      box-shadow: 0 0 6px #00d2d3;
     }}
 
     .score-stars {{
       display: flex;
-      gap: 3px;
+      gap: 2px;
       align-items: center;
     }}
     .star {{
-      font-size: 1.1rem;
+      font-size: 0.82rem;
       color: rgba(255,255,255,0.2);
     }}
     .star.filled {{
       color: var(--gold);
-      text-shadow: 0 0 8px rgba(255, 165, 2, 0.8);
+      text-shadow: 0 0 6px rgba(255, 165, 2, 0.8);
+    }}
+    .res-text {{
+      font-size: 0.76rem;
     }}
 
     /* 双路战场 */
     .lanes-grid {{
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      gap: 8px;
       flex: 1;
+      min-height: 0;
+      overflow: hidden;
     }}
     .lane-box {{
       background: rgba(15, 23, 42, 0.7);
       border: 1px solid var(--panel-border);
-      border-radius: 12px;
-      padding: 14px;
+      border-radius: 8px;
+      padding: 5px 8px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       position: relative;
       overflow: hidden;
+      flex: 1;
+      min-height: 0;
     }}
     .lane-title {{
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 1.6rem;
+      font-size: 1.15rem;
       font-weight: 900;
       color: rgba(255,255,255,0.03);
       pointer-events: none;
-      letter-spacing: 4px;
+      letter-spacing: 3px;
+    }}
+
+    .lane-half {{
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+      min-height: 0;
+      justify-content: space-around;
     }}
 
     .unit-lane-zone {{
-      min-height: 85px;
+      min-height: 34px;
+      max-height: 65px;
       display: flex;
-      gap: 8px;
+      gap: 4px;
       flex-wrap: wrap;
       align-items: center;
-      padding: 6px 8px;
-      border-radius: 8px;
+      padding: 2px 4px;
+      border-radius: 4px;
       background: rgba(255,255,255,0.02);
+      overflow-y: auto;
     }}
-    .unit-lane-zone.defense {{ border-style: dashed; border-width: 1px; border-color: rgba(255,255,255,0.08); }}
+    .unit-lane-zone.defense {{
+      border-style: dashed;
+      border-width: 1px;
+      border-color: rgba(255,255,255,0.08);
+    }}
     .zone-label {{
       width: 100%;
-      font-size: 0.7rem;
+      font-size: 0.62rem;
       color: var(--text-dim);
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
       display: flex;
       justify-content: space-between;
+      margin-bottom: 1px;
     }}
 
     /* 对撞中线 */
     .clash-divider {{
-      margin: 10px 0;
+      margin: 1px 0;
       border-top: 1px dashed rgba(255, 255, 255, 0.15);
       position: relative;
       text-align: center;
+      height: 8px;
+      flex-shrink: 0;
     }}
     .clash-divider span {{
       position: relative;
-      top: -10px;
+      top: -8px;
       background: #1e293b;
-      padding: 2px 10px;
-      border-radius: 10px;
-      font-size: 0.7rem;
+      padding: 1px 8px;
+      border-radius: 6px;
+      font-size: 0.58rem;
       color: var(--text-dim);
       border: 1px solid rgba(255,255,255,0.1);
     }}
@@ -317,29 +367,31 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
     .minion-card {{
       background: linear-gradient(145deg, #1e293b, #0f172a);
       border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 8px;
-      padding: 6px 10px;
-      min-width: 90px;
+      border-radius: 4px;
+      padding: 2px 5px;
+      min-width: 62px;
+      max-width: 100px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      gap: 1px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
       position: relative;
-      animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }}
     @keyframes popIn {{
       0% {{ transform: scale(0.8); opacity: 0; }}
       100% {{ transform: scale(1); opacity: 1; }}
     }}
-    .minion-card.red {{ border-top: 3px solid var(--red-team); }}
-    .minion-card.blue {{ border-top: 3px solid var(--blue-team); }}
+    .minion-card.red {{ border-top: 2px solid var(--red-team); }}
+    .minion-card.blue {{ border-top: 2px solid var(--blue-team); }}
+    .minion-card.green {{ border-top: 2px solid var(--green-team); }}
     .minion-card.ready {{
-      box-shadow: 0 0 10px rgba(46, 213, 115, 0.4);
-      border-color: var(--green);
+      box-shadow: 0 0 6px rgba(46, 213, 115, 0.4);
+      border-color: var(--green-team);
     }}
     .minion-name {{
-      font-size: 0.8rem;
-      font-weight: bold;
+      font-size: 0.66rem;
+      font-weight: 600;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -348,56 +400,114 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.75rem;
+      font-size: 0.6rem;
     }}
     .dp-badge {{
       background: #374151;
-      padding: 1px 6px;
-      border-radius: 4px;
+      padding: 0 3px;
+      border-radius: 2px;
       font-weight: bold;
       color: #38bdf8;
+      font-size: 0.6rem;
     }}
     .state-tag {{
-      font-size: 0.65rem;
-      padding: 1px 4px;
-      border-radius: 3px;
+      font-size: 0.55rem;
+      padding: 0 2px;
+      border-radius: 2px;
     }}
     .state-tag.ready {{ background: rgba(46, 213, 115, 0.2); color: #2ed573; }}
     .state-tag.charging {{ background: rgba(255, 165, 2, 0.2); color: #ffa502; }}
 
-    /* 右侧事件日志面板 */
+    /* 手牌展示区 */
+    .hand-toggle {{
+      background: rgba(255,255,255,0.06);
+      border: none;
+      color: var(--text-dim);
+      font-size: 0.68rem;
+      cursor: pointer;
+      padding: 1px 6px;
+      border-radius: 3px;
+      margin-left: 6px;
+    }}
+    .hand-toggle:hover {{ background: rgba(255,255,255,0.12); color: var(--text-main); }}
+    .hand-panel {{
+      display: none;
+      flex-wrap: wrap;
+      gap: 3px;
+      padding: 3px 8px;
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 4px;
+      border: 1px solid var(--panel-border);
+      max-height: 46px;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }}
+    .hand-panel.open {{ display: flex; }}
+    .hand-card-chip {{
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: 0.58rem;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }}
+    .hand-card-chip .hc-cost {{
+      background: #2563eb;
+      color: white;
+      border-radius: 2px;
+      padding: 0 3px;
+      font-weight: bold;
+      font-size: 0.55rem;
+    }}
+    .hand-card-chip .hc-dp {{
+      color: #38bdf8;
+      font-weight: bold;
+    }}
+    .hand-card-chip .hc-spell {{
+      color: #c084fc;
+      font-style: italic;
+    }}
+
+    /* 右侧战报面板 */
     .log-panel {{
       background: var(--card-bg);
       border: 1px solid var(--panel-border);
-      border-radius: 12px;
-      padding: 16px;
+      border-radius: 8px;
+      padding: 6px 8px;
       display: flex;
       flex-direction: column;
       height: 100%;
+      min-height: 0;
+      overflow: hidden;
     }}
     .log-panel h3 {{
-      font-size: 0.95rem;
-      margin-bottom: 12px;
-      padding-bottom: 8px;
+      font-size: 0.78rem;
+      margin-bottom: 4px;
+      padding-bottom: 4px;
       border-bottom: 1px solid var(--panel-border);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-shrink: 0;
     }}
     .log-list {{
       flex: 1;
+      min-height: 0;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      padding-right: 4px;
+      gap: 4px;
+      padding-right: 2px;
     }}
     .log-item {{
-      padding: 8px 10px;
-      border-radius: 6px;
+      padding: 3px 6px;
+      border-radius: 4px;
       background: rgba(255,255,255,0.03);
-      font-size: 0.8rem;
-      line-height: 1.4;
+      font-size: 0.68rem;
+      line-height: 1.3;
       border-left: 3px solid transparent;
       cursor: pointer;
       transition: all 0.15s;
@@ -411,6 +521,7 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
     }}
     .log-item.red {{ border-left-color: var(--red-team); }}
     .log-item.blue {{ border-left-color: var(--blue-team); }}
+    .log-item.green {{ border-left-color: var(--green-team); }}
     .log-item.score-event {{
       background: rgba(255, 165, 2, 0.1);
       border-left-color: var(--gold);
@@ -420,30 +531,32 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
     .controls-dock {{
       background: var(--card-bg);
       border: 1px solid var(--panel-border);
-      border-radius: 12px;
-      padding: 12px 24px;
-      margin-top: 16px;
+      border-radius: 8px;
+      padding: 4px 12px;
+      margin-top: 5px;
       display: flex;
       align-items: center;
-      gap: 20px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      gap: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      flex-shrink: 0;
+      min-height: 34px;
     }}
     .btn-group {{
       display: flex;
-      gap: 8px;
+      gap: 4px;
     }}
     button {{
       background: #1e293b;
       border: 1px solid rgba(255,255,255,0.15);
       color: var(--text-main);
-      padding: 6px 14px;
-      border-radius: 6px;
-      font-size: 0.85rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.74rem;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
+      gap: 4px;
+      transition: all 0.15s;
     }}
     button:hover {{
       background: #334155;
@@ -460,14 +573,16 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
       flex: 1;
       accent-color: #38bdf8;
       cursor: pointer;
+      height: 4px;
     }}
-    .speed-select {{
+    .control-select {{
       background: #1e293b;
       border: 1px solid rgba(255,255,255,0.15);
       color: var(--text-main);
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 0.8rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      cursor: pointer;
     }}
   </style>
 </head>
@@ -477,11 +592,11 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
   <header>
     <div class="title-area">
       <h1>🃏 TCG-AI 对局全景交互式回放器</h1>
-      <p>双路集换式卡牌对战引擎 (DuelEnv) | PPO 强化学习自博弈</p>
+      <p>双路卡牌对战引擎 (DuelEnv) | PPO 强化学习自博弈</p>
     </div>
     <div class="match-status">
       <span class="turn-badge" id="turnDisplay">回合 0 / 0</span>
-      <div id="winnerBanner" style="font-size:0.85rem; margin-top:4px; font-weight:bold;"></div>
+      <div id="winnerBanner"></div>
     </div>
   </header>
 
@@ -489,26 +604,30 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
   <div class="arena">
     <div class="battle-field-container">
       
-      <!-- 蓝方信息栏 -->
-      <div class="player-strip blue">
-        <div class="player-name blue">🔵 蓝方 (P1 - 控制防守流)</div>
+      <!-- 上方 P1 信息栏 (默认后手) -->
+      <div class="player-strip" id="p1Strip">
+        <div class="player-name" id="p1Name">P1 玩家</div>
         <div class="resource-group">
           <div class="mana-container" id="blueManaContainer"></div>
-          <span style="font-size:0.85rem;" id="blueManaText">法力: 0/0</span>
+          <span class="res-text" id="blueManaText">法力: 0/0</span>
           <div class="score-stars" id="blueStars"></div>
-          <span style="font-size:0.85rem; font-weight:bold;" id="blueScoreText">0/7 分</span>
+          <span class="res-text" style="font-weight:bold;" id="blueScoreText">0/7 分</span>
+          <span class="res-text" id="p1HandCount">🃏0</span>
+          <button class="hand-toggle" onclick="toggleHand('p1')" title="展开/收起手牌">👁</button>
         </div>
       </div>
+      <div class="hand-panel open" id="p1HandPanel"></div>
 
       <!-- 双路核心战场 -->
       <div class="lanes-grid">
         <!-- 左路 -->
         <div class="lane-box" id="lane0">
           <div class="lane-title">LEFT LANE</div>
-          <div>
-            <div class="zone-label"><span>🛡️ 蓝方防守区</span></div>
+          
+          <div class="lane-half">
+            <div class="zone-label"><span id="l0_p1_def_lbl">🛡️ P1 防守区</span></div>
             <div class="unit-lane-zone defense" id="l0_blue_def"></div>
-            <div class="zone-label" style="margin-top:6px;"><span>⚔️ 蓝方冲锋区</span></div>
+            <div class="zone-label" style="margin-top:2px;"><span id="l0_p1_atk_lbl">⚔️ P1 冲锋区</span></div>
             <div class="unit-lane-zone" id="l0_blue_atk"></div>
           </div>
 
@@ -516,10 +635,10 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
             <span>⚡ 左路对撞判定线 ⚡</span>
           </div>
 
-          <div>
-            <div class="zone-label"><span>⚔️ 红方冲锋区</span></div>
+          <div class="lane-half">
+            <div class="zone-label"><span id="l0_p0_atk_lbl">⚔️ P0 冲锋区</span></div>
             <div class="unit-lane-zone" id="l0_red_atk"></div>
-            <div class="zone-label" style="margin-top:6px;"><span>🛡️ 红方防守区</span></div>
+            <div class="zone-label" style="margin-top:2px;"><span id="l0_p0_def_lbl">🛡️ P0 防守区</span></div>
             <div class="unit-lane-zone defense" id="l0_red_def"></div>
           </div>
         </div>
@@ -527,10 +646,11 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
         <!-- 右路 -->
         <div class="lane-box" id="lane1">
           <div class="lane-title">RIGHT LANE</div>
-          <div>
-            <div class="zone-label"><span>🛡️ 蓝方防守区</span></div>
+          
+          <div class="lane-half">
+            <div class="zone-label"><span id="l1_p1_def_lbl">🛡️ P1 防守区</span></div>
             <div class="unit-lane-zone defense" id="l1_blue_def"></div>
-            <div class="zone-label" style="margin-top:6px;"><span>⚔️ 蓝方冲锋区</span></div>
+            <div class="zone-label" style="margin-top:2px;"><span id="l1_p1_atk_lbl">⚔️ P1 冲锋区</span></div>
             <div class="unit-lane-zone" id="l1_blue_atk"></div>
           </div>
 
@@ -538,23 +658,26 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
             <span>⚡ 右路对撞判定线 ⚡</span>
           </div>
 
-          <div>
-            <div class="zone-label"><span>⚔️ 红方冲锋区</span></div>
+          <div class="lane-half">
+            <div class="zone-label"><span id="l1_p0_atk_lbl">⚔️ P0 冲锋区</span></div>
             <div class="unit-lane-zone" id="l1_red_atk"></div>
-            <div class="zone-label" style="margin-top:6px;"><span>🛡️ 红方防守区</span></div>
+            <div class="zone-label" style="margin-top:2px;"><span id="l1_p0_def_lbl">🛡️ P0 防守区</span></div>
             <div class="unit-lane-zone defense" id="l1_red_def"></div>
           </div>
         </div>
       </div>
 
-      <!-- 红方信息栏 -->
-      <div class="player-strip red">
-        <div class="player-name red">🔴 红方 (P0 - 快攻突破流)</div>
+      <div class="hand-panel open" id="p0HandPanel"></div>
+      <!-- 下方 P0 信息栏 (先手) -->
+      <div class="player-strip" id="p0Strip">
+        <div class="player-name" id="p0Name">P0 玩家</div>
         <div class="resource-group">
           <div class="mana-container" id="redManaContainer"></div>
-          <span style="font-size:0.85rem;" id="redManaText">法力: 0/0</span>
+          <span class="res-text" id="redManaText">法力: 0/0</span>
           <div class="score-stars" id="redStars"></div>
-          <span style="font-size:0.85rem; font-weight:bold;" id="redScoreText">0/7 分</span>
+          <span class="res-text" style="font-weight:bold;" id="redScoreText">0/7 分</span>
+          <span class="res-text" id="p0HandCount">🃏0</span>
+          <button class="hand-toggle" onclick="toggleHand('p0')" title="展开/收起手牌">👁</button>
         </div>
       </div>
 
@@ -564,7 +687,7 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
     <div class="log-panel">
       <h3>
         <span>📜 实时决策与攻防战报</span>
-        <span id="logStepCount" style="font-size:0.75rem; color:var(--text-dim);">0 步记录</span>
+        <span id="logStepCount" style="font-size:0.7rem; color:var(--text-dim);">0 步记录</span>
       </h3>
       <div class="log-list" id="logList"></div>
     </div>
@@ -582,11 +705,19 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
     
     <input type="range" class="timeline-slider" id="scrubber" min="0" max="0" value="0" oninput="onScrub(this.value)">
     
-    <select class="speed-select" id="speedSelect" onchange="changeSpeed(this.value)">
+    <select class="control-select" id="speedSelect" onchange="changeSpeed(this.value)" title="播放速度">
       <option value="1200">0.5x 慢速</option>
       <option value="600" selected>1.0x 标准</option>
       <option value="300">2.0x 快速</option>
       <option value="150">4.0x 极速</option>
+    </select>
+
+    <select class="control-select" id="zoomSelect" onchange="changeZoom(this.value)" title="页面视图缩放">
+      <option value="0.75">缩放 75%</option>
+      <option value="0.85">缩放 85%</option>
+      <option value="0.95">缩放 95%</option>
+      <option value="1.0" selected>缩放 100%</option>
+      <option value="1.1">缩放 110%</option>
     </select>
   </div>
 
@@ -598,12 +729,67 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
     let playTimer = null;
     let playSpeed = 600;
 
+    // 动态阵营识别
+    const fMeta = {{
+      "Red": {{ name: "红方", colorClass: "red", icon: "🔴", style: "快攻流" }},
+      "Blue": {{ name: "蓝方", colorClass: "blue", icon: "🔵", style: "控制流" }},
+      "Green": {{ name: "绿方", colorClass: "green", icon: "🟢", style: "跳费流" }}
+    }};
+    const p0F = (snapshots[0] && snapshots[0].p0 && snapshots[0].p0.faction) || "Red";
+    const p1F = (snapshots[0] && snapshots[0].p1 && snapshots[0].p1.faction) || "Blue";
+    const p0Meta = fMeta[p0F] || fMeta["Red"];
+    const p1Meta = fMeta[p1F] || fMeta["Blue"];
+
+    // 初始化阵营样式与标签
+    document.getElementById("p0Strip").className = `player-strip ${{p0Meta.colorClass}}`;
+    document.getElementById("p0Name").className = `player-name ${{p0Meta.colorClass}}`;
+    document.getElementById("p0Name").textContent = `${{p0Meta.icon}} ${{p0Meta.name}} (P0 - ${{p0Meta.style}})`;
+
+    document.getElementById("p1Strip").className = `player-strip ${{p1Meta.colorClass}}`;
+    document.getElementById("p1Name").className = `player-name ${{p1Meta.colorClass}}`;
+    document.getElementById("p1Name").textContent = `${{p1Meta.icon}} ${{p1Meta.name}} (P1 - ${{p1Meta.style}})`;
+
+    document.getElementById("l0_p1_def_lbl").textContent = `🛡️ ${{p1Meta.name}}防守区`;
+    document.getElementById("l0_p1_atk_lbl").textContent = `⚔️ ${{p1Meta.name}}冲锋区`;
+    document.getElementById("l0_p0_atk_lbl").textContent = `⚔️ ${{p0Meta.name}}冲锋区`;
+    document.getElementById("l0_p0_def_lbl").textContent = `🛡️ ${{p0Meta.name}}防守区`;
+
+    document.getElementById("l1_p1_def_lbl").textContent = `🛡️ ${{p1Meta.name}}防守区`;
+    document.getElementById("l1_p1_atk_lbl").textContent = `⚔️ ${{p1Meta.name}}冲锋区`;
+    document.getElementById("l1_p0_atk_lbl").textContent = `⚔️ ${{p0Meta.name}}冲锋区`;
+    document.getElementById("l1_p0_def_lbl").textContent = `🛡️ ${{p0Meta.name}}防守区`;
+
     document.getElementById("scrubber").max = Math.max(0, snapshots.length - 1);
 
-    function renderUnit(u, isRed, isAtk) {{
+    function changeZoom(val) {{
+      document.body.style.zoom = val;
+    }}
+
+    function toggleHand(who) {{
+      const panel = document.getElementById(who + 'HandPanel');
+      panel.classList.toggle('open');
+    }}
+
+    function renderHand(panelId, handArr, countId) {{
+      const panel = document.getElementById(panelId);
+      const countEl = document.getElementById(countId);
+      countEl.textContent = `🃏${{(handArr || []).length}}`;
+      if (!handArr || handArr.length === 0) {{
+        panel.innerHTML = '<span style="color:var(--text-dim); font-size:0.6rem;">无手牌</span>';
+        return;
+      }}
+      panel.innerHTML = handArr.map(c => {{
+        const isSpell = c.dp === 0 && c.cost >= 0;
+        const dpPart = c.dp > 0 ? `<span class="hc-dp">DP${{c.dp}}</span>` : `<span class="hc-spell">法术</span>`;
+        const tagStr = (c.tags && c.tags.length) ? `<span style="color:var(--text-dim);">${{c.tags.join(',')}}</span>` : '';
+        return `<div class="hand-card-chip"><span class="hc-cost">${{c.cost}}</span>${{c.name}} ${{dpPart}} ${{tagStr}}</div>`;
+      }}).join('');
+    }}
+
+    function renderUnit(u, playerIdx, isAtk) {{
       const tagClass = u.ready ? 'ready' : 'charging';
       const tagText = u.ready ? '⚡ 就绪' : '⏳ 蓄势';
-      const colorClass = isRed ? 'red' : 'blue';
+      const colorClass = playerIdx === 0 ? p0Meta.colorClass : p1Meta.colorClass;
       const readyClass = u.ready ? 'ready' : '';
       return `
         <div class="minion-card ${{colorClass}} ${{readyClass}}">
@@ -648,31 +834,35 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
       document.getElementById("turnDisplay").textContent = `第 ${{snap.turn}} 回合 (步骤 ${{idx + 1}}/${{snapshots.length}})`;
       document.getElementById("scrubber").value = idx;
 
-      // 蓝方状态
+      // P1 状态
       document.getElementById("blueScoreText").textContent = `${{snap.p1.score}}/7 分`;
       document.getElementById("blueManaText").textContent = `法力: ${{snap.p1.mana}}/${{snap.p1.max_mana}}`;
       renderStars("blueStars", snap.p1.score);
       renderMana("blueManaContainer", snap.p1.mana, snap.p1.max_mana);
 
-      // 红方状态
+      // P0 状态
       document.getElementById("redScoreText").textContent = `${{snap.p0.score}}/7 分`;
       document.getElementById("redManaText").textContent = `法力: ${{snap.p0.mana}}/${{snap.p0.max_mana}}`;
       renderStars("redStars", snap.p0.score);
       renderMana("redManaContainer", snap.p0.mana, snap.p0.max_mana);
 
+      // 手牌渲染
+      renderHand("p1HandPanel", snap.p1.hand, "p1HandCount");
+      renderHand("p0HandPanel", snap.p0.hand, "p0HandCount");
+
       // 左路随从渲染
       const l0 = snap.lanes[0];
-      document.getElementById("l0_blue_def").innerHTML = (l0.p1_defenders || []).map(u => renderUnit(u, false, false)).join("") || '<span style="color:rgba(255,255,255,0.2); font-size:0.75rem;">无驻防单位</span>';
-      document.getElementById("l0_blue_atk").innerHTML = (l0.p1_attackers || []).map(u => renderUnit(u, false, true)).join("") || '<span style="color:rgba(255,255,255,0.2); font-size:0.75rem;">无冲锋单位</span>';
-      document.getElementById("l0_red_atk").innerHTML = (l0.p0_attackers || []).map(u => renderUnit(u, true, true)).join("") || '<span style="color:rgba(255,255,255,0.2); font-size:0.75rem;">无冲锋单位</span>';
-      document.getElementById("l0_red_def").innerHTML = (l0.p0_defenders || []).map(u => renderUnit(u, true, false)).join("") || '<span style="color:rgba(255,255,255,0.2); font-size:0.75rem;">无驻防单位</span>';
+      document.getElementById("l0_blue_def").innerHTML = (l0.p1_defenders || []).map(u => renderUnit(u, 1, false)).join("") || '<span style="color:rgba(255,255,255,0.2); font-size:0.65rem;">无驻防</span>';
+      document.getElementById("l0_blue_atk").innerHTML = (l0.p1_attackers || []).map(u => renderUnit(u, 1, true)).join("") || '<span style="color:rgba(255,255,255,0.2); font-size:0.65rem;">无冲锋</span>';
+      document.getElementById("l0_red_atk").innerHTML = (l0.p0_attackers || []).map(u => renderUnit(u, 0, true)).join("") || '<span style="color:rgba(255,255,255,0.2); font-size:0.65rem;">无冲锋</span>';
+      document.getElementById("l0_red_def").innerHTML = (l0.p0_defenders || []).map(u => renderUnit(u, 0, false)).join("") || '<span style="color:rgba(255,255,255,0.2); font-size:0.65rem;">无驻防</span>';
 
       // 右路随从渲染
       const l1 = snap.lanes[1];
-      document.getElementById("l1_blue_def").innerHTML = (l1.p1_defenders || []).map(u => renderUnit(u, false, false)).join("") || '<span style="color:rgba(255,255,255,0.2); font-size:0.75rem;">无驻防单位</span>';
-      document.getElementById("l1_blue_atk").innerHTML = (l1.p1_attackers || []).map(u => renderUnit(u, false, true)).join("") || '<span style="color:rgba(255,255,255,0.2); font-size:0.75rem;">无冲锋单位</span>';
-      document.getElementById("l1_red_atk").innerHTML = (l1.p0_attackers || []).map(u => renderUnit(u, true, true)).join("") || '<span style="color:rgba(255,255,255,0.2); font-size:0.75rem;">无冲锋单位</span>';
-      document.getElementById("l1_red_def").innerHTML = (l1.p0_defenders || []).map(u => renderUnit(u, true, false)).join("") || '<span style="color:rgba(255,255,255,0.2); font-size:0.75rem;">无驻防单位</span>';
+      document.getElementById("l1_blue_def").innerHTML = (l1.p1_defenders || []).map(u => renderUnit(u, 1, false)).join("") || '<span style="color:rgba(255,255,255,0.2); font-size:0.65rem;">无驻防</span>';
+      document.getElementById("l1_blue_atk").innerHTML = (l1.p1_attackers || []).map(u => renderUnit(u, 1, true)).join("") || '<span style="color:rgba(255,255,255,0.2); font-size:0.65rem;">无冲锋</span>';
+      document.getElementById("l1_red_atk").innerHTML = (l1.p0_attackers || []).map(u => renderUnit(u, 0, true)).join("") || '<span style="color:rgba(255,255,255,0.2); font-size:0.65rem;">无冲锋</span>';
+      document.getElementById("l1_red_def").innerHTML = (l1.p0_defenders || []).map(u => renderUnit(u, 0, false)).join("") || '<span style="color:rgba(255,255,255,0.2); font-size:0.65rem;">无驻防</span>';
 
       // 日志高亮与自动滚动
       const items = document.querySelectorAll(".log-item");
@@ -684,8 +874,8 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
       }});
 
       if (idx === snapshots.length - 1) {{
-        document.getElementById("winnerBanner").textContent = `🏆 对局结束！获胜方: 【${{winnerInfo}}】`;
-        document.getElementById("winnerBanner").style.color = winnerInfo.includes("红方") ? "var(--red-team)" : "var(--blue-team)";
+        document.getElementById("winnerBanner").textContent = `🏆 获胜方: 【${{winnerInfo}}】`;
+        document.getElementById("winnerBanner").style.color = winnerInfo.includes(p0Meta.name) ? `var(--${{p0Meta.colorClass}}-team)` : `var(--${{p1Meta.colorClass}}-team)`;
       }} else {{
         document.getElementById("winnerBanner").textContent = "";
       }}
@@ -696,21 +886,23 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
       list.innerHTML = "";
       snapshots.forEach((snap, idx) => {{
         const d = document.createElement("div");
-        const actColor = snap.acting_player === 0 ? "red" : "blue";
+        const isP0 = snap.acting_player === 0;
+        const meta = isP0 ? p0Meta : p1Meta;
+        const actColor = meta.colorClass;
         const scoreEvent = snap.result_log && snap.result_log.includes("斩获") ? "score-event" : "";
         d.className = `log-item ${{actColor}} ${{scoreEvent}}`;
         d.onclick = () => goTo(idx);
         d.innerHTML = `
-          <div style="display:flex; justify-content:space-between; margin-bottom:2px; font-weight:bold;">
-            <span>[第 ${{snap.turn}} 回合] ${{snap.acting_player === 0 ? '🔴 红方' : '🔵 蓝方'}}</span>
-            <span style="font-size:0.7rem; color:var(--text-dim);">#${{idx + 1}}</span>
+          <div style="display:flex; justify-content:space-between; margin-bottom:1px; font-weight:bold;">
+            <span>[第 ${{snap.turn}} 回合] ${{meta.icon}} ${{meta.name}}</span>
+            <span style="font-size:0.62rem; color:var(--text-dim);">#${{idx + 1}}</span>
           </div>
           <div>${{snap.action_desc}}</div>
-          ${{snap.result_log ? `<div style="color:var(--gold); margin-top:3px;">${{snap.result_log}}</div>` : ''}}
+          ${{snap.result_log ? `<div style="color:var(--gold); margin-top:2px;">${{snap.result_log}}</div>` : ''}}
         `;
         list.appendChild(d);
       }});
-      document.getElementById("logStepCount").textContent = `${{snapshots.length}} 步动作`;
+      document.getElementById("logStepCount").textContent = `${{snapshots.length}} 步记录`;
     }}
 
     function nextTurn() {{
@@ -749,13 +941,13 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
         currentIndex = 0;
       }}
       isPlaying = true;
-      document.getElementById("playBtn").textContent = "⏸ 暂停播放";
+      document.getElementById("playBtn").textContent = "⏸ 暂停";
       playTimer = setInterval(nextTurn, playSpeed);
     }}
 
     function pause() {{
       isPlaying = false;
-      document.getElementById("playBtn").textContent = "▶ 自动播放";
+      document.getElementById("playBtn").textContent = "▶ 播放";
       if (playTimer) {{
         clearInterval(playTimer);
         playTimer = null;
@@ -791,4 +983,24 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
 """
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html_content)
+
+    # 自动同步更新两处路径 (根目录与子目录)，确保用户在任意位置打开都能看到最新版
+    try:
+        base_name = os.path.basename(output_path)
+        if base_name == "battle_replay.html":
+            parent = os.path.abspath(os.path.dirname(os.path.abspath(output_path))).lower()
+            cur_dir = os.path.abspath(os.path.dirname(__file__))
+            root_dir = os.path.abspath(os.path.join(cur_dir, ".."))
+            if parent == cur_dir.lower():
+                root_target = os.path.join(root_dir, "battle_replay.html")
+                with open(root_target, "w", encoding="utf-8") as rf:
+                    rf.write(html_content)
+            elif parent == root_dir.lower():
+                sub_target = os.path.join(cur_dir, "battle_replay.html")
+                with open(sub_target, "w", encoding="utf-8") as sf:
+                    sf.write(html_content)
+    except Exception:
+        pass
+
     return output_path
+

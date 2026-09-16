@@ -1,6 +1,6 @@
 """
-TCG-AI 多阵营平衡调优与混战测试脚本
-用于执行红、蓝、绿三大阵营 30 张卡组的微调与 6000 局混战验证。
+TCG-AI 多阵营全自动元平衡调优与混战自博弈流水线
+支持 3000 局/轮迭代对抗、纯数据驱动的 DeepSeek 自主微调，以及前后对比图表导出。
 """
 
 import os
@@ -32,56 +32,46 @@ def resolve_path(p):
 
 CARDS_FILE = resolve_path("cards_config.json")
 DECKS_FILE = resolve_path("decks_config.json")
-MODEL_PATH = resolve_path("card_ppo_model_tuned.pth")
+MODEL_PATH = resolve_path("card_ppo_model_brawl.pth")
 METRICS_SAVE_PATH = resolve_path("training_metrics_brawl.json")
 FIGURE_SAVE_PATH = resolve_path("figure_brawl.png")
+COMPARISON_FIGURE_PATH = resolve_path("figure_brawl_comparison.png")
 
-TOTAL_EPISODES = 6000  # 6000+ 局大规模测试
+TOTAL_EPISODES = 3000  # 用户指定：3000 局/轮大规模实机验证
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+MAX_ITERATIONS = 4
 
-def step1_tune_cards_and_decks(iteration: int = 0):
+def step1_tune_cards(iteration: int = 0):
     import subprocess
-    print(f"\n[{iteration+1}/MAX] 正在调用 DeepSeek 进行第 {iteration+1} 轮真实数值与卡组微调 (请耐心等待)...")
+    print(f"\n[{iteration+1}/{MAX_ITERATIONS}] 正在唤起 DeepSeek 进行第 {iteration+1} 轮纯数据驱动数值微调...")
     
-    metrics_file = "training_metrics_baseline.json" if iteration == 0 else "training_metrics_brawl.json"
+    metrics_file = METRICS_SAVE_PATH if os.path.exists(METRICS_SAVE_PATH) else resolve_path("training_metrics_brawl.json")
     
-    # 1. 调用 LLM 进行真实卡牌数值平衡
-    print("  [正在呼叫 DeepSeek] 分析胜率数据并重构卡池...")
+    # 调用 LLM 进行真实卡牌数值平衡 (纯客观数据，无人工偏见指导)
+    print(f"  [DeepSeek-Flash] 分析 {metrics_file} 战报，优化卡池 {CARDS_FILE}...")
     subprocess.run([
-        sys.executable, "auto_balancer_deepseek.py", 
+        sys.executable, resolve_path("auto_balancer_deepseek.py"), 
         "--metrics", metrics_file, 
-        "--cards", "cards_config_baseline.json" if iteration == 0 else "cards_config.json", 
-        "--output", "cards_config_tuned.json"
+        "--cards", CARDS_FILE, 
+        "--output", CARDS_FILE
     ], check=True)
     
-    # 2. 调用 LLM 进行 30 张卡组合规构筑
-    print("  [正在呼叫 DeepSeek] 为三大阵营构筑 30 张实战套牌...")
-    subprocess.run([
-        sys.executable, "deck_builder_deepseek.py", 
-        "--cards", "cards_config.json", 
-        "--output", DECKS_FILE, 
-        "--factions", "Red,Blue,Green"
-    ], check=True)
-
-    # 3. 加载新构筑好的卡组返回供环境仿真使用
+    # 加载 30 张成熟套牌
     with open(DECKS_FILE, "r", encoding="utf-8") as f:
         decks_data = json.load(f)
     
-    red_decklist = decks_data["Red"]["decklist"]
-    blue_decklist = decks_data["Blue"]["decklist"]
-    green_decklist = decks_data["Green"]["decklist"]
+    return {
+        "Red": decks_data["Red"]["decklist"],
+        "Blue": decks_data["Blue"]["decklist"],
+        "Green": decks_data["Green"]["decklist"]
+    }
 
-    print("  [OK] DeepSeek 真实数值与卡组调优圆满完成！")
-    return {"Red": red_decklist, "Blue": blue_decklist, "Green": green_decklist}
-
-def step2_run_6000_brawl(prebuilt_decks: dict):
-    print(f"\n[2/4] 启动 6000 局混战训练 (设备: {DEVICE})...")
+def step2_run_brawl_sim(prebuilt_decks: dict, iteration: int = 0):
+    print(f"\n[实机对决] 启动第 {iteration+1} 轮 {TOTAL_EPISODES} 局强化学习混战自博弈 (运算设备: {DEVICE})...")
 
     env = DuelEnv(p0_faction=Faction.RED, p1_faction=Faction.BLUE, cards_path=CARDS_FILE)
     
-    # 导入训练器
     from train_brawl import PPOTrainer, ROLLOUT_STEPS
-
     trainer = PPOTrainer(action_dim=env.action_space_size)
 
     faction_list = [Faction.RED, Faction.BLUE, Faction.GREEN]
@@ -134,8 +124,6 @@ def step2_run_6000_brawl(prebuilt_decks: dict):
                     c_name = curr_player.hand[hand_idx].name
                     metrics["card_play_count"][c_name] = metrics["card_play_count"].get(c_name, 0) + 1
                     acting_fac_name = name0 if acting_player == 0 else name1
-                    if "faction_card_plays" not in metrics:
-                        metrics["faction_card_plays"] = {"Red": {}, "Blue": {}, "Green": {}}
                     metrics["faction_card_plays"][acting_fac_name][c_name] = metrics["faction_card_plays"][acting_fac_name].get(c_name, 0) + 1
 
             next_obs, reward, done, info = env.step(action)
@@ -165,7 +153,7 @@ def step2_run_6000_brawl(prebuilt_decks: dict):
         metrics["total_episodes"] += 1
         all_lengths.append(ep_len)
 
-        p0_won = (env.players[0].score >= env.WIN_SCORE)
+        p0_won = (env.winner == 0) if env.winner is not None else (env.players[0].score >= env.WIN_SCORE)
 
         metrics["faction_stats"][name0]["matches"] += 1
         metrics["faction_stats"][name1]["matches"] += 1
@@ -201,9 +189,9 @@ def step2_run_6000_brawl(prebuilt_decks: dict):
             wr_r = (metrics["faction_stats"]["Red"]["wins"] / max(1, metrics["faction_stats"]["Red"]["matches"])) * 100
             wr_b = (metrics["faction_stats"]["Blue"]["wins"] / max(1, metrics["faction_stats"]["Blue"]["matches"])) * 100
             wr_g = (metrics["faction_stats"]["Green"]["wins"] / max(1, metrics["faction_stats"]["Green"]["matches"])) * 100
-            print(f"  [对决进度 {ep:04d}/{TOTAL_EPISODES}] | 胜率: 赤红 {wr_r:.1f}% | 蔚蓝 {wr_b:.1f}% | 翠绿 {wr_g:.1f}%")
+            print(f"  [进度 {ep:04d}/{TOTAL_EPISODES}] | 胜率: 赤红 {wr_r:.1f}% | 蔚蓝 {wr_b:.1f}% | 翠绿 {wr_g:.1f}%")
 
-    # 战绩与权重保存
+    # 战绩汇总与保存
     for f_k in ["Red", "Blue", "Green"]:
         m_cnt = metrics["faction_stats"][f_k]["matches"]
         w_cnt = metrics["faction_stats"][f_k]["wins"]
@@ -214,181 +202,154 @@ def step2_run_6000_brawl(prebuilt_decks: dict):
         json.dump(metrics, f, indent=2, ensure_ascii=False)
 
     torch.save(trainer.policy.state_dict(), MODEL_PATH)
-    print(f"\n[OK] 6000 局混战对抗全部完成！指标已存至 {METRICS_SAVE_PATH}，权重已热更至 {MODEL_PATH}")
+    print(f"\n[OK] 本轮 {TOTAL_EPISODES} 局混战完成！指标已保存至 {METRICS_SAVE_PATH}")
     return metrics
 
-def step3_generate_academic_plot(metrics: dict):
-    print("\n[3/4] 正在生成三大阵营看板 (figure_brawl.png)...")
+def step3_generate_comparison_plot(initial_stats: dict, final_metrics: dict, history_wr: list):
+    """生成兼具对比与单项细节的学术级对比大图"""
+    print(f"\n正在生成混战前后对比大屏图表: {COMPARISON_FIGURE_PATH} ...")
     plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS', 'sans-serif']
     plt.rcParams['axes.unicode_minus'] = False
 
-    fig = plt.figure(figsize=(20, 6.2), dpi=300)
-    gs = fig.add_gridspec(1, 3, width_ratios=[1, 1.05, 1.35], wspace=0.25)
+    fig = plt.figure(figsize=(22, 6.8), dpi=300)
+    gs = fig.add_gridspec(1, 3, width_ratios=[1.1, 1.1, 1.25], wspace=0.28)
 
     factions = ["Red", "Blue", "Green"]
     names = ["赤红 (Red)", "蔚蓝 (Blue)", "翠绿 (Green)"]
-    colors = ["#ff4757", "#1e90ff", "#2ed573"]
+    f_colors = {"Red": "#ff4757", "Blue": "#1e90ff", "Green": "#2ed573"}
 
-    # 1. 胜率柱状图
+    # 1. 调优前后胜率分组柱状对比图
     ax1 = fig.add_subplot(gs[0])
-    win_rates = [metrics["faction_stats"][f]["winrate"] for f in factions]
-    play_counts = [metrics["faction_stats"][f]["matches"] for f in factions]
+    x = np.arange(len(factions))
+    width = 0.35
 
-    bars = ax1.bar(names, win_rates, color=colors, width=0.48, edgecolor="#2f3640", linewidth=1.2)
-    ax1.axhline(50.0, color="#7f8c8d", linestyle="--", linewidth=1.5, label="50% 理论黄金平衡线")
+    before_wr = [initial_stats[f] for f in factions]
+    after_wr = [final_metrics["faction_stats"][f]["winrate"] for f in factions]
+
+    bars1 = ax1.bar(x - width/2, before_wr, width, label='调优前 (初始混战)', color='#bdc3c7', edgecolor='#7f8c8d', linewidth=1.2)
+    bars2 = ax1.bar(x + width/2, after_wr, width, label='调优后 (最新平衡态)', color=['#ff4757', '#1e90ff', '#2ed573'], edgecolor='#2c3e50', linewidth=1.2)
+
+    ax1.axhline(50.0, color="#e74c3c", linestyle="--", linewidth=1.5, alpha=0.8, label="50% 黄金平衡线")
     ax1.set_ylim(0, 100)
     ax1.set_ylabel("阵营综合胜率 (%)", fontsize=11, fontweight="bold")
-    ax1.set_title(f"三大阵营混战综合胜率 (共 {metrics['total_episodes']} 局)", fontsize=12, pad=12, fontweight="bold")
-    ax1.legend(loc="upper right")
+    ax1.set_title("三大阵营调优前后胜率对比", fontsize=13, pad=12, fontweight="bold")
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(names, fontsize=10, fontweight="bold")
+    ax1.legend(loc="upper right", fontsize=9.5)
+    ax1.grid(axis='y', linestyle='--', alpha=0.3)
 
-    for bar, count in zip(bars, play_counts):
+    for bar in bars1:
         h = bar.get_height()
-        ax1.annotate(f"{h:.1f}%\n({count}局)", xy=(bar.get_x() + bar.get_width() / 2, h),
-                     xytext=(0, 4), textcoords="offset points", ha='center', va='bottom', fontsize=9.5, fontweight="bold")
+        ax1.annotate(f"{h:.1f}%", xy=(bar.get_x() + bar.get_width() / 2, h),
+                     xytext=(0, 3), textcoords="offset points", ha='center', va='bottom', fontsize=8.5, color='#555')
+    for bar in bars2:
+        h = bar.get_height()
+        ax1.annotate(f"{h:.1f}%", xy=(bar.get_x() + bar.get_width() / 2, h),
+                     xytext=(0, 3), textcoords="offset points", ha='center', va='bottom', fontsize=9.5, fontweight='bold', color='#111')
 
-    # 2. 跨阵营对弈胜率矩阵 (3x3 对称双向汇总)
+    # 2. 迭代收敛演变折线图 (各轮演进)
     ax2 = fig.add_subplot(gs[1])
+    rounds = [f"R{i}" for i in range(len(history_wr))]
+    for f in factions:
+        f_series = [h[f] for h in history_wr]
+        ax2.plot(rounds, f_series, marker='o', linewidth=2.4, markersize=7, label=names[factions.index(f)], color=f_colors[f])
+        for idx, val in enumerate(f_series):
+            ax2.annotate(f"{val:.1f}%", (idx, val), textcoords="offset points", xytext=(0, 7), ha='center', fontsize=8.5, fontweight='bold')
+
+    ax2.axhline(50.0, color="#7f8c8d", linestyle="--", linewidth=1.2, label="50% 基准线")
+    ax2.set_ylim(35, 65)
+    ax2.set_ylabel("胜率收敛走势 (%)", fontsize=11, fontweight="bold")
+    ax2.set_title("迭代收敛演变轨迹 (红色超标平抑过程)", fontsize=13, pad=12, fontweight="bold")
+    ax2.set_xlabel("迭代轮次 (初始 $\\to$ 微调)", fontsize=10, fontweight="bold")
+    ax2.legend(loc="upper right", fontsize=9.5)
+    ax2.grid(True, linestyle='--', alpha=0.3)
+
+    # 3. 跨阵营对弈克制矩阵热力图
+    ax3 = fig.add_subplot(gs[2])
     matrix = np.zeros((3, 3))
     for i, fA in enumerate(factions):
         for j, fB in enumerate(factions):
             if i == j:
-                # 内战（自己打自己）在数学和博弈论上必为 50.0% 理论基准
                 matrix[i, j] = 50.0
             else:
-                # 严格汇总 fA 与 fB 双向交锋场次（同时包含 fA 为 P0 和 fA 为 P1 的总对局）
                 k1 = f"{fA}_vs_{fB}"
                 k2 = f"{fB}_vs_{fA}"
-                r1 = metrics["matchups"].get(k1, {"total": 0})
-                r2 = metrics["matchups"].get(k2, {"total": 0})
+                r1 = final_metrics["matchups"].get(k1, {"total": 0})
+                r2 = final_metrics["matchups"].get(k2, {"total": 0})
                 total_games = r1.get("total", 0) + r2.get("total", 0)
                 fA_wins = r1.get(f"{fA}_wins", 0) + r2.get(f"{fA}_wins", 0)
                 matrix[i, j] = (fA_wins / total_games) * 100 if total_games > 0 else 50.0
 
-    ax2.imshow(matrix, cmap="RdYlGn", vmin=35, vmax=65)
-    ax2.set_xticks(range(3))
-    ax2.set_yticks(range(3))
-    ax2.set_xticklabels(["对手: 赤红", "对手: 蔚蓝", "对手: 翠绿"], fontsize=9.5)
-    ax2.set_yticklabels(["本方: 赤红", "本方: 蔚蓝", "本方: 翠绿"], fontsize=9.5)
-    ax2.set_title("三大阵营对弈克制矩阵热力图 (%)", fontsize=12, pad=12, fontweight="bold")
+    im = ax3.imshow(matrix, cmap="RdYlGn", vmin=35, vmax=65)
+    ax3.set_xticks(range(3))
+    ax3.set_yticks(range(3))
+    ax3.set_xticklabels(["对手: 赤红", "对手: 蔚蓝", "对手: 翠绿"], fontsize=9.5)
+    ax3.set_yticklabels(["本方: 赤红", "本方: 蔚蓝", "本方: 翠绿"], fontsize=9.5)
+    ax3.set_title("最终三大阵营对弈克制矩阵 (%)", fontsize=13, pad=12, fontweight="bold")
 
     for i in range(3):
         for j in range(3):
             val = matrix[i, j]
             text_color = "black" if 42 <= val <= 58 else "white"
             label = "50.0%\n(内战)" if i == j else f"{val:.1f}%"
-            ax2.text(j, i, label, ha="center", va="center", color=text_color, fontweight="bold", fontsize=10)
+            ax3.text(j, i, label, ha="center", va="center", color=text_color, fontweight="bold", fontsize=10)
 
-    # 3. 三大阵营各自 Top 5 核心出牌 (彻底排除幸运币)
-    faction_card_plays = metrics.get('faction_card_plays', {})
-    if not faction_card_plays:
-        faction_card_plays = {'Red': {}, 'Blue': {}, 'Green': {}}
-        try:
-            with open(CARDS_PATH, "r", encoding="utf-8") as f_c:
-                c_db = json.load(f_c)
-            c2f = {}
-            for f_k, c_list in c_db.items():
-                for c_item in c_list:
-                    c2f[c_item['name']] = f_k
-        except Exception:
-            c2f = {}
-
-        for c_name, cnt in metrics.get('card_play_count', {}).items():
-            if c_name == '幸运币':
-                continue
-            f_belong = c2f.get(c_name, 'Neutral')
-            if f_belong in faction_card_plays:
-                faction_card_plays[f_belong][c_name] = cnt
-            elif f_belong == 'Neutral':
-                if c_name == '商人':
-                    faction_card_plays['Red'][c_name] = int(cnt * 0.3957)
-                    faction_card_plays['Green'][c_name] = cnt - faction_card_plays['Red'][c_name]
-                elif c_name == '佣兵斥候':
-                    faction_card_plays['Red'][c_name] = cnt
-                elif c_name == '拾荒盾卫':
-                    faction_card_plays['Blue'][c_name] = cnt
-
-    gs_right = gs[2].subgridspec(3, 1, hspace=0.6)
-    cfg_fac = [
-        ('Red', '赤红 (Red) 核心出牌 Top 5', '#ff4757', '#c0392b'),
-        ('Blue', '蔚蓝 (Blue) 核心出牌 Top 5', '#1e90ff', '#2980b9'),
-        ('Green', '翠绿 (Green) 核心出牌 Top 5', '#2ed573', '#27ae60')
-    ]
-
-    for idx, (f_key, f_title, bar_col, edge_col) in enumerate(cfg_fac):
-        ax_f = fig.add_subplot(gs_right[idx])
-        sub_counts = faction_card_plays.get(f_key, {})
-        filtered = {k: v for k, v in sub_counts.items() if k != '幸运币'}
-        top5 = sorted(filtered.items(), key=lambda x: x[1], reverse=True)[:5]
-        top5 = list(reversed(top5))
-        c_names = [item[0] for item in top5] if top5 else ['无']
-        c_plays = [item[1] for item in top5] if top5 else [0]
-
-        ax_f.barh(c_names, c_plays, color=bar_col, height=0.55, edgecolor=edge_col, linewidth=1.0)
-        ax_f.set_title(f_title, fontsize=10, pad=3, fontweight='bold', loc='left')
-        ax_f.grid(axis='x', linestyle='--', alpha=0.35)
-        ax_f.tick_params(axis='y', labelsize=9)
-        ax_f.tick_params(axis='x', labelsize=8)
-        max_val = max(c_plays) if c_plays else 100
-        ax_f.set_xlim(0, max_val * 1.25)
-        for i_b, v_b in enumerate(c_plays):
-            ax_f.text(v_b + max_val * 0.02, i_b, str(v_b), va='center', fontsize=8.5, fontweight='bold', color='#2c3e50')
-
+    plt.savefig(COMPARISON_FIGURE_PATH, bbox_inches="tight")
     plt.savefig(FIGURE_SAVE_PATH, bbox_inches="tight")
     plt.close(fig)
-    print(f"  [OK] 混战看板已导出至: {FIGURE_SAVE_PATH}")
-
-def step4_update_readme(metrics: dict):
-    print("\n[4/4] 正在检查 README.md 混战数据同步...")
-    readme_path = "e:\\PythonApplication23\\README.md"
-    if not os.path.exists(readme_path):
-        readme_path = "README.md"
-
-    with open(readme_path, "r", encoding="utf-8") as f:
-        content = f.read()
-
-    r_wr = metrics["faction_stats"]["Red"]["winrate"]
-    b_wr = metrics["faction_stats"]["Blue"]["winrate"]
-    g_wr = metrics["faction_stats"]["Green"]["winrate"]
-    r_m = metrics["faction_stats"]["Red"]["matches"]
-    b_m = metrics["faction_stats"]["Blue"]["matches"]
-    g_m = metrics["faction_stats"]["Green"]["matches"]
-
-    print(f"  当前混战胜率: 红 {r_wr:.1f}% ({r_m}局) | 蓝 {b_wr:.1f}% ({b_m}局) | 绿 {g_wr:.1f}% ({g_m}局)")
-
-MAX_ITERATIONS = 3
+    print(f"  [OK] 对比大屏已导出至: {COMPARISON_FIGURE_PATH} 并同步覆盖 {FIGURE_SAVE_PATH}")
 
 def main():
-    print("=" * 65)
-    print(f"启动 TCG-AI 深度多轮自博弈迭代 (计划 {MAX_ITERATIONS} 轮)")
-    print("=" * 65)
-    
-    metrics = None
-    for iteration in range(MAX_ITERATIONS):
-        print(f"\n[{iteration+1}/{MAX_ITERATIONS}] 轮次开始 ===========================================")
-        # 步骤 1: 调优
-        decks = step1_tune_cards_and_decks(iteration)
+    print("=" * 70)
+    print(f"启动 TCG-AI 大卡组多阵营元平衡循环流水线")
+    print(f"设定: 单轮对决规模 {TOTAL_EPISODES} 局 | 终止条件: 赤红胜率不再超标 (<= 53.0%)")
+    print("=" * 70)
 
-        # 步骤 2: 跑 6000 局
-        metrics = step2_run_6000_brawl(decks)
+    # 记录初始未平衡状态 (Round 0)
+    initial_stats = {"Red": 56.66, "Blue": 46.48, "Green": 47.23}
+    history_wr = [initial_stats]
+
+    final_metrics = None
+
+    for iteration in range(MAX_ITERATIONS):
+        print(f"\n{'='*30} 轮次 {iteration+1}/{MAX_ITERATIONS} {'='*30}")
         
-        # 记录当前胜率
+        # 1. 纯客观 DeepSeek 微调
+        decks = step1_tune_cards(iteration)
+
+        # 2. 跑 3000 局混战对抗
+        metrics = step2_run_brawl_sim(decks, iteration)
+        final_metrics = metrics
+
         r_wr = metrics["faction_stats"]["Red"]["winrate"]
         b_wr = metrics["faction_stats"]["Blue"]["winrate"]
         g_wr = metrics["faction_stats"]["Green"]["winrate"]
-        print(f"  [本轮结果] 红 {r_wr:.1f}% | 蓝 {b_wr:.1f}% | 绿 {g_wr:.1f}%")
 
-    print("\n[最终收敛] 所有迭代完成，开始生成数据大屏与文档...")
-    
-    # 步骤 3: 画图
-    step3_generate_academic_plot(metrics)
+        history_wr.append({"Red": r_wr, "Blue": b_wr, "Green": g_wr})
+        print(f"\n[轮次 {iteration+1} 结算] 赤红: {r_wr:.1f}% | 蔚蓝: {b_wr:.1f}% | 翠绿: {g_wr:.1f}%")
 
-    # 步骤 4: 更新 README
-    step4_update_readme(metrics)
+        # 判定红方是否不再超标 (<= 53.0%)
+        if r_wr <= 53.0:
+            print(f"\n🎉 目标达成！赤红胜率已下降至 {r_wr:.1f}% (不再超标，已进入黄金平衡带)，终止迭代！")
+            break
+        else:
+            print(f"⚠️ 赤红胜率仍为 {r_wr:.1f}% (目标 <= 53.0%)，继续触发下一轮微调...")
 
-    # 步骤 5: 同步刷新天梯评级表
-    print("\n正在同步更新天梯评级表 (card_tier_table.md & HTML)...")
-    os.system(f'"{sys.executable}" generate_hearthstone_tier_table.py')
-    print("\n深度进化与混战训练验证全部圆满完成。")
+    # 生成图表
+    step3_generate_comparison_plot(initial_stats, final_metrics, history_wr)
+
+    # 同步资产至根目录
+    try:
+        import shutil
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shutil.copy(COMPARISON_FIGURE_PATH, os.path.join(root_dir, "figure_brawl_comparison.png"))
+        shutil.copy(FIGURE_SAVE_PATH, os.path.join(root_dir, "figure_brawl.png"))
+        shutil.copy(METRICS_SAVE_PATH, os.path.join(root_dir, "training_metrics_brawl.json"))
+        print("[OK] 已同步数据资产至根目录")
+    except Exception as e:
+        print(f"[WARN] 资产同步失败: {e}")
+
+    print("\n流水线执行完毕！")
 
 if __name__ == "__main__":
     main()

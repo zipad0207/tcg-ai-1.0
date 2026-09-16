@@ -132,17 +132,29 @@ class DuelEnv:
         1. 若提供了 custom_decklist，直接装配；
         2. 否则从可用卡池构建，每张同名卡最多 3 张。
         """
+        faction_code = 1 if faction == Faction.RED else 2 if faction == Faction.BLUE else 3
         if custom_decklist:
+            card_counts: Dict[int, int] = {}
             deck = []
+            valid = True
             for cid in custom_decklist:
                 if cid in self.card_database:
                     c = self.card_database[cid]
+                    card_faction = c.id // 100
+                    if card_faction != faction_code and card_faction != 9:
+                        valid = False
+                        break
+                    card_counts[cid] = card_counts.get(cid, 0) + 1
+                    if card_counts[cid] > self.MAX_COPIES_PER_CARD:
+                        valid = False
+                        break
                     deck.append(self._clone_card(c))
-            if len(deck) == self.DECK_SIZE:
+                else:
+                    valid = False
+                    break
+            if valid and len(deck) == self.DECK_SIZE:
                 random.shuffle(deck)
                 return deck
-
-        faction_code = 1 if faction == Faction.RED else 2 if faction == Faction.BLUE else 3
         faction_pool = [c for c in self.card_database.values() if c.id // 100 == faction_code]
         neutral_pool = [c for c in self.card_database.values() if c.id // 100 == 9]
         all_pool = faction_pool + neutral_pool
@@ -194,10 +206,12 @@ class DuelEnv:
             self._draw_card(self.players[1])
 
         # 后手幸运币补给
-        coin = Card(id=901, name="幸运币", card_type=CardType.SPELL, cost=0, base_dp=0, atk_spell_val=0, def_spell_val=0, tags=["TEMP_MANA_1"])
+        coin = Card(id=996, name="幸运币", card_type=CardType.SPELL, cost=0, base_dp=0, atk_spell_val=0, def_spell_val=0, tags=["TEMP_MANA_1"])
         if len(self.players[1].hand) < self.MAX_HAND_SIZE:
             self.players[1].hand.append(coin)
 
+        self.last_bonus_score_pts = 0
+        self.winner = None
         return self.get_observation()
 
     def _draw_card(self, player: Player):
@@ -210,7 +224,28 @@ class DuelEnv:
         else:
             player.fatigue += 1
             opp = self.players[1 - player.player_id]
-            opp.score += player.fatigue
+            opp.score += 1
+
+    def _lane_has_enemy(self, lane_id: int) -> bool:
+        """判断指定路线是否存在敌方单位（进攻区或防守区）"""
+        opp_id = 1 - self.current_player
+        lane = self.lanes[lane_id]
+        return any(u.owner == opp_id for u in lane.attackers) or any(u.owner == opp_id for u in lane.defenders)
+
+    def _lane_has_my_unit(self, lane_id: int) -> bool:
+        """判断指定路线是否存在己方单位（进攻区或防守区）"""
+        lane = self.lanes[lane_id]
+        return any(u.owner == self.current_player for u in lane.attackers) or any(u.owner == self.current_player for u in lane.defenders)
+
+    def _is_offensive_spell(self, card: Card) -> bool:
+        """判断是否为需要敌方目标的攻击性法术"""
+        if card.card_type != CardType.SPELL:
+            return False
+        if card.atk_spell_val > 0:
+            return True
+        if "SACRIFICE_1_KILL_1" in card.tags:
+            return True
+        return False
 
     def get_action_mask(self) -> np.ndarray:
         mask = np.zeros(self.action_space_size, dtype=np.float32)
@@ -225,22 +260,37 @@ class DuelEnv:
                 is_atk_only = "ATTACK_ONLY" in card.tags
                 # 纯法术（非衍生召唤类）不占用随从格子空间
                 is_spell = (card.card_type == CardType.SPELL and not any(t.startswith("SPAWN_") for t in card.tags))
+                # 攻击性法术必须有合法目标才能施放
+                is_off_spell = self._is_offensive_spell(card)
+                needs_sacrifice = "SACRIFICE_1_KILL_1" in card.tags
 
-                # 左路进攻区 / 防守区容量判定
-                l_atks = sum(1 for u in self.lanes[0].attackers if u.owner == curr.player_id)
-                l_defs = sum(1 for u in self.lanes[0].defenders if u.owner == curr.player_id)
-                if is_spell or l_atks < self.MAX_LANE_UNITS:
-                    mask[base_idx + 0] = 1.0
-                if not is_atk_only and (is_spell or l_defs < self.MAX_LANE_UNITS):
-                    mask[base_idx + 1] = 1.0
+                for lane_id in [0, 1]:
+                    lane = self.lanes[lane_id]
+                    my_atks = sum(1 for u in lane.attackers if u.owner == curr.player_id)
+                    my_defs = sum(1 for u in lane.defenders if u.owner == curr.player_id)
+                    atk_slot = base_idx + (0 if lane_id == 0 else 2)  # 进攻位
+                    def_slot = base_idx + (1 if lane_id == 0 else 3)  # 防守位
 
-                # 右路进攻区 / 防守区容量判定
-                r_atks = sum(1 for u in self.lanes[1].attackers if u.owner == curr.player_id)
-                r_defs = sum(1 for u in self.lanes[1].defenders if u.owner == curr.player_id)
-                if is_spell or r_atks < self.MAX_LANE_UNITS:
-                    mask[base_idx + 2] = 1.0
-                if not is_atk_only and (is_spell or r_defs < self.MAX_LANE_UNITS):
-                    mask[base_idx + 3] = 1.0
+                    if is_off_spell:
+                        # 攻击法术：必须目标路线有敌方单位
+                        has_enemy = self._lane_has_enemy(lane_id)
+                        # 自爆法术还需要己方有单位可以牺牲
+                        has_my = self._lane_has_my_unit(lane_id) if needs_sacrifice else True
+                        if has_enemy and has_my:
+                            mask[atk_slot] = 1.0
+                            if not is_atk_only:
+                                mask[def_slot] = 1.0
+                    elif is_spell:
+                        # 辅助法术（抽牌/跳费/增益等）：总是可以使用
+                        mask[atk_slot] = 1.0
+                        if not is_atk_only:
+                            mask[def_slot] = 1.0
+                    else:
+                        # 随从牌：受场地容量限制
+                        if my_atks < self.MAX_LANE_UNITS:
+                            mask[atk_slot] = 1.0
+                        if not is_atk_only and my_defs < self.MAX_LANE_UNITS:
+                            mask[def_slot] = 1.0
 
         return mask
 
@@ -249,7 +299,14 @@ class DuelEnv:
         prev_p1_score = self.players[1].score
         acting_player = self.current_player  # 记录当前执行动作的玩家
 
+        self.last_bonus_score_pts = 0
         done = False
+
+        # 非法动作与越界动作防错保护：安全回退至 PASS
+        mask = self.get_action_mask()
+        if action < 0 or action >= self.action_space_size or mask[action] <= 0.0:
+            action = self.action_space_size - 1
+
         if action == self.action_space_size - 1:
             # 结束回合 -> 触发同路合击冲锋结算与轮换
             done = self._resolve_turn_end()
@@ -270,14 +327,38 @@ class DuelEnv:
         # 计算 P0 收益 (零和博弈)
         r0 = (self.players[0].score - prev_p0_score) - (self.players[1].score - prev_p1_score)
         if done:
-            if self.players[0].score >= self.WIN_SCORE:
+            s0 = self.players[0].score
+            s1 = self.players[1].score
+            if s0 >= self.WIN_SCORE and s1 >= self.WIN_SCORE:
+                # 双方同回合达到 7 分平局：攻击方(acting_player)胜出
+                if s0 > s1:
+                    self.winner = 0
+                elif s1 > s0:
+                    self.winner = 1
+                else:
+                    self.winner = acting_player
+            elif s0 >= self.WIN_SCORE:
+                self.winner = 0
+            elif s1 >= self.WIN_SCORE:
+                self.winner = 1
+            elif self.turn_count >= self.MAX_TURNS:
+                if s0 > s1:
+                    self.winner = 0
+                elif s1 > s0:
+                    self.winner = 1
+                else:
+                    self.winner = acting_player  # 回合耗尽平局时同样由最后攻击方判定获胜
+            else:
+                self.winner = None
+
+            if self.winner == 0:
                 r0 += 10.0
-            elif self.players[1].score >= self.WIN_SCORE:
+            elif self.winner == 1:
                 r0 -= 10.0
 
         # 准确根据行动方 acting_player 返回奖励，避免换边轮换后将正向收益逆转为负惩罚
         step_reward = r0 if acting_player == 0 else -r0
-        return self.get_observation(), step_reward, done, {}
+        return self.get_observation(), step_reward, done, {"bonus_score_pts": getattr(self, "last_bonus_score_pts", 0), "winner": self.winner}
 
     def _play_card(self, hand_idx: int, lane_id: int, is_attack: bool):
         player = self.players[self.current_player]
@@ -336,7 +417,12 @@ class DuelEnv:
                     for _ in range(int(tag.split("_")[1])):
                         self._draw_card(player)
                 elif tag.startswith("RAMP_"):
-                    player.max_mana = min(10, player.max_mana + int(tag.split("_")[1]))
+                    self._apply_ramp(player, int(tag.split("_")[1]))
+                elif tag.startswith("DISCARD_"):
+                    for _ in range(int(tag.split("_")[1])):
+                        if player.hand:
+                            discarded = player.hand.pop(0)
+                            player.graveyard.append(discarded)
 
             # 直伤削弱法术（优先打击敌方防守随从；若防守区无随从，则拦截打击敌方攻击随从）
             if card.atk_spell_val > 0:
@@ -359,7 +445,7 @@ class DuelEnv:
                 my_defs = [u for u in lane.defenders if u.owner == player.player_id]
                 if my_defs:
                     my_defs[0].current_dp += card.def_spell_val
-                elif len(lane.defenders) < self.MAX_LANE_UNITS:
+                elif len(my_defs) < self.MAX_LANE_UNITS:
                     shield_card = Card(
                         id=998,
                         name=f"{card.name}壁垒",
@@ -377,13 +463,42 @@ class DuelEnv:
                         ready_to_attack=False
                     ))
 
+    def _add_mana_overload(self, player: Player):
+        """当法力上限已达10且发生跳费时，给予0费抽1的【法力过载】法术牌"""
+        overload_card = Card(
+            id=997,
+            name="法力过载",
+            card_type=CardType.SPELL,
+            cost=0,
+            base_dp=0,
+            atk_spell_val=0,
+            def_spell_val=0,
+            tags=["DRAW_1"]
+        )
+        if len(player.hand) < self.MAX_HAND_SIZE:
+            player.hand.append(overload_card)
+        else:
+            player.graveyard.append(overload_card)
+
+    def _apply_ramp(self, player: Player, ramp_val: int):
+        """执行跳费机制：若超过或达到10费上限，生成【法力过载】补偿"""
+        if player.max_mana >= 10:
+            self._add_mana_overload(player)
+        else:
+            new_mana = player.max_mana + ramp_val
+            if new_mana > 10:
+                player.max_mana = 10
+                self._add_mana_overload(player)
+            else:
+                player.max_mana = new_mana
+
     def _trigger_tags(self, card: Card, player: Player, lane_id: int, is_attack: bool):
         for tag in card.tags:
             if tag.startswith("DRAW_"):
                 for _ in range(int(tag.split("_")[1])):
                     self._draw_card(player)
             elif tag.startswith("RAMP_"):
-                player.max_mana = min(10, player.max_mana + int(tag.split("_")[1]))
+                self._apply_ramp(player, int(tag.split("_")[1]))
             elif tag.startswith("DISCARD_"):
                 for _ in range(int(tag.split("_")[1])):
                     if player.hand:
@@ -428,12 +543,13 @@ class DuelEnv:
                 for _ in range(int(tag.split("_")[2])):
                     self._draw_card(owner_p)
             elif tag.startswith("DEATH_MANA_"):
-                owner_p.max_mana = min(10, owner_p.max_mana + int(tag.split("_")[2]))
+                self._apply_ramp(owner_p, int(tag.split("_")[2]))
 
     def _resolve_turn_end(self) -> bool:
-        """回合结束：同路已就绪单位发起合击冲锋"""
+        """回合结束：同路已就绪单位发起合击冲锋，需逐个穿透所有防守怪方可得分"""
         curr_p = self.current_player
         opp_id = 1 - curr_p
+        self.last_bonus_score_pts = 0
 
         for lane_id, lane in self.lanes.items():
             # 筛选当前玩家中【已就绪】的冲锋单位
@@ -464,29 +580,56 @@ class DuelEnv:
                     elif tag.startswith("BONUS_SCORE_"):
                         bonus_score_pts += int(tag.split("_")[2])
 
-            total_award = 1 + bonus_score_pts
+            total_award = min(2, 1 + bonus_score_pts)
+            remaining_atk = total_atk_dp
 
-            # 碰撞判定
+            # 逐个穿透判定：必须打穿所有防守怪才能得分
             opp_defenders = [u for u in lane.defenders if u.owner == opp_id]
+            breakthrough = True  # 是否成功突破全部防线
+
             if opp_defenders:
-                def_unit = opp_defenders[0]
+                # 削弱词条先全局生效：平摊削弱到各防守单位（从前往后依次削弱）
+                degrade_remaining = total_degrade
+                for def_unit in list(opp_defenders):
+                    if degrade_remaining <= 0:
+                        break
+                    reduction = min(degrade_remaining, def_unit.current_dp)
+                    def_unit.current_dp = max(0, def_unit.current_dp - reduction)
+                    degrade_remaining -= reduction
+                    if def_unit.current_dp == 0:
+                        lane.defenders.remove(def_unit)
+                        self.players[opp_id].graveyard.append(def_unit.card)
+                        self._trigger_deathrattle(def_unit)
 
-                # 削弱词条生效
-                if total_degrade > 0:
-                    def_unit.current_dp = max(0, def_unit.current_dp - total_degrade)
+                # 逐个对撞：攻击力依次穿透每个防守单位
+                remaining_defenders = [u for u in lane.defenders if u.owner == opp_id]
+                for def_unit in remaining_defenders:
+                    if remaining_atk <= 0:
+                        breakthrough = False
+                        break
 
-                # 突破阈值判定
-                if def_unit.current_dp == 0 or total_atk_dp > def_unit.current_dp:
-                    lane.defenders.remove(def_unit)
-                    self.players[opp_id].graveyard.append(def_unit.card)
-                    self._trigger_deathrattle(def_unit)
+                    if remaining_atk >= def_unit.current_dp:
+                        # 攻击力足够击穿此防守怪（同归于尽或击破后穿透）
+                        remaining_atk -= def_unit.current_dp
+                        lane.defenders.remove(def_unit)
+                        self.players[opp_id].graveyard.append(def_unit.card)
+                        self._trigger_deathrattle(def_unit)
+                        if remaining_atk == 0:
+                            # 刚好同归于尽，无法继续击穿或突破得分
+                            breakthrough = False
+                            break
+                    else:
+                        # 攻击力不够击穿，防守怪扣减 DP 后存活
+                        def_unit.current_dp -= remaining_atk
+                        remaining_atk = 0
+                        breakthrough = False
+                        break
 
-                    self.players[curr_p].score += total_award
-                    if self.players[curr_p].score >= self.WIN_SCORE:
-                        return True
-            else:
-                # 空场突破
+            # 只有穿透了所有防守怪（或空场）才得分
+            if breakthrough and remaining_atk > 0:
                 self.players[curr_p].score += total_award
+                if bonus_score_pts > 0:
+                    self.last_bonus_score_pts += (total_award - 1)
                 if self.players[curr_p].score >= self.WIN_SCORE:
                     return True
 

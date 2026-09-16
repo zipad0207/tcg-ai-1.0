@@ -268,30 +268,6 @@ def generate_brawl_plots(metrics: dict):
     faction_card_plays = metrics.get('faction_card_plays', {})
     if not faction_card_plays:
         faction_card_plays = {'Red': {}, 'Blue': {}, 'Green': {}}
-        try:
-            with open(CARDS_FILE, "r", encoding="utf-8") as f_c:
-                c_db = json.load(f_c)
-            c2f = {}
-            for f_k, c_list in c_db.items():
-                for c_item in c_list:
-                    c2f[c_item['name']] = f_k
-        except Exception:
-            c2f = {}
-
-        for c_name, cnt in metrics.get('card_play_count', {}).items():
-            if c_name == '幸运币':
-                continue
-            f_belong = c2f.get(c_name, 'Neutral')
-            if f_belong in faction_card_plays:
-                faction_card_plays[f_belong][c_name] = cnt
-            elif f_belong == 'Neutral':
-                if c_name == '商人':
-                    faction_card_plays['Red'][c_name] = int(cnt * 0.3957)
-                    faction_card_plays['Green'][c_name] = cnt - faction_card_plays['Red'][c_name]
-                elif c_name == '佣兵斥候':
-                    faction_card_plays['Red'][c_name] = cnt
-                elif c_name == '拾荒盾卫':
-                    faction_card_plays['Blue'][c_name] = cnt
 
     gs_right = gs[2].subgridspec(3, 1, hspace=0.6)
     cfg_fac = [
@@ -382,7 +358,6 @@ def main():
     def handle_sigint(sig, frame):
         print("\n捕获中断信号，正在保存混战模型与战绩...")
         torch.save(trainer.policy.state_dict(), MODEL_SAVE_PATH)
-        torch.save(trainer.policy.state_dict(), TUNED_MODEL_PATH)
         save_metrics()
         generate_brawl_plots(metrics)
         sys.exit(0)
@@ -456,7 +431,7 @@ def main():
         metrics["total_episodes"] += 1
         all_lengths.append(ep_len)
 
-        p0_won = (env.players[0].score >= env.WIN_SCORE)
+        p0_won = (env.winner == 0) if env.winner is not None else (env.players[0].score >= env.WIN_SCORE)
         winner_faction = name0 if p0_won else name1
 
         # 阵营战报
@@ -502,14 +477,12 @@ def main():
         # 定期保存权重
         if ep % 200 == 0:
             torch.save(trainer.policy.state_dict(), MODEL_SAVE_PATH)
-            torch.save(trainer.policy.state_dict(), TUNED_MODEL_PATH)
             save_metrics()
 
     # 训练完成终结归档
     torch.save(trainer.policy.state_dict(), MODEL_SAVE_PATH)
-    torch.save(trainer.policy.state_dict(), TUNED_MODEL_PATH)
     save_metrics()
-    print(f"\n混战训练完成，模型已保存至 {MODEL_SAVE_PATH} 与 {TUNED_MODEL_PATH}")
+    print(f"\n混战训练完成，模型已保存至 {MODEL_SAVE_PATH}")
     generate_brawl_plots(metrics)
 
 if __name__ == "__main__":

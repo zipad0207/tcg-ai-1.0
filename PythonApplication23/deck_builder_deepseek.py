@@ -21,7 +21,7 @@ def get_api_key() -> str:
     return key
 
 DEEPSEEK_API_KEY = get_api_key()
-MODEL_NAME = "deepseek-chat"
+MODEL_NAME = "deepseek-flash"
 
 MAX_COPIES_PER_CARD = 3
 DECK_SIZE = 30

@@ -115,17 +115,10 @@ def run_simulation(episodes: int = 500, decks_path: str = "decks_config.json", c
         p1_scores.append(s1)
         turns_history.append(env.turn_count)
 
-        if s0 >= env.WIN_SCORE and s1 < env.WIN_SCORE:
+        if env.winner == 0:
             p0_wins += 1
-        elif s1 >= env.WIN_SCORE and s0 < env.WIN_SCORE:
+        elif env.winner == 1:
             p1_wins += 1
-        elif s0 >= env.WIN_SCORE and s1 >= env.WIN_SCORE:
-            if s0 > s1:
-                p0_wins += 1
-            elif s1 > s0:
-                p1_wins += 1
-            else:
-                draws += 1
         else:
             draws += 1
 

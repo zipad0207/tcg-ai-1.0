@@ -188,60 +188,60 @@
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "FORTIFY_1"
+        "DEATH_MANA_1"
       ]
     },
     {
       "id": 302,
-      "name": "剧毒花",
+      "name": "德鲁伊",
       "card_type": "MINION",
-      "cost": 2,
-      "base_dp": 1,
+      "cost": 4,
+      "base_dp": 5,
       "atk_spell_val": 0,
       "def_spell_val": 0,
-      "tags": [
-        "DEGRADE_2"
-      ]
+      "tags": []
     },
     {
       "id": 303,
-      "name": "狂暴生长",
+      "name": "奥数聪明",
       "card_type": "SPELL",
       "cost": 3,
       "base_dp": 0,
       "atk_spell_val": 0,
-      "def_spell_val": 3,
-      "tags": []
-    },
-    {
-      "id": 304,
-      "name": "森林之狼",
-      "card_type": "MINION",
-      "cost": 4,
-      "base_dp": 4,
-      "atk_spell_val": 0,
-      "def_spell_val": 0,
-      "tags": []
-    },
-    {
-      "id": 305,
-      "name": "远古巨树",
-      "card_type": "MINION",
-      "cost": 7,
-      "base_dp": 8,
-      "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "FORTIFY_2"
+        "DRAW_2"
       ]
     },
     {
-      "id": 306,
-      "name": "荆棘缠绕",
+      "id": 304,
+      "name": "野蛮生长",
       "card_type": "SPELL",
-      "cost": 2,
+      "cost": 5,
       "base_dp": 0,
-      "atk_spell_val": 2,
+      "atk_spell_val": 0,
+      "def_spell_val": 0,
+      "tags": [
+        "RAMP_2"
+      ]
+    },
+    {
+      "id": 305,
+      "name": "始祖龙",
+      "card_type": "MINION",
+      "cost": 8,
+      "base_dp": 13,
+      "atk_spell_val": 0,
+      "def_spell_val": 0,
+      "tags": []
+    },
+    {
+      "id": 306,
+      "name": "死神的化身",
+      "card_type": "MINION",
+      "cost": 10,
+      "base_dp": 16,
+      "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": []
     }
@@ -252,7 +252,7 @@
       "name": "商人",
       "card_type": "MINION",
       "cost": 2,
-      "base_dp": 2,
+      "base_dp": 1,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -264,7 +264,7 @@
       "name": "雇佣兵",
       "card_type": "MINION",
       "cost": 3,
-      "base_dp": 5,
+      "base_dp": 4,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": []
