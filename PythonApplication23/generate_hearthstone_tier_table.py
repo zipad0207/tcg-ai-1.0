@@ -1,20 +1,6 @@
 """
-TCG-AI Card Tier Analytics & Rating Generator
-TCG-AI 竞技场卡牌大数据评级系统（按卡组阵营分色专属评级）
-
-核心原则：
-1. 按卡组分色建榜：
-   - 🔴 赤红 (Red) 卡组：12 张专属红卡 + 6 张中立卡 (共 18 张候选)
-   - 🔵 蔚蓝 (Blue) 卡组：12 张专属蓝卡 + 6 张中立卡 (共 18 张候选)
-   - 🟢 翠绿 (Green) 卡组：12 张专属绿卡 + 6 张中立卡 (共 18 张候选)
-   - ⚪ 中立 (Neutral) 卡池：6 张中立卡在各个卡组中的泛用度对比
-2. 核心考核指标：
-   - 【带它的比例】：在对应卡组自博弈构建与实机对决中的出场/携带率 (%)
-   - 【对胜率的影响】：携带/打出该卡后对该阵营基础胜率的真实净贡献 (ΔWR = 胜率 - 50%)
-   - 【综合战力评分】：结合携带率与胜率贡献加权计算的 0~100 标准分
-   - 【梯队与推荐张数】：S(幻神,3张) / A(主力,2~3张) / B(拼图,1~2张) / C(平庸,0~1张) / D(避坑,0张)
-   - 【独家实战锐评】：一针见血点评优劣势与避坑理由
-3. 可视化红绿热力图分色与卡组主题色。
+TCG-AI 卡牌评级与胜率影响分析生成器
+按阵营分别统计单卡携带率、胜率贡献（ΔWR）与推荐张数。
 """
 
 import os
@@ -291,7 +277,7 @@ def evaluate_faction_pool(target_faction: str, faction_cards: list, neutral_card
 
 def main():
     print("=" * 65)
-    print("🚀 正在启动【TCG-AI 竞技场卡牌大数据评级系统】(按卡组分色建榜)...")
+    print("正在启动各阵营卡牌评级与胜率影响分析...")
     print("=" * 65)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -310,15 +296,15 @@ def main():
     print(f"[*] 阵营卡池统计: Red={len(red_cards)}张, Blue={len(blue_cards)}张, Green={len(green_cards)}张, Neutral={len(neutral_cards)}张")
 
     # 1. 评估赤红 (Red) 卡组 (12 红 + 6 中立)
-    print("[*] 正在为【🔴 赤红卡组】生成 18 张候选卡评级与胜率影响分析...")
+    print("[*] 正在评估赤红卡组候选卡...")
     red_pool_eval = evaluate_faction_pool("Red", red_cards, neutral_cards, model, device)
 
     # 2. 评估蔚蓝 (Blue) 卡组 (12 蓝 + 6 中立)
-    print("[*] 正在为【🔵 蔚蓝卡组】生成 18 张候选卡评级与胜率影响分析...")
+    print("[*] 正在评估蔚蓝卡组候选卡...")
     blue_pool_eval = evaluate_faction_pool("Blue", blue_cards, neutral_cards, model, device)
 
     # 3. 评估翠绿 (Green) 卡组 (12 绿 + 6 中立)
-    print("[*] 正在为【🟢 翠绿卡组】生成 18 张候选卡评级与胜率影响分析...")
+    print("[*] 正在评估翠绿卡组候选卡...")
     green_pool_eval = evaluate_faction_pool("Green", green_cards, neutral_cards, model, device)
 
     all_faction_data = {

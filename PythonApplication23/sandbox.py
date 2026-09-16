@@ -64,8 +64,8 @@ class DuelEnv:
     MAX_HAND_SIZE = 7
     MAX_LANE_UNITS = 3
     MAX_TURNS = 100
-    MAX_COPIES_PER_CARD = 3  # 方案 B：同名卡严格上限 3 张
-    DECK_SIZE = 30           # 标准卡组规模 30 张
+    MAX_COPIES_PER_CARD = 3  # 同名卡上限 3 张
+    DECK_SIZE = 30           # 卡组规模 30 张
 
     def __init__(self, p0_faction: Faction = Faction.RED, p1_faction: Faction = Faction.BLUE, 
                  cards_path: str = "cards_config.json", p0_decklist=None, p1_decklist=None):
@@ -129,8 +129,8 @@ class DuelEnv:
     def _build_deck(self, faction: Faction, custom_decklist: Optional[List[int]] = None) -> List[Card]:
         """
         构建对战牌库：
-        1. 若提供了 custom_decklist (如 AI 或玩家自主挑选的卡牌 ID 列表)，直接装配；
-        2. 否则从可用卡池构建，严格遵守【同名卡上限最多 3 张】的标准 TCG 规则。
+        1. 若提供了 custom_decklist，直接装配；
+        2. 否则从可用卡池构建，每张同名卡最多 3 张。
         """
         if custom_decklist:
             deck = []

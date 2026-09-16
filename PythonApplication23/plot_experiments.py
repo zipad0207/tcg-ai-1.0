@@ -35,7 +35,7 @@ def plot_thesis_comparison(metrics_path, output_filename, is_tuned=False):
     metrics_path = resolve_path(metrics_path)
     output_filename = resolve_output(output_filename)
     if not os.path.exists(metrics_path):
-        print(f"❌ 找不到文件: {metrics_path}")
+        print(f"找不到文件: {metrics_path}")
         return
 
     with open(metrics_path, 'r', encoding='utf-8') as f:
@@ -54,7 +54,7 @@ def plot_thesis_comparison(metrics_path, output_filename, is_tuned=False):
 
     # 根据实验阶段设置规范学术标题
     if is_tuned:
-        fig_title = f"LLM 闭环调优后对局胜率分布 (Tuned, PPO {total_episodes}局)"
+        fig_title = f"调优后对局胜率分布 (Tuned, PPO {total_episodes}局)"
         bar_title = "Top 10 核心对局卡牌出场频次分布 (调优后)"
     else:
         fig_title = f"基准环境对局胜率分布 (Baseline, PPO {total_episodes}局)"
@@ -95,16 +95,16 @@ def plot_thesis_comparison(metrics_path, output_filename, is_tuned=False):
 
     plt.tight_layout()
     plt.savefig(output_filename, bbox_inches="tight")
-    print(f"✅ 图表已导出至: {output_filename}")
+    print(f"图表已导出至: {output_filename}")
     plt.close()
 
 def plot_comprehensive_comparison(baseline_path="training_metrics_baseline.json", tuned_path="training_metrics_tuned.json", output_filename="figure_comparison.png"):
-    """绘制四合一学术全景对比图 (2x2 画布)"""
+    """绘制调优前后对比图 (2x2 画布)"""
     baseline_path = resolve_path(baseline_path)
     tuned_path = resolve_path(tuned_path)
     output_filename = resolve_output(output_filename)
     if not os.path.exists(baseline_path) or not os.path.exists(tuned_path):
-        print(f"❌ 数据文件缺失: {baseline_path} 或 {tuned_path}")
+        print(f"数据文件缺失: {baseline_path} 或 {tuned_path}")
         return
 
     import numpy as np
@@ -128,7 +128,7 @@ def plot_comprehensive_comparison(baseline_path="training_metrics_baseline.json"
     bars1 = ax1.bar(x - width/2, b_rates, width, label='调优前 (Baseline)', color='#e74c3c', alpha=0.85, edgecolor='black', linewidth=0.8)
     bars2 = ax1.bar(x + width/2, t_rates, width, label='调优后 (Tuned)', color='#2ecc71', alpha=0.85, edgecolor='black', linewidth=0.8)
 
-    ax1.axhline(50.0, color='#7f8c8d', linestyle='--', linewidth=1.5, label='50% 理论纳什均衡线')
+    ax1.axhline(50.0, color='#7f8c8d', linestyle='--', linewidth=1.5, label='50% 平衡线')
     ax1.set_ylabel('胜率 (%)', fontsize=12, fontweight='bold')
     ax1.set_title('图 1: 调优前后对局胜率直接对比 (1000局 PPO 自博弈)', fontsize=13, pad=12, fontweight='bold')
     ax1.set_xticks(x)
@@ -164,7 +164,7 @@ def plot_comprehensive_comparison(baseline_path="training_metrics_baseline.json"
     b_top = list(reversed(sorted(b_data.get('card_play_count', {}).items(), key=lambda x: x[1], reverse=True)[:10]))
     ax3.barh([x[0] for x in b_top], [x[1] for x in b_top], color='#3498db', alpha=0.85, edgecolor='black', linewidth=0.6)
     ax3.set_xlabel('打出频次 (局数累积)', fontsize=11, fontweight='bold')
-    ax3.set_title('图 3: 基准阶段核心卡牌出场频次 Top 10 (失衡态)', fontsize=13, pad=12, fontweight='bold')
+    ax3.set_title('图 3: 基准阶段核心卡牌出场频次 Top 10', fontsize=13, pad=12, fontweight='bold')
     ax3.grid(axis='x', linestyle=':', alpha=0.6)
 
     # 4. 右下：调优阶段核心卡牌 Top 10
@@ -172,13 +172,13 @@ def plot_comprehensive_comparison(baseline_path="training_metrics_baseline.json"
     t_top = list(reversed(sorted(t_data.get('card_play_count', {}).items(), key=lambda x: x[1], reverse=True)[:10]))
     ax4.barh([x[0] for x in t_top], [x[1] for x in t_top], color='#1abc9c', alpha=0.85, edgecolor='black', linewidth=0.6)
     ax4.set_xlabel('打出频次 (局数累积)', fontsize=11, fontweight='bold')
-    ax4.set_title('图 4: 调优阶段核心卡牌出场频次 Top 10 (平衡态)', fontsize=13, pad=12, fontweight='bold')
+    ax4.set_title('图 4: 调优阶段核心卡牌出场频次 Top 10', fontsize=13, pad=12, fontweight='bold')
     ax4.grid(axis='x', linestyle=':', alpha=0.6)
 
-    plt.suptitle('TCG 卡牌自适应平衡系统：PPO 自博弈演化全景学术对比', fontsize=16, fontweight='bold', y=0.98)
+    plt.suptitle('TCG 卡牌平衡系统：调优前后数据对比', fontsize=16, fontweight='bold', y=0.98)
     plt.savefig(output_filename, bbox_inches='tight')
     plt.close()
-    print(f"✅ 全景整合图表已导出至: {output_filename}")
+    print(f"对比图表已导出至: {output_filename}")
 
 if __name__ == "__main__":
     # 1. 导出基准对照组图表
@@ -195,7 +195,7 @@ if __name__ == "__main__":
         is_tuned=True
     )
 
-    # 3. 导出四合一学术全景对比大图
+    # 3. 导出对比图表
     plot_comprehensive_comparison(
         baseline_path="training_metrics_baseline.json",
         tuned_path="training_metrics_tuned.json",

@@ -79,17 +79,17 @@ def pack_snapshot(env, turn_count, acting_player, action_desc, result_log=None):
     }
 
 def evaluate():
-    parser = argparse.ArgumentParser(description="TCG AI 对局全景回放与评估 (支持红/蓝/绿任意阵营对决)")
+    parser = argparse.ArgumentParser(description="TCG 对局回放与评估")
     parser.add_argument("--stage", type=str, default="tuned", choices=["baseline", "tuned"],
-                        help="选择评估模型阶段: tuned(调优后平衡模型) 或 baseline(基准模型)")
+                        help="选择评估模型阶段: tuned(调优后模型) 或 baseline(基准模型)")
     parser.add_argument("--model", type=str, default=None, help="自定义指定模型权重文件路径")
-    parser.add_argument("--cards", type=str, default=None, help="自定义指定卡池配置文件路径 (默认根据 stage 自动选择)")
-    parser.add_argument("--decks", type=str, default="decks_config.json", help="AI 构筑卡组配置文件路径 (默认 decks_config.json)")
+    parser.add_argument("--cards", type=str, default=None, help="自定义指定卡池配置文件路径")
+    parser.add_argument("--decks", type=str, default="decks_config.json", help="卡组配置文件路径 (默认 decks_config.json)")
     parser.add_argument("--p0", "--f0", dest="p0_faction", type=str, default="Red", choices=["Red", "Blue", "Green"],
-                        help="先手 P0 阵营: Red, Blue, Green (默认 Red)")
+                        help="先手 P0 阵营 (默认 Red)")
     parser.add_argument("--p1", "--f1", dest="p1_faction", type=str, default="Blue", choices=["Red", "Blue", "Green"],
-                        help="后手 P1 阵营: Red, Blue, Green (默认 Blue)")
-    parser.add_argument("--html", type=str, default="battle_replay.html", help="导出可交互网页回放文件名")
+                        help="后手 P1 阵营 (默认 Blue)")
+    parser.add_argument("--html", type=str, default="battle_replay.html", help="导出网页回放文件名")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -97,7 +97,7 @@ def evaluate():
     # 查找模型
     model_path = find_model_path(args.model, args.stage)
     if not model_path:
-        print("❌ 未找到可用的权重文件！请先运行 train.py 进行训练。")
+        print("未找到可用的权重文件，请先运行 train.py 进行训练。")
         return
 
     # 动态匹配卡池文件
@@ -113,17 +113,17 @@ def evaluate():
     p1_f = f_map.get(args.p1_faction, Faction.BLUE)
 
     faction_meta = {
-        Faction.RED: ("🔴 红方", "赤红·快攻突破流"),
-        Faction.BLUE: ("🔵 蓝方", "蔚蓝·守卫控制流"),
-        Faction.GREEN: ("🟢 绿方", "翠绿·林野跳费流")
+        Faction.RED: ("红方", "快攻流"),
+        Faction.BLUE: ("蓝方", "控制流"),
+        Faction.GREEN: ("绿方", "跳费流")
     }
-    p0_tag, p0_style = faction_meta.get(p0_f, ("🔴 红方", "赤红"))
-    p1_tag, p1_style = faction_meta.get(p1_f, ("🔵 蓝方", "蔚蓝"))
+    p0_tag, p0_style = faction_meta.get(p0_f, ("红方", "赤红"))
+    p1_tag, p1_style = faction_meta.get(p1_f, ("蓝方", "蔚蓝"))
 
-    # 加载 AI 自主构筑卡组
+    # 加载卡组
     p0_decklist, p1_decklist = None, None
-    p0_deck_name = f"{args.p0_faction}AI卡组"
-    p1_deck_name = f"{args.p1_faction}AI卡组"
+    p0_deck_name = f"{args.p0_faction}卡组"
+    p1_deck_name = f"{args.p1_faction}卡组"
 
     if args.decks and os.path.exists(args.decks):
         import json
@@ -135,9 +135,9 @@ def evaluate():
             if args.p1_faction in decks_cfg:
                 p1_decklist = decks_cfg[args.p1_faction].get("decklist")
                 p1_deck_name = decks_cfg[args.p1_faction].get("deck_name", p1_deck_name)
-        print(f"🃏 已加载 AI 构筑卡组: {p0_tag}《{p0_deck_name}》 vs {p1_tag}《{p1_deck_name}》")
+        print(f"已加载卡组: {p0_tag}《{p0_deck_name}》 vs {p1_tag}《{p1_deck_name}》")
 
-    print(f"📦 正在加载智能体模型权重: {model_path} | 卡池文件: {cards_path}")
+    print(f"加载模型权重: {model_path} | 卡池文件: {cards_path}")
     env = DuelEnv(p0_faction=p0_f, p1_faction=p1_f, cards_path=cards_path,
                   p0_decklist=p0_decklist, p1_decklist=p1_decklist)
     
@@ -151,8 +151,8 @@ def evaluate():
     snapshots = []
     
     print("\n" + "="*80)
-    print(f"🎮 AI 对局全景回放启动 ({p0_tag} vs {p1_tag}) | 模型: {os.path.basename(model_path)}")
-    print(f"⚔️ 对战阵列: {p0_tag}《{p0_deck_name}》 VS {p1_tag}《{p1_deck_name}》")
+    print(f"对局回放启动 ({p0_tag} vs {p1_tag}) | 模型: {os.path.basename(model_path)}")
+    print(f"对战阵列: {p0_tag}《{p0_deck_name}》 VS {p1_tag}《{p1_deck_name}》")
     print("="*80)
 
     while not done:
@@ -220,11 +220,11 @@ def evaluate():
     print(f"最终比分: {p0_tag} {env.players[0].score} : {env.players[1].score} {p1_tag} (总回合数: {env.turn_count} 轮)")
     print("="*80)
 
-    # 导出可交互 HTML 网页回放器
+    # 导出 HTML 回放文件
     html_file = export_html_replay(snapshots, winner, output_path=args.html)
     abs_html = os.path.abspath(html_file)
-    print(f"\n🌐 交互式战报回放网页已生成: file:///{abs_html.replace(os.sep, '/')}")
-    print("💡 提示：双击该文件或在浏览器中打开，即可享受类似正式 TCG 游戏的动态播控回放！")
+    print(f"\n对战回放网页已生成: file:///{abs_html.replace(os.sep, '/')}")
+    print("可在浏览器中打开该文件进行可视化复盘。")
 
 if __name__ == "__main__":
     evaluate()

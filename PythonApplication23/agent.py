@@ -4,7 +4,7 @@ from torch.distributions.categorical import Categorical
 
 class CardNet(nn.Module):
     """
-    TCG 智能体 Actor-Critic 策略与价值网络 (权威统一架构)
+    TCG 智能体 Actor-Critic 策略与价值网络
     输入尺寸: 3 * 13 * 5 = 195
     动作空间: 29 (7张手牌 * 4种打出位置 + 1个结束回合动作)
     """

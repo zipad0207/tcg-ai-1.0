@@ -74,34 +74,34 @@ def get_next_id(existing_cards: List[dict], default_start: int) -> int:
 
 def build_prompt(current_pool: dict, faction: str, count: int, theme: str) -> str:
     faction_desc = {
-        "Red": "红方（赤红军团）：特色为快攻冲锋、突袭（RUSH）、召唤炮灰小怪（SPAWN_X_Y）、牺牲自爆以小换大（SACRIFICE_1_KILL_1）、破甲削弱（DEGRADE）与空场高伤突破。必须有小怪生成机制来配合自爆与血祭牺牲！",
-        "Blue": "蓝方（蔚蓝守卫）：特色为高额阻挡（高DP/坚守FORTIFY）、阵地驻防光环（SUPPORT_ATK）、控制护盾与防线延阻。",
-        "Green": "绿方（翡翠林野）：特色为极致跳费成长（RAMP/DEATH_MANA）、单体超模远古巨兽/巨龙（高费高DP大怪，坚守FORTIFY）。核心打法是前期跳费、后期拍巨型大怪正面碾压，绝不生杂毛小怪！",
-        "Neutral": "中立（雇佣酒馆）：提供过牌抽卡（DRAW）、通用阻挡身材与战术润滑单卡。"
+        "Red": "红方：快攻冲锋、突袭（RUSH）、召唤衍生单位（SPAWN）、破甲削弱（DEGRADE）",
+        "Blue": "蓝方：高额防御（FORTIFY）、光环增益（SUPPORT_ATK）、控制护盾",
+        "Green": "绿方：跳费成长（RAMP/DEATH_MANA）、高费随从（FORTIFY）",
+        "Neutral": "中立：过牌（DRAW）、通用防御与辅助"
     }.get(faction, f"{faction} 阵营")
 
     return f"""
-你是一名资深 TCG（集换式卡牌游戏）首席卡牌架构师与创新数值设计师。
-你的目标是为我们的【双路对撞战术卡牌游戏（DuelEnv）】设计并印刷全新单卡（印卡系统）。
+你是一名 TCG 卡牌设计与数值平衡工程师。
+请为双路集换式卡牌对战环境（DuelEnv）设计新卡。
 
-### 1. 本次印卡需求：
+### 1. 本次设计需求：
 - 目标阵营: 【{faction}】 ({faction_desc})
-- 印刷新卡数量: 【{count}】张
-- 设计主题/风格诉求: 【{theme if theme else '符合阵营特色，富有构筑深度与博弈互动的全新机制卡'}】
+- 数量: 【{count}】张
+- 设计主题: 【{theme if theme else '符合阵营特色，具备一定战术搭配价值的机制卡'}】
 
-### 2. 核心物理沙盒机制与规则边界：
-1. **双路对撞体系**：左右两路独立攻防，随从打入进攻区默认需【蓄势一回合】方可冲锋（除非拥有 `RUSH` 突袭词条）。
-2. **同名卡构筑上限**：单卡上限 3 张，牌库 30 张。单卡设计需具备合理曲线与构筑价值，切忌不可替代的绝对单卡。
-3. **支持的属性字段（严禁使用 atk/hp 等非沙盒字段）**：
+### 2. 核心机制与规则边界：
+1. **双路对撞**：左右两路独立攻防，随从打入进攻区默认需蓄势一回合（除非拥有 `RUSH` 突袭词条）。
+2. **构筑上限**：单卡上限 3 张，牌库 30 张。
+3. **支持的属性字段**：
    - `id`: 卡牌整数标识
-   - `name`: 中文名称（具有鲜明奇幻风味）
+   - `name`: 中文名称
    - `card_type`: "MINION" 或 "SPELL"
    - `cost`: 施法消耗 (0~10)
    - `base_dp`: 随从基础战力/阻挡阈值 (SPELL 必须为 0)
    - `atk_spell_val`: 直伤削弱数值 (无则为 0)
    - `def_spell_val`: 增益护盾数值 (无则为 0)
-   - `tags`: 词条列表 (必须严格从下方已支持词条中挑选组装)
-4. **沙盒已完整支持的词条系统（严禁虚构沙盒无法解析的词条）**：
+   - `tags`: 词条列表 (仅限已支持词条)
+4. **支持的词条**：
    - `RUSH`：突袭，打出当回合立刻就绪冲锋。
    - `FORTIFY_X`：坚守，打入防守区时自身立即增加 X 点 DP。
    - `DEGRADE_X`：削弱，冲锋碰撞前永久扣除目标防守怪 X 点 DP 上限。
@@ -117,11 +117,11 @@ def build_prompt(current_pool: dict, faction: str, count: int, theme: str) -> st
    - `TEMP_MANA_X`：施法当回合获得 X 点临时法力。
    - `DISCARD_X`：负面补偿，使用时从手牌弃掉 X 张牌。
 
-### 3. 当前参考卡池现状 (现有卡牌):
+### 3. 当前参考卡池现状:
 {json.dumps(current_pool, indent=2, ensure_ascii=False)}
 
 ---
-### 输出格式硬性要求：
+### 输出格式：
 必须严格输出纯合法 JSON，结构如下：
 {{
   "new_cards": {{
@@ -141,18 +141,18 @@ def build_prompt(current_pool: dict, faction: str, count: int, theme: str) -> st
   "design_notes": [
     {{
       "card_name": "卡牌名",
-      "flavor_and_strategy": "设计意图、策略定位及博弈价值简述"
+      "flavor_and_strategy": "设计说明"
     }}
   ]
 }}
-严禁夹带任何额外解释、注释或 Markdown 外壳！
+不要包含额外解释或 Markdown 标记。
 """
 
 def print_card_table(cards_dict: Dict[str, List[dict]], design_notes: List[dict]):
-    """在终端渲染清晰美观的印卡战报"""
+    """在终端打印新生成卡牌信息"""
     notes_map = {n.get("card_name"): n.get("flavor_and_strategy", "") for n in design_notes}
     print("\n" + "═" * 95)
-    print("🖨️  【TCG-AI 印卡工坊】全新生成卡牌一览")
+    print("【TCG-AI】新生成卡牌一览")
     print("═" * 95)
     print(f"{'ID':<6}{'阵营':<8}{'名称':<14}{'类型':<8}{'费用':<6}{'DP/数值':<10}{'词条 (Tags)':<26}{'设计意图'}")
     print("─" * 95)
@@ -189,10 +189,10 @@ def run_post_print_benchmark(cards_path: str, all_printed_cards: Dict[str, List[
     model_file = find_model_path()
 
     print("\n" + "═" * 85)
-    print("⚡ 启动【印后即时数值平衡实测 (Post-Printing 1000-Game Benchmark)】")
-    print(f"📦 实测卡池: {cards_path} | 对战规模: {episodes} 局 | 运算加速: {device}")
+    print("启动印后数值实测 (1000 局)")
+    print(f"实测卡池: {cards_path} | 对战规模: {episodes} 局 | 设备: {device}")
     if model_file:
-        print(f"🧠 决策权重: {model_file}")
+        print(f"模型权重: {model_file}")
     print("═" * 85)
 
     new_card_info = {}
@@ -286,14 +286,14 @@ def run_post_print_benchmark(cards_path: str, all_printed_cards: Dict[str, List[
     p1_rate = (blue_wins / max(1, total_played_games)) * 100
 
     print("\n" + "═" * 85)
-    print("📊 【印后数值平衡遥测快报 (Post-Printing Balance Verification)】")
+    print("【印后数值平衡实测结果】")
     print("═" * 85)
     print(f"⏱️ 测试总耗时: {elapsed:.2f} 秒 ({total_played_games/max(0.01, elapsed):.1f} 局/秒)")
-    print(f"🏁 战报概览: 🔴 红方胜 {red_wins} 场 ({p0_rate:.1f}%) | 🔵 蓝方胜 {blue_wins} 场 ({p1_rate:.1f}%)" + (f" | 🟢 绿方胜 {green_wins} 场" if has_green else ""))
+    print(f"对局统计: 红方胜 {red_wins} 场 ({p0_rate:.1f}%) | 蓝方胜 {blue_wins} 场 ({p1_rate:.1f}%)" + (f" | 🟢 绿方胜 {green_wins} 场" if has_green else ""))
     print(f"⌛ 平均对局回合: {avg_turns:.1f} 轮")
     print("─" * 85)
-    print("🔍 新印卡牌实战表现追踪与健康度评估:")
-    print(f"{'ID':<6}{'阵营':<8}{'名称':<14}{'费用':<6}{'出牌频次':<20}{'实战胜率':<12}{'健康度裁决'}")
+    print("新卡实战表现与胜率统计:")
+    print(f"{'ID':<6}{'阵营':<8}{'名称':<14}{'费用':<6}{'出牌频次':<20}{'实战胜率':<12}{'状态评定'}")
     print("─" * 85)
 
     has_imbalance = False
@@ -304,14 +304,14 @@ def run_post_print_benchmark(cards_path: str, all_printed_cards: Dict[str, List[
         win_pct = (wins / played * 100) if played > 0 else 0.0
 
         if played == 0:
-            health = "⚪ 未出场 (费用过高或被冷落)"
+            health = "未出场"
         elif win_pct >= 65.0 and played >= 10:
-            health = "🔴 过于强势 (OP，需削弱)"
+            health = "偏强 (胜率>65%)"
             has_imbalance = True
         elif win_pct <= 35.0 and played >= 10:
-            health = "🟡 偏弱 (需适当强化)"
+            health = "偏弱 (胜率<35%)"
         else:
-            health = "🟢 表现健康 (数值均衡)"
+            health = "正常"
 
         played_str = f"{played} 次 (局均{played/max(1, total_played_games):.2f})"
         win_str = f"{win_pct:.1f}%" if played > 0 else "-"
@@ -319,10 +319,10 @@ def run_post_print_benchmark(cards_path: str, all_printed_cards: Dict[str, List[
 
     print("─" * 85)
     if not has_imbalance:
-        print("⚖️ 【总体平衡性裁决】: 🟢 [环境健康] 新卡引入后表现平稳适度，未引发破坏性数值膨胀！")
+        print("总体评估: 新卡表现平稳，环境处于正常区间。")
     else:
-        print("⚖️ 【总体平衡性裁决】: ⚠️ [失衡预警] 部分新卡实测胜率显著超标 (OP)，建议立即微调！")
-        print("💡 解决方案：可直接运行 python auto_balancer_deepseek.py 进行闭环数值微调。")
+        print("总体评估: 部分新卡实测胜率偏高，建议后续微调。")
+        print("提示: 可运行 python auto_balancer_deepseek.py 进行数值微调。")
 
     print("═" * 85)
 
@@ -337,7 +337,7 @@ def run_post_print_benchmark(cards_path: str, all_printed_cards: Dict[str, List[
     }
     with open("training_metrics_post_print.json", "w", encoding="utf-8") as mf:
         json.dump(metrics_export, mf, indent=2, ensure_ascii=False)
-    print("📈 印后对战遥测数据已保存至: training_metrics_post_print.json\n")
+    print("对战数据已保存至: training_metrics_post_print.json\n")
 
 
 def main():
@@ -362,14 +362,13 @@ def main():
     args = parser.parse_args()
 
     if not DEEPSEEK_API_KEY:
-        print("⚠️ [安全提示] 未检测到 DEEPSEEK_API_KEY 环境变量！")
-        print("请先配置环境变量：")
+        print("未检测到 DEEPSEEK_API_KEY 环境变量，请先配置：")
         print("  Windows PowerShell: $env:DEEPSEEK_API_KEY=\"你的API_KEY\"")
         print("  Linux / macOS:     export DEEPSEEK_API_KEY=\"你的API_KEY\"")
         return
 
     base_path = args.base if os.path.exists(args.base) else "cards_config.json"
-    print(f"📖 读取基准参考卡池: {base_path}")
+    print(f"读取基准卡池: {base_path}")
     current_pool = load_json(base_path)
 
     client = OpenAI(
@@ -386,13 +385,13 @@ def main():
 
     if args.faction == "all":
         factions_to_process = [
-            ("Red", args.count, "红方：强化快攻冲锋（RUSH）、破甲削弱（DEGRADE）与牺牲直伤斩杀"),
-            ("Blue", args.count, "蓝方：强化阵地驻防（FORTIFY）、光环增益（SUPPORT_ATK）与护盾控制"),
-            ("Green", args.count, "绿方：强化跳费成长（RAMP）、远古巨兽巨龙与衍生物召唤（SPAWN）"),
-            ("Neutral", max(2, args.count - 2), "中立：强化战术润滑、通用过牌抽卡（DRAW）与身材博弈")
+            ("Red", args.count, "红方：快攻冲锋（RUSH）、破甲削弱（DEGRADE）与牺牲直伤"),
+            ("Blue", args.count, "蓝方：阵地驻防（FORTIFY）、光环增益（SUPPORT_ATK）与护盾控制"),
+            ("Green", args.count, "绿方：跳费成长（RAMP）、高费随从与召唤（SPAWN）"),
+            ("Neutral", max(2, args.count - 2), "中立：过牌（DRAW）与通用辅助")
         ]
     else:
-        theme = args.theme if args.theme else f"{args.faction} 阵营核心机制扩充"
+        theme = args.theme if args.theme else f"{args.faction} 阵营机制扩充"
         factions_to_process = [(args.faction, args.count, theme)]
 
     expanded_pool = json.loads(json.dumps(current_pool))
@@ -401,8 +400,8 @@ def main():
 
     for f_name, f_count, f_theme in factions_to_process:
         print("\n" + "─" * 70)
-        print(f"🤖 正在调用 [{MODEL_NAME}] 印刷阵营: 【{f_name}】 (目标: {f_count} 张)...")
-        print(f"🎯 设计特色主题: {f_theme}")
+        print(f"正在调用 [{MODEL_NAME}] 生成阵营卡牌: {f_name} ({f_count} 张)...")
+        print(f"设计主题: {f_theme}")
 
         prompt = build_prompt(expanded_pool, f_name, f_count, f_theme)
         response = client.chat.completions.create(
@@ -444,34 +443,33 @@ def main():
                 expanded_pool[f_name].append(c)
                 all_printed_cards[f_name].append(c)
 
-            print(f"✅ 【{f_name}】阵营成功印制 {len(cards_list)} 张新卡！")
+            print(f"{f_name} 阵营成功生成 {len(cards_list)} 张新卡。")
 
         except json.JSONDecodeError as e:
-            print(f"❌ 解析【{f_name}】大模型返回 JSON 异常: {e}")
+            print(f"解析大模型返回 JSON 异常: {e}")
             print("原始返回内容：\n", raw_output)
 
-    # 打印全局可视化印卡总表
+    # 打印全局卡牌表
     print_card_table(all_printed_cards, all_design_notes)
 
-    # 写入独立扩充卡池文件
+    # 写入文件
     output_file = args.output
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(expanded_pool, f, indent=2, ensure_ascii=False)
-    print(f"💾 全阵营扩充后卡池已保存至专属文件: {output_file}")
-    print(f"🔒 原基准卡池 {base_path} 处于只读保护，未受影响。")
+    print(f"扩充后卡池已保存至: {output_file}")
 
     # 统计卡池总数
-    print("\n📊 扩充后卡池总规模统计:")
+    print("\n扩充后卡池总规模:")
     total_cards = sum(len(cards) for cards in expanded_pool.values())
     print(f"   总卡牌数: {total_cards} 张")
     for f, c_list in expanded_pool.items():
-        print(f"   └─ {f}: {len(c_list)} 张 (新增 {len(all_printed_cards.get(f, []))} 张)")
+        print(f"   - {f}: {len(c_list)} 张 (新增 {len(all_printed_cards.get(f, []))} 张)")
 
     # 若指定了合并写入
     if args.merge_into:
         with open(args.merge_into, "w", encoding="utf-8") as f:
             json.dump(expanded_pool, f, indent=2, ensure_ascii=False)
-        print(f"🔗 已同步合并更新至生产卡池: {args.merge_into}")
+        print(f"已同步更新至卡池: {args.merge_into}")
 
     # 印完卡后立即先跑 1000 局对抗压力测试，严密监控平衡性
     if args.test_episodes > 0 and any(len(cards) > 0 for cards in all_printed_cards.values()):

@@ -32,7 +32,7 @@ def get_faction_meta(faction_val, player_id):
 
 def format_terminal_board(turn_count, acting_player, p0, p1, lanes, action_desc, result_log=None):
     """
-    生成高信息密度、对齐工整的双路战场控制台可视化看板 (支持红/蓝/绿自适应阵营)
+    生成双路战场控制台看板 (支持红/蓝/绿自适应阵营)
     """
     lines = []
     w = 78
@@ -102,7 +102,7 @@ def format_terminal_board(turn_count, acting_player, p0, p1, lanes, action_desc,
 
 def export_html_replay(snapshots, winner_info, output_path="battle_replay.html"):
     """
-    导出独立可交互的双路对战 HTML5 回放器（现代暗黑拟态风格）
+    导出双路对战 HTML5 回放网页
     """
     json_data = json.dumps(snapshots, ensure_ascii=False)
     
@@ -111,7 +111,7 @@ def export_html_replay(snapshots, winner_info, output_path="battle_replay.html")
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🃏 TCG-AI 对局全景回放与战术看板</title>
+  <title>TCG-AI 对局回放看板</title>
   <style>
     :root {{
       --bg-dark: #0b0f19;

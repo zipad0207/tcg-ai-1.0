@@ -162,10 +162,10 @@ class PPOTrainer:
         return total_loss_accum / max(1, n_batches)
 
 # ==========================================
-# 5. 学术图表一键生成函数 (新增)
+# 5. 图表生成函数
 # ==========================================
 def auto_generate_plot():
-    print("\n🎨 正在自动生成对局结果图表...")
+    print("\n正在生成对局结果图表...")
     plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS', 'sans-serif']
     plt.rcParams['axes.unicode_minus'] = False
 
@@ -181,19 +181,18 @@ def auto_generate_plot():
     card_names = [item[0] for item in top10]
     play_counts = [item[1] for item in top10]
 
-    # 根据当前阶段自动调整论文图表标题
     if STAGE == "tuned":
-        fig_title = f"LLM 闭环调优后对局胜率分布 (Tuned, PPO {TOTAL_EPISODES}局)"
-        bar_title = "Top 10 核心对局卡牌出场频次分布 (调优后)"
+        fig_title = f"调优后对局胜率分布 (Tuned, PPO {TOTAL_EPISODES}局)"
+        bar_title = "Top 10 对局卡牌出场频次分布 (调优后)"
     else:
         fig_title = f"基准环境对局胜率分布 (Baseline, PPO {TOTAL_EPISODES}局)"
-        bar_title = "Top 10 核心对局卡牌出场频次分布 (基准对照组)"
+        bar_title = "Top 10 对局卡牌出场频次分布 (基准组)"
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6), dpi=300)
 
     # 左子图
     bars = ax1.bar(["红方 (快攻/突破)", "蓝方 (防守/控制)"], [p0_winrate, p1_winrate], color=["#e74c3c", "#3498db"], width=0.45)
-    ax1.axhline(50.0, color="#7f8c8d", linestyle="--", linewidth=1.5, label="50% 理论基准线")
+    ax1.axhline(50.0, color="#7f8c8d", linestyle="--", linewidth=1.5, label="50% 平衡线")
     ax1.set_ylim(0, 100)
     ax1.set_ylabel("胜率 (%)", fontsize=11)
     ax1.set_title(fig_title, fontsize=12, pad=12, fontweight="bold")
@@ -212,14 +211,14 @@ def auto_generate_plot():
     plt.tight_layout()
     plt.savefig(FIGURE_SAVE_PATH, bbox_inches="tight")
     plt.close(fig)
-    print(f"✅ 图表已导出至: {FIGURE_SAVE_PATH}")
+    print(f"图表已导出至: {FIGURE_SAVE_PATH}")
 
 # ==========================================
-# 5. 训练与指标统计主入口
+# 6. 训练与指标统计主入口
 # ==========================================
 def main():
     if args.brawl:
-        print("⚔️ 检测到 --brawl 标志，无缝启动三大阵营自由混战训练模式！")
+        print("检测到 --brawl 标志，启动三大阵营自由混战训练模式。")
         import train_brawl
         train_brawl.TOTAL_EPISODES = args.episodes
         train_brawl.main()
@@ -227,7 +226,7 @@ def main():
 
     print(f"[系统] 当前运行阶段: {STAGE.upper()} | 运算设备: {DEVICE}")
     cards_file = args.cards if args.cards else ("cards_config_baseline.json" if STAGE == "baseline" and os.path.exists("cards_config_baseline.json") else ("cards_config_tuned.json" if STAGE == "tuned" and os.path.exists("cards_config_tuned.json") else "cards_config.json"))
-    print(f"📦 [卡池加载] 阶段: {STAGE.upper()} | 锁定卡池文件: {cards_file}")
+    print(f"[卡池加载] 阶段: {STAGE.upper()} | 卡池文件: {cards_file}")
     env = DuelEnv(p0_faction=Faction.RED, p1_faction=Faction.BLUE, cards_path=cards_file)
     trainer = PPOTrainer(action_dim=env.action_space_size)
 
@@ -245,13 +244,13 @@ def main():
             metrics["avg_steps_per_episode"] = round(float(np.mean(total_steps_history)), 2)
         with open(METRICS_SAVE_PATH, "w", encoding="utf-8") as f:
             json.dump(metrics, f, indent=2, ensure_ascii=False)
-        print(f"📊 [指标持久化] 训练战报已同步写入: {METRICS_SAVE_PATH}")
+        print(f"[指标保存] 训练指标已写入: {METRICS_SAVE_PATH}")
 
     def handle_sigint(sig, frame):
-        print("\n🛑 捕获中断信号，正在保存当前权重与战报数据...")
+        print("\n捕获中断信号，正在保存当前权重与数据...")
         torch.save(trainer.policy.state_dict(), MODEL_SAVE_PATH)
         save_metrics()
-        auto_generate_plot() # 中断时也顺手生成一下图
+        auto_generate_plot()
         sys.exit(0)
 
     signal.signal(signal.SIGINT, handle_sigint)
@@ -320,7 +319,7 @@ def main():
     # 正常训练结束归档并出图
     torch.save(trainer.policy.state_dict(), MODEL_SAVE_PATH)
     save_metrics()
-    print(f"\n🎉 训练全流程结束！模型权重已存至 {MODEL_SAVE_PATH}")
+    print(f"\n训练结束，模型权重已保存至: {MODEL_SAVE_PATH}")
     auto_generate_plot()
 
 if __name__ == "__main__":

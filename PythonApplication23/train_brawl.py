@@ -1,19 +1,6 @@
 """
-TCG-AI Multi-Faction Battle Royale PPO Self-Play Training Pipeline
-多卡组随机混战 PPO 强化学习训练流水线
-
-核心机制：
-1. 【三大阵营自由混战】：
-   - 对局双方（P0 与 P1）每局独立且随机选择阵营：🔴 赤红 (Red) / 🔵 蔚蓝 (Blue) / 🟢 翠绿 (Green)
-   - 覆盖所有对战组合：Red vs Blue、Red vs Green、Blue vs Green 以及各类阵营内战 (Mirror Match)
-2. 【双重牌库模式动态切换】：
-   - 50% 概率选用 PPO 演进出的 30 张顶尖成熟套牌 (decks_config.json)
-   - 50% 概率从生态卡池中动态随机抽取 30 张标准卡组 (同名卡严格上限 3 张)
-3. 【全阵营战绩矩阵与数据闭环】：
-   - 追踪三大阵营总出场率、胜场数、胜率分布
-   - 统计 3x3 跨阵营对战克制矩阵 (Matchup Matrix)
-   - 生成学术级三子图看板 figure_brawl.png
-   - 产出 training_metrics_brawl.json，并更新 card_ppo_model_tuned.pth
+TCG-AI 多阵营自博弈强化学习训练脚本
+支持红、蓝、绿三大阵营混战对局训练与胜率统计。
 """
 
 import os
@@ -204,10 +191,10 @@ class PPOTrainer:
         return total_loss_accum / max(1, n_batches)
 
 # ==========================================
-# 3. 学术可视化图表生成器 (三图合一看板)
+# 3. 可视化图表生成 (三图看板)
 # ==========================================
 def generate_brawl_plots(metrics: dict):
-    print("\n🎨 正在自动生成多卡组自由混战战绩分布看板...")
+    print("\n正在生成多阵营混战战绩分布看板...")
     plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS', 'sans-serif']
     plt.rcParams['axes.unicode_minus'] = False
 
@@ -224,7 +211,7 @@ def generate_brawl_plots(metrics: dict):
     play_counts = [metrics["faction_stats"][f]["matches"] for f in factions]
 
     bars = ax1.bar(names, win_rates, color=colors, width=0.5, edgecolor="#2f3640", linewidth=1.2)
-    ax1.axhline(50.0, color="#7f8c8d", linestyle="--", linewidth=1.5, label="50% 理论平衡基准")
+    ax1.axhline(50.0, color="#7f8c8d", linestyle="--", linewidth=1.5, label="50% 平衡线")
     ax1.set_ylim(0, 100)
     ax1.set_ylabel("阵营综合胜率 (%)", fontsize=11, fontweight="bold")
     ax1.set_title(f"三大阵营混战综合胜率 (共 {metrics['total_episodes']} 局)", fontsize=12, pad=12, fontweight="bold")
@@ -276,7 +263,7 @@ def generate_brawl_plots(metrics: dict):
 
     ax3.barh(c_names, c_plays, color="#f39c12", height=0.6, edgecolor="#d35400", linewidth=1.1)
     ax3.set_xlabel("出战频次 (Play Count)", fontsize=10.5, fontweight="bold")
-    ax3.set_title("多阵营混战核心出牌热度榜 Top 10", fontsize=12, pad=12, fontweight="bold")
+    ax3.set_title("多阵营混战核心出牌频次 Top 10", fontsize=12, pad=12, fontweight="bold")
     ax3.grid(axis="x", linestyle="--", alpha=0.5)
 
     for i, v in enumerate(c_plays):
@@ -285,14 +272,14 @@ def generate_brawl_plots(metrics: dict):
     plt.tight_layout()
     plt.savefig(FIGURE_SAVE_PATH, bbox_inches="tight")
     plt.close(fig)
-    print(f"✅ 学术级混战看板已导出至: {FIGURE_SAVE_PATH}")
+    print(f"混战看板已导出至: {FIGURE_SAVE_PATH}")
 
 # ==========================================
 # 4. 主训练流程
 # ==========================================
 def main():
     print("=" * 70)
-    print(f"⚔️  TCG-AI 多卡组自由混战 PPO 强化学习流水线启动 (总对局: {TOTAL_EPISODES} 局)")
+    print(f"TCG-AI 多阵营混战强化学习训练启动 (总对局: {TOTAL_EPISODES} 局)")
     print("=" * 70)
     print(f"[*] 运算设备: {DEVICE}")
 
@@ -343,7 +330,7 @@ def main():
             json.dump(metrics, f, indent=2, ensure_ascii=False)
 
     def handle_sigint(sig, frame):
-        print("\n🛑 捕获中断信号，正在保存混战模型与战绩...")
+        print("\n捕获中断信号，正在保存混战模型与战绩...")
         torch.save(trainer.policy.state_dict(), MODEL_SAVE_PATH)
         torch.save(trainer.policy.state_dict(), TUNED_MODEL_PATH)
         save_metrics()
@@ -456,7 +443,7 @@ def main():
             wr_b = (metrics["faction_stats"]["Blue"]["wins"] / max(1, metrics["faction_stats"]["Blue"]["matches"])) * 100
             wr_g = (metrics["faction_stats"]["Green"]["wins"] / max(1, metrics["faction_stats"]["Green"]["matches"])) * 100
 
-            print(f"Episode {ep:04d}/{TOTAL_EPISODES} | 对弈: [{name0} vs {name1}] | 胜者: {winner_faction} | 胜率走势: [🔴Red {wr_r:.1f}% | 🔵Blue {wr_b:.1f}% | 🟢Green {wr_g:.1f}%]")
+            print(f"Episode {ep:04d}/{TOTAL_EPISODES} | 对局: [{name0} vs {name1}] | 胜者: {winner_faction} | 胜率: [Red {wr_r:.1f}% | Blue {wr_b:.1f}% | Green {wr_g:.1f}%]")
 
         # 定期保存权重
         if ep % 200 == 0:
@@ -468,7 +455,7 @@ def main():
     torch.save(trainer.policy.state_dict(), MODEL_SAVE_PATH)
     torch.save(trainer.policy.state_dict(), TUNED_MODEL_PATH)
     save_metrics()
-    print(f"\n🎉 混战训练成功完成！模型已存至 {MODEL_SAVE_PATH} 并同步热更至 {TUNED_MODEL_PATH}")
+    print(f"\n混战训练完成，模型已保存至 {MODEL_SAVE_PATH} 与 {TUNED_MODEL_PATH}")
     generate_brawl_plots(metrics)
 
 if __name__ == "__main__":

@@ -1,23 +1,6 @@
 """
-TCG-AI Auto Meta-Balancer & 6000+ Episode Battle Royale Simulator
-三大阵营（红/蓝/绿）30张成熟卡组生态闭环调优与 6000+ 局混战大检验
-
-目标：
-1. 诊断失衡根源：
-   - 🔴 赤红过强 (70.8%)：破阵狂徒等低费突袭过度滚雪球
-   - 🟢 翠绿过弱 (35.9%)：前期全在跳费无场面，卡组均费 4.2 费严重卡手
-   - 🔵 蔚蓝中庸 (42.8%)：被动防御亏卡
-2. 手术级平衡调控：
-   - 优化三套 30 张卡组：
-     * 翠绿卡组加入 1 费假人、2 费过牌突袭、剧毒花降低均费至 ~2.7 费，增强前期苟活
-     * 蔚蓝卡组剔除纯防守亏卡牌，满编寒晶护壁与前中期节奏
-     * 赤红卡组微调单卡曲线，避免极端起手即秒杀
-   - 微调卡池关键数值：
-     * 破阵狂徒 (109): DP 3 -> 2 (保留突袭与削弱特效，避免无脑强拆)
-     * 树人 (301): DP 2 -> 3 (3费3DP+护甲1，为绿方前期提供坚固护墙)
-     * 剧毒花 (302): DP 1 -> 2 (2费2DP+削弱2，有效遏制快攻)
-3. 运行 6000+ 局高强度自由混战对决，验证三大阵营胜率全部收敛到 48% ~ 52% 平衡区间！
-4. 自动生成学术图表 figure_brawl.png、更新 README.md 与天梯评级表。
+TCG-AI 多阵营平衡调优与混战测试脚本
+用于执行红、蓝、绿三大阵营 30 张卡组的微调与 6000 局混战验证。
 """
 
 import os
@@ -46,7 +29,7 @@ TOTAL_EPISODES = 6000  # 6000+ 局大规模测试
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def step1_tune_cards_and_decks():
-    print("[1/4] 🔧 正在执行三大阵营卡牌数值微调与 30 张卡组自适应重构...")
+    print("[1/4] 正在执行三大阵营卡牌数值与卡组微调...")
     
     # 1. 微调卡牌数值
     with open(CARDS_FILE, "r", encoding="utf-8") as f:
@@ -98,7 +81,7 @@ def step1_tune_cards_and_decks():
     with open(DECKS_FILE, "r", encoding="utf-8") as f:
         decks_data = json.load(f)
 
-    # 🟢 翠绿卡组大优化：减少高费卡手卡，补充 1 费与 2 费抗快攻拼图
+    # 翠绿卡组优化：补充低费随从
     # 原先 4.2 费 -> 降至约 2.7 费
     # 候选: 902假人(1费), 302剧毒花(2费), 300萌芽(2费), 900商人(2费), 905斥候(2费), 301树人(3费), 307祭司(3费), 904盾卫(3费), 304狼(4费), 309幼龙(5费), 305巨树(7费), 310巨龙(9费)
     green_allocation = {
@@ -122,7 +105,7 @@ def step1_tune_cards_and_decks():
         green_decklist.extend([cid] * cnt)
     assert len(green_decklist) == 30, f"Green deck count is {len(green_decklist)}"
 
-    # 🔵 蔚蓝卡组优化：剔除无用纯防守，强化 1 费盾兵与 2 费寒晶护壁
+    # 蔚蓝卡组优化：强化前期防御
     blue_allocation = {
         201: 3,  # 盾兵 (1费 护甲) * 3
         902: 3,  # 训练假人 (1费) * 3
@@ -142,7 +125,7 @@ def step1_tune_cards_and_decks():
         blue_decklist.extend([cid] * cnt)
     assert len(blue_decklist) == 30, f"Blue deck count is {len(blue_decklist)}"
 
-    # 🔴 赤红卡组优化：稍微增加稳定性，平衡突袭爆发
+    # 赤红卡组优化：调整费用曲线
     red_allocation = {
         100: 3,  # 赤红突击手 (1费 亡语抽1) * 3
         103: 2,  # 射线 (1费 攻2法术) * 2
@@ -179,7 +162,7 @@ def step1_tune_cards_and_decks():
     return {"Red": red_decklist, "Blue": blue_decklist, "Green": green_decklist}
 
 def step2_run_6000_brawl(prebuilt_decks: dict):
-    print(f"\n[2/4] ⚔️ 正在启动 6000+ 局全阵营纯 30 张成熟套牌自由混战训练 (设备: {DEVICE})...")
+    print(f"\n[2/4] 启动 6000 局混战训练 (设备: {DEVICE})...")
 
     env = DuelEnv(p0_faction=Faction.RED, p1_faction=Faction.BLUE, cards_path=CARDS_FILE)
     
@@ -300,7 +283,7 @@ def step2_run_6000_brawl(prebuilt_decks: dict):
             wr_r = (metrics["faction_stats"]["Red"]["wins"] / max(1, metrics["faction_stats"]["Red"]["matches"])) * 100
             wr_b = (metrics["faction_stats"]["Blue"]["wins"] / max(1, metrics["faction_stats"]["Blue"]["matches"])) * 100
             wr_g = (metrics["faction_stats"]["Green"]["wins"] / max(1, metrics["faction_stats"]["Green"]["matches"])) * 100
-            print(f"  [对决进度 {ep:04d}/{TOTAL_EPISODES}] | 胜率走势: 🔴赤红 {wr_r:.1f}% | 🔵蔚蓝 {wr_b:.1f}% | 🟢翠绿 {wr_g:.1f}%")
+            print(f"  [对决进度 {ep:04d}/{TOTAL_EPISODES}] | 胜率: 赤红 {wr_r:.1f}% | 蔚蓝 {wr_b:.1f}% | 翠绿 {wr_g:.1f}%")
 
     # 战绩与权重保存
     for f_k in ["Red", "Blue", "Green"]:
@@ -317,7 +300,7 @@ def step2_run_6000_brawl(prebuilt_decks: dict):
     return metrics
 
 def step3_generate_academic_plot(metrics: dict):
-    print("\n[3/4] 🎨 正在生成三大阵营纳什均衡学术看板 (figure_brawl.png)...")
+    print("\n[3/4] 正在生成三大阵营看板 (figure_brawl.png)...")
     plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS', 'sans-serif']
     plt.rcParams['axes.unicode_minus'] = False
 
@@ -387,7 +370,7 @@ def step3_generate_academic_plot(metrics: dict):
 
     ax3.barh(c_names, c_plays, color="#f39c12", height=0.6, edgecolor="#d35400", linewidth=1.1)
     ax3.set_xlabel("出战频次 (Play Count)", fontsize=10.5, fontweight="bold")
-    ax3.set_title("6000+ 局混战全阵营出牌热度榜 Top 10", fontsize=12, pad=12, fontweight="bold")
+    ax3.set_title("6000 局混战全阵营出牌频次 Top 10", fontsize=12, pad=12, fontweight="bold")
     ax3.grid(axis="x", linestyle="--", alpha=0.5)
 
     for i, v in enumerate(c_plays):
@@ -396,10 +379,10 @@ def step3_generate_academic_plot(metrics: dict):
     plt.tight_layout()
     plt.savefig(FIGURE_SAVE_PATH, bbox_inches="tight")
     plt.close(fig)
-    print(f"  [OK] 学术级看板已成功导出至: {FIGURE_SAVE_PATH}")
+    print(f"  [OK] 混战看板已导出至: {FIGURE_SAVE_PATH}")
 
 def step4_update_readme(metrics: dict):
-    print("\n[4/4] 📝 正在将 6000+ 局三大阵营生态平衡成果同步追加至 README.md...")
+    print("\n[4/4] 正在检查 README.md 混战数据同步...")
     readme_path = "e:\\PythonApplication23\\README.md"
     if not os.path.exists(readme_path):
         readme_path = "README.md"
@@ -414,44 +397,7 @@ def step4_update_readme(metrics: dict):
     b_m = metrics["faction_stats"]["Blue"]["matches"]
     g_m = metrics["faction_stats"]["Green"]["matches"]
 
-    brawl_section = f"""
-
----
-
-## ⚔️ 里程碑 7：三大阵营 30 张成熟套牌 6000+ 局自由混战与纳什均衡 (Battle Royale)
-
-> **科研亮点**：在卡池扩充至 42 张后，系统彻底跳出“红打蓝”单一局限，构建了**三大阵营（赤红·快攻突破 / 蔚蓝·护甲防反 / 翠绿·跳费成长）纯 30 张正规卡组的大规模自由混战流水线**。
-
-### 1. 闭环调优前后胜率收敛对比 (6,000 局混战验证)
-
-* **调优前失衡态 (2000局)**：
-  * 🔴 赤红快攻凭 2.2 费极速压制横行霸道，胜率高达 **70.8%**；
-  * 🟢 翠绿跳费由于均费高达 4.2 费且前期缺乏护脸，胜率暴跌至 **35.9%**（赤红对阵翠绿胜率高达 85.9%）；
-  * 🔵 蔚蓝胜率 **42.8%**。
-* **自适应闭环调控**：
-  * **卡组自适应重构**：为翠绿卡组注入 1 费假人、2 费剧毒花与突袭过牌，均费大幅压制到 2.7 费；蔚蓝剔除被动亏卡牌；赤红削减单核突袭。
-  * **关键点穴微调**：微调「破阵狂徒」DP（3 $\\to$ 2）平抑极速滚雪球；补强「树人」DP（2 $\\to$ 3）与「剧毒花」DP（1 $\\to$ 2）筑牢前期护脸防线。
-* **调优后 6,000 局终极均衡态**：
-  * 🔴 **赤红 (Red)**：出战 {r_m} 局，胜率 **{r_wr:.1f}%**
-  * 🔵 **蔚蓝 (Blue)**：出战 {b_m} 局，胜率 **{b_wr:.1f}%**
-  * 🟢 **翠绿 (Green)**：出战 {g_m} 局，胜率 **{g_wr:.1f}%**
-  * 🏆 **结论**：三大阵营胜率全面收敛至 **50% $\\pm$ 3% 黄金平衡区间**，形成良性的**“快攻克跳费、跳费克控制、控制克快攻”剪刀石头布动态平衡**！
-
-### 2. 三大阵营自由混战全景学术看板
-
-<p align="center">
-  <img src="./PythonApplication23/figure_brawl.png" alt="三大阵营 6000+ 局混战学术看板" width="95%">
-</p>
-
-"""
-    # 避免重复插入
-    if "三大阵营 30 张成熟套牌 6000+ 局自由混战" not in content:
-        content += brawl_section
-        with open(readme_path, "w", encoding="utf-8") as f:
-            f.write(content)
-        print("  [OK] README.md 里程碑 7 成果已成功更新！")
-    else:
-        print("  [INFO] README.md 已存在相关章节，跳过重复写入。")
+    print(f"  当前混战胜率: 红 {r_wr:.1f}% ({r_m}局) | 蓝 {b_wr:.1f}% ({b_m}局) | 绿 {g_wr:.1f}% ({g_m}局)")
 
 def main():
     # 步骤 1: 调优
@@ -467,9 +413,9 @@ def main():
     step4_update_readme(metrics)
 
     # 步骤 5: 同步刷新天梯评级表
-    print("\n[5/5] 🔄 正在自动同步刷新分卡组天梯战力榜 (card_tier_table.md & HTML)...")
+    print("\n[5/5] 正在同步更新天梯评级表 (card_tier_table.md & HTML)...")
     os.system(f'"{sys.executable}" generate_hearthstone_tier_table.py')
-    print("\n🎉 全套 6000+ 局生态闭环调优、验证与文档生成全部圆满达成！")
+    print("\n混战训练与验证完成。")
 
 if __name__ == "__main__":
     main()

@@ -47,19 +47,19 @@ def get_faction_pool(card_database: dict, faction: str) -> List[dict]:
     return f_cards + n_cards
 
 def heuristic_deck_build(faction: str, pool: List[dict]) -> dict:
-    """当 LLM 不可用或超额时，由高级启发式策略算法兜底构建战术卡组"""
+    """默认基于预设规则构建推荐卡组"""
     pool_dict = {c["id"]: c for c in pool}
     counts: Dict[int, int] = {c["id"]: 0 for c in pool}
 
     if faction == "Red":
-        # 红方快攻/爆燃流偏好：低费随从、衍生小怪、自爆、突袭
+        # 红方快攻偏好：低费随从、衍生小怪、自爆、突袭
         name = "赤红·裂甲爆燃突袭流"
         archetype = "Swarm Aggro & Sacrifice"
-        concept = "前期依靠突击手、号手快速铺场并生成衍生兵，配合射线抢占先手；中期利用自爆与血祭以小换大摧毁防线，后手利用突袭迅速抢分斩杀。"
+        concept = "前期依靠突击手、号手铺场，配合射线抢占先手；中期利用自爆与以小换大摧毁防线，利用突袭抢分。"
         combos = [
-            "集结号手 (2费生1/1) + 自爆 (2费)：以小兵牺牲瞬间清除敌方重装大怪",
-            "裂甲掷斧手 (2费突袭破甲) + 射线 (1费直伤)：快速击穿敌方防线造成突破伤害",
-            "赤红突击手 (1费亡语抽卡) + 酒馆密账 (1费抽2弃1)：维持快攻手牌续航"
+            "集结号手 (2费生1/1) + 自爆 (2费)：牺牲小兵清除敌方大怪",
+            "裂甲掷斧手 (2费突袭破甲) + 射线 (1费直伤)：快速击穿防线",
+            "赤红突击手 (1费亡语抽卡) + 酒馆密账 (1费抽2弃1)：维持手牌续航"
         ]
         priority = [
             (100, 3), # 赤红突击手
@@ -77,14 +77,14 @@ def heuristic_deck_build(faction: str, pool: List[dict]) -> dict:
             (105, 1), # 掠夺者
         ]
     elif faction == "Blue":
-        # 蓝方壁垒控制流偏好：高坚守、支援光环、法术延阻、厚实大怪
+        # 蓝方控制流偏好：高坚守、支援光环、法术延阻、高防随从
         name = "蔚蓝·晶壁坚垒反制流"
         archetype = "Fortress Control & Support"
-        concept = "依托坚守属性将防守区打造为坚不可摧的高DP壁垒；配合支援光环为进攻提供协同战力，中后期出动石像鬼与蔚蓝要塞进行全面战力碾压。"
+        concept = "依托坚守属性将防守区打造为高战力壁垒，配合支援光环提供战力，中后期出动石像鬼与蔚蓝要塞推进。"
         combos = [
-            "盾兵/霜盾见习官 + 壁垒工匠：叠加强力坚守与支援光环，单路DP迅速突破8点",
-            "防御！+ 寒晶护壁：兼具强力防御提升与抽牌润滑，拖延敌方进攻节奏",
-            "蔚蓝要塞 (6费坚守3+支援1) + 石像鬼 (8DP)：终结对局的终极攻防一体阵列"
+            "盾兵/霜盾见习官 + 壁垒工匠：叠加强力坚守与支援光环",
+            "防御！+ 寒晶护壁：兼具防御提升与抽牌",
+            "蔚蓝要塞 (6费坚守3+支援1) + 石像鬼 (8DP)：中后期高防与站场配合"
         ]
         priority = [
             (201, 3), # 盾兵
@@ -103,11 +103,11 @@ def heuristic_deck_build(faction: str, pool: List[dict]) -> dict:
     else: # Green
         name = "翡翠·古树巨龙跳费流"
         archetype = "Pure Ramp & Giant Colossus"
-        concept = "专注前期跳费提升法力上限，中后期连续召唤远古巨树、翡翠巨熊与灭世巨龙，利用庞大DP与突袭直接压垮对手。"
+        concept = "专注前期跳费提升法力上限，中后期召唤远古巨树、翡翠巨熊与巨龙，利用高战力与突袭推进。"
         combos = [
-            "翠绿萌芽 + 芽苗祭司：连续跳费，4回合即可进入7-8费大怪爆发期",
-            "狂暴生长 + 翡翠幼龙：冲锋试探，死后返还法力，衔接后期巨龙",
-            "世界树恩泽 + 灭世翡翠巨龙 (11DP突袭)：终极清屏突破"
+            "翠绿萌芽 + 芽苗祭司：连续跳费进入大怪阶段",
+            "狂暴生长 + 翡翠幼龙：冲锋试探，阵亡返还法力",
+            "世界树恩泽 + 灭世翡翠巨龙 (11DP突袭)：高费突袭突破"
         ]
         priority = [
             (300, 3), # 翠绿萌芽
@@ -219,10 +219,10 @@ def build_prompt_for_deck(faction: str, pool: List[dict]) -> str:
 
 def call_deepseek_deckbuild(faction: str, pool: List[dict]) -> dict:
     if not DEEPSEEK_API_KEY:
-        print(f"⚠️ [提示] 未检测到 DEEPSEEK_API_KEY，将启用内置职业级启发式构筑算法构建 {faction} 卡组...")
+        print(f"未检测到 DEEPSEEK_API_KEY，使用默认预设规则构建 {faction} 卡组...")
         return heuristic_deck_build(faction, pool)
 
-    print(f"🤖 正在连接 DeepSeek AI 大模型，为【{faction}】量身构筑 30 张竞技卡组...")
+    print(f"调用 DeepSeek 生成 {faction} 阵营卡组...")
     client = OpenAI(
         api_key=DEEPSEEK_API_KEY,
         base_url="https://api.deepseek.com"
@@ -233,7 +233,7 @@ def call_deepseek_deckbuild(faction: str, pool: List[dict]) -> dict:
         response = client.chat.completions.create(
             model=MODEL_NAME,
             messages=[
-                {"role": "system", "content": "你是一名严谨的 TCG 首席构筑大师与数学分析专家，精通法力曲线平衡与单卡张数分配，严格遵守输出 JSON 约束与 30 张牌库上限。"},
+                {"role": "system", "content": "你是一名 TCG 构筑分析工程师，负责卡组配置与法力曲线优化，请严格输出合法 JSON。"},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
@@ -257,7 +257,7 @@ def call_deepseek_deckbuild(faction: str, pool: List[dict]) -> dict:
         return parsed
 
     except Exception as e:
-        print(f"⚠️ DeepSeek 接口交互或解析异常: {e}，自动切换至启发式大师构筑引擎...")
+        print(f"接口调用或解析异常: {e}，使用默认规则生成...")
         return heuristic_deck_build(faction, pool)
 
 def generate_deck_details(deck_data: dict, pool: List[dict]) -> dict:
@@ -316,13 +316,13 @@ def generate_deck_details(deck_data: dict, pool: List[dict]) -> dict:
 
 def print_deck_profile(faction: str, deck_info: dict):
     print("\n" + "═" * 80)
-    print(f"🃏 【{faction}】AI 竞技卡组发布: 《{deck_info['deck_name']}》")
-    print(f"📌 流派定位: {deck_info['archetype']} | 平均费用: {deck_info['avg_cost']} 费 | 构成: 随从 {deck_info['minion_count']} 张 / 法术 {deck_info['spell_count']} 张")
+    print(f"【{faction}】卡组配置: 《{deck_info['deck_name']}》")
+    print(f"类型: {deck_info['archetype']} | 均费: {deck_info['avg_cost']} 费 | 随从 {deck_info['minion_count']} 张 / 法术 {deck_info['spell_count']} 张")
     print("─" * 80)
-    print("💡 构筑战术设计理念:")
+    print("构筑说明:")
     print(f"   {deck_info['tactical_concept']}")
     if deck_info.get("key_combos"):
-        print("🔗 核心战术配合 (Key Combos):")
+        print("主要配合:")
         for idx, cb in enumerate(deck_info["key_combos"], 1):
             print(f"   {idx}. {cb}")
     print("─" * 80)
@@ -334,7 +334,7 @@ def print_deck_profile(faction: str, deck_info: dict):
         print(f"{c['id']:<6}{c['cost']:<6}{c['name']:<12}{c['card_type']:<8}{dp_str:<10}{c['count']:<6}{tags_str}")
     
     print("─" * 80)
-    print("📊 法力曲线分布 (Mana Curve):")
+    print("法力曲线分布:")
     for cost in range(1, 8):
         cnt = deck_info["mana_curve"].get(cost, 0)
         bar = "█" * (cnt * 2)
@@ -360,7 +360,7 @@ def main():
 
     cards_db = load_json(args.cards)
     if not cards_db:
-        print(f"❌ 无法读取卡池数据: {args.cards}")
+        print(f"无法读取卡池数据: {args.cards}")
         return
 
     factions_to_build = [f.strip() for f in args.factions.split(",") if f.strip()]
@@ -371,13 +371,13 @@ def main():
         decks_result = load_json(args.output)
 
     print("\n" + "⚔️ " * 20)
-    print("🏛️  TCG AI 大模型卡组构筑系统启动 (Deckbuilder Engine)")
+    print("TCG 卡组构筑工具启动")
     print("⚔️ " * 20)
 
     for faction in factions_to_build:
         pool = get_faction_pool(cards_db, faction)
         if not pool:
-            print(f"⚠️ 未找到阵营 {faction} 的可用卡池！")
+            print(f"未找到阵营 {faction} 的可用卡池。")
             continue
 
         if args.heuristic:
@@ -394,7 +394,7 @@ def main():
         json.dump(decks_result, f, indent=2, ensure_ascii=False)
 
     abs_out = os.path.abspath(args.output)
-    print(f"💾 AI 构筑竞技卡组已成功保存至: {abs_out}")
+    print(f"卡组已保存至: {abs_out}")
 
 if __name__ == "__main__":
     main()

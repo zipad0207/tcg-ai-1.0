@@ -56,10 +56,10 @@ def run_simulation(episodes: int = 500, decks_path: str = "decks_config.json", c
                 p1_name = decks_cfg[p1_faction].get("deck_name", p1_name)
 
     print("=" * 80)
-    print("🔬 AI 构筑卡组竞技场对抗评测 (Monte Carlo Simulation)")
+    print("卡组对抗测试")
     print(f"{p0_tag} 卡组: 《{p0_name}》 (30张)")
     print(f"{p1_tag} 卡组: 《{p1_name}》 (30张)")
-    print(f"📊 评测总轮数: {episodes} 场 | 运算设备: {device}")
+    print(f"评测总轮数: {episodes} 场 | 运算设备: {device}")
     print("=" * 80)
 
     env = DuelEnv(p0_faction=p0_f, p1_faction=p1_f, cards_path=cards_path,
@@ -69,9 +69,9 @@ def run_simulation(episodes: int = 500, decks_path: str = "decks_config.json", c
     if os.path.exists(model_path):
         state_dict = torch.load(model_path, map_location=device, weights_only=True)
         model.load_state_dict(state_dict)
-        print(f"✅ 已装载智能决策模型权重: {model_path}")
+        print(f"已加载模型权重: {model_path}")
     else:
-        print(f"⚠️ 未找到指定权重 {model_path}，将采用随机/策略推断")
+        print(f"未找到指定权重 {model_path}，采用随机动作策略")
     model.eval()
 
     p0_wins = 0
@@ -132,7 +132,7 @@ def run_simulation(episodes: int = 500, decks_path: str = "decks_config.json", c
         if ep % (max(1, episodes // 5)) == 0 or ep == episodes:
             p0_rate = (p0_wins / ep) * 100
             p1_rate = (p1_wins / ep) * 100
-            print(f"⏳ 进度: {ep:4d}/{episodes} 局 | {p0_tag} 胜率: {p0_rate:5.1f}% | {p1_tag} 胜率: {p1_rate:5.1f}% | 均轮: {np.mean(turns_history):.1f}")
+            print(f"进度: {ep:4d}/{episodes} 局 | {p0_tag} 胜率: {p0_rate:5.1f}% | {p1_tag} 胜率: {p1_rate:5.1f}% | 均轮: {np.mean(turns_history):.1f}")
 
     elapsed = time.time() - start_time
     p0_rate = (p0_wins / episodes) * 100
@@ -140,17 +140,17 @@ def run_simulation(episodes: int = 500, decks_path: str = "decks_config.json", c
     draw_rate = (draws / episodes) * 100
 
     print("\n" + "═" * 80)
-    print(f"🏆 【{p0_tag} vs {p1_tag} AI 卡组对决测试报告】")
+    print(f"【{p0_tag} vs {p1_tag} 卡组测试报告】")
     print("═" * 80)
-    print(f"⏱️ 测试总耗时: {elapsed:.2f} 秒 ({episodes / elapsed:.1f} 场/秒)")
+    print(f"测试耗时: {elapsed:.2f} 秒 ({episodes / elapsed:.1f} 场/秒)")
     print(f"{p0_tag}《{p0_name}》: 胜 {p0_wins} 场 ({p0_rate:.2f}%) | 局均分: {np.mean(p0_scores):.2f}")
     print(f"{p1_tag}《{p1_name}》: 胜 {p1_wins} 场 ({p1_rate:.2f}%) | 局均分: {np.mean(p1_scores):.2f}")
     if draws > 0:
-        print(f"⚖️ 平局/超时: {draws} 场 ({draw_rate:.2f}%)")
-    print(f"⌛ 平均对局轮数: {np.mean(turns_history):.1f} 回合 (中位数: {np.median(turns_history):.0f})")
-    print(f"📈 轮数分布: 最短 {min(turns_history)} 回合 / 最长 {max(turns_history)} 回合")
+        print(f"平局/超时: {draws} 场 ({draw_rate:.2f}%)")
+    print(f"平均对局轮数: {np.mean(turns_history):.1f} 回合 (中位数: {np.median(turns_history):.0f})")
+    print(f"轮数分布: 最短 {min(turns_history)} 回合 / 最长 {max(turns_history)} 回合")
     print("─" * 80)
-    print("🌟 对战中使用频次最高的 TOP 8 核心单卡:")
+    print("出牌频次 Top 8 单卡:")
     for rank, (cname, cnt) in enumerate(card_usage.most_common(8), 1):
         print(f"   {rank}. [{cname}]: 出牌 {cnt} 次 (局均 {cnt/episodes:.2f} 次)")
     print("═" * 80 + "\n")

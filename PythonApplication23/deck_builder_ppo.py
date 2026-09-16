@@ -45,8 +45,8 @@ def get_faction_candidates(pool_data: dict, faction: str) -> List[dict]:
 def evaluate_card_neural_utility(model: CardNet, device: torch.device, candidate: dict, 
                                  faction: Faction, cards_path: str, samples: int = 15) -> dict:
     """
-    PPO 神经网络单卡效用探针 (Neural Card Probe):
-    在多种法力与场面环境下将候选卡置入手牌，测量 PPO Actor 的出牌偏好概率与 Critic 的状态价值增益 (ΔV)
+    单卡效用评估:
+    在多种模拟环境下测量 Actor 出牌偏好概率与 Critic 状态价值增益 (ΔV)
     """
     card_obj = Card(
         id=candidate["id"],
@@ -185,7 +185,7 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
     introspections = []
     prev_winrate = 50.0
 
-    print(f"\n🧬 启动 PPO 强化学习自博弈进化选卡算法 (共 {generations} 轮进化，每轮 {games_per_gen} 局实测)...")
+    print(f"\n启动 PPO 自博弈卡组搜索 (共 {generations} 轮，每轮 {games_per_gen} 局)...")
 
     for gen in range(1, generations + 1):
         # 组装当前测试卡组
@@ -291,15 +291,11 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
             worst_win_pct = (worst_win / worst_played * 100) if worst_played > 0 else 0.0
 
             thought_demote = (
-                f"🤔【自我反思 · 我是不是想错了？】: "
-                f"我原先在静态探针中对 [{c_name_worst}] 估值偏高，但在本轮 50 局实测中它出战 {worst_played} 次，实战胜率仅 {worst_win_pct:.1f}%。"
-                f"它在实战中经常无法有效破局或在手牌中形成卡滞。我必须主动纠正认知偏差：削减 -1 张（调整为 {current_counts[worst_candidate]} 张）！"
+                f"[{c_name_worst}] 本轮实测出战 {worst_played} 次，出场胜率仅 {worst_win_pct:.1f}%，表现不佳，调减 1 张（调整为 {current_counts[worst_candidate]} 张）。"
             )
 
             thought_promote = (
-                f"💡【心智进化 · 认知突破修正】: "
-                f"实战交锋证明我之前低估了 [{c_name_best}]（实测出战 {best_played} 次，出场胜率高达 {best_win_pct:.1f}%）！"
-                f"它在双路攻防对撞中能高频打出关键节奏差。实战经验推翻了原先的保守估计，果断追加 +1 张（强化至 {current_counts[best_candidate]} 张）！"
+                f"[{c_name_best}] 本轮实测出战 {best_played} 次，出场胜率达 {best_win_pct:.1f}%，表现良好，追加 1 张（调整为 {current_counts[best_candidate]} 张）。"
             )
 
             gen_reflection["promoted"] = {
@@ -383,11 +379,11 @@ def build_ppo_deck_package(faction: str, candidates: List[dict], neural_stats: L
 
 def print_ppo_deck_report(faction: str, deck_pkg: dict, neural_stats: List[dict]):
     print("\n" + "═" * 85)
-    print(f"🧠 【{faction}】PPO 强化学习智能体自主选卡报告: 《{deck_pkg['deck_name']}》")
-    print(f"📌 构筑属性: 智能体自研策略 | 牌库规模: {deck_pkg['total_cards']} 张 | 平均费用: {deck_pkg['avg_cost']} 费")
-    print(f"📐 体系构成: 随从 {deck_pkg['minion_count']} 张 / 法术 {deck_pkg['spell_count']} 张")
+    print(f"【{faction}】PPO 推荐卡组: 《{deck_pkg['deck_name']}》")
+    print(f"牌库规模: {deck_pkg['total_cards']} 张 | 平均费用: {deck_pkg['avg_cost']} 费")
+    print(f"随从 {deck_pkg['minion_count']} 张 / 法术 {deck_pkg['spell_count']} 张")
     print("─" * 85)
-    print("🎯 PPO 神经网络单卡效用评分与入选结果 (Actor 动作偏好度 & Critic 价值收益 ΔV):")
+    print("单卡效用评分与入选结果:")
     print(f"{'ID':<6}{'名称':<12}{'费用':<6}{'类型':<8}{'PPO出牌偏好':<14}{'Critic收益(ΔV)':<16}{'PPO评分':<10}{'入选张数'}")
     print("─" * 85)
 
@@ -397,11 +393,11 @@ def print_ppo_deck_report(faction: str, deck_pkg: dict, neural_stats: List[dict]
     for st in sorted_stats:
         cid = st["id"]
         count = alloc.get(str(cid), 0)
-        status = f"✅ {count} 张" if count > 0 else "❌ 弃选 (0张)"
+        status = f"{count} 张" if count > 0 else "未入选"
         print(f"{cid:<6}{st['name']:<12}{st['cost']:<6}{st['card_type']:<8}{str(st['play_prob'])+'%':<14}{str(st['value_gain']):<16}{st['ppo_score']:<10}{status}")
 
     print("─" * 85)
-    print("📊 PPO 自主规划法力曲线 (Mana Curve):")
+    print("法力曲线分布:")
     for cost in range(1, 8):
         cnt = deck_pkg["mana_curve"].get(cost, 0)
         bar = "█" * (cnt * 2)
@@ -413,49 +409,49 @@ def print_ppo_deck_report(faction: str, deck_pkg: dict, neural_stats: List[dict]
 
     if deck_pkg.get("introspections"):
         print("─" * 85)
-        print("🧠 PPO 智能体每轮实战心智自省日记 (Cognitive Reflection: \"我是不是想错了？\"):")
+        print("各轮对战调整记录:")
         for intro in deck_pkg["introspections"]:
             g = intro["generation"]
             wr = intro["winrate"]
             pwr = intro["prev_winrate"]
-            print(f"\n   ┌── 🔬 [第 {g} 代进化反思] 本轮实测胜率: {wr:.1f}% (较上轮变化: {wr - pwr:+.1f}%)")
+            print(f"\n   第 {g} 轮测试胜率: {wr:.1f}% (变化: {wr - pwr:+.1f}%)")
             if intro.get("demoted"):
                 print(f"   │  {intro['demoted']['thought']}")
             if intro.get("promoted"):
                 print(f"   │  {intro['promoted']['thought']}")
-            print("   └── 结论: 智能体成功完成认知纠偏与卡组微调。")
+            
 
     print("═" * 85 + "\n")
 
 def export_introspection_report(decks_result: dict, output_path: str = "ppo_introspection_report.md"):
-    """导出 PPO 智能体选卡心智自省演进 Markdown 格式精美学术报告"""
+    """导出 PPO 选卡与微调记录报告"""
     lines = []
-    lines.append("# 🧠 PPO 智能体自博弈选卡与心智自省演进报告 (XAI Cognitive Reflection Report)\n")
-    lines.append("> **课题说明**：本报告记录了 PPO 深度强化学习智能体（Actor-Critic）在面对 42 张卡牌生态池时，如何通过神经网络效用探针进行先验评估，并在多轮实机自博弈对抗中审视实战反差（“我是不是想错了？”），实现卡组跨代进化的完整心智历程。\n")
+    lines.append("# PPO 自博弈选卡与调整记录报告\n")
+    lines.append("> 本报告记录了 PPO 智能体在自博弈对战中逐步迭代、微调卡组构筑的过程。\n")
     lines.append("---\n")
 
     for faction, deck in decks_result.items():
-        lines.append(f"## ⚔️ 【{faction}】阵营自主卡组：《{deck['deck_name']}》\n")
+        lines.append(f"## 【{faction}】阵营卡组：《{deck['deck_name']}》\n")
         lines.append(f"- **流派定位**：`{deck['archetype']}`")
         lines.append("- **牌库规模**：严格遵守 **30 张** 标准规则（同名卡上限 3 张）")
         lines.append(f"- **法力曲线均值**：**{deck['avg_cost']} 费**（随从 {deck['minion_count']} 张 / 法术 {deck['spell_count']} 张）\n")
 
-        lines.append("### 1. 深度自省日记：智能体的自我怀疑与跨代纠偏（“我是不是想错了？”）\n")
+        lines.append("### 1. 迭代调整记录\n")
         if deck.get("introspections"):
             for intro in deck["introspections"]:
                 g = intro["generation"]
                 wr = intro["winrate"]
                 pwr = intro["prev_winrate"]
                 diff = wr - pwr
-                lines.append(f"#### 🔬 第 {g} 代自博弈进化（本轮对战胜率: {wr:.1f}% | 胜率跃升: {diff:+.1f}%）")
+                lines.append(f"#### 第 {g} 轮迭代（对战胜率: {wr:.1f}% | 胜率变化: {diff:+.1f}%）")
                 if intro.get("demoted"):
-                    lines.append(f"> ❌ **认知纠错（削减卡牌）**：  \n> {intro['demoted']['thought']}\n")
+                    lines.append(f"> **调减卡牌**：{intro['demoted']['thought']}\n")
                 if intro.get("promoted"):
-                    lines.append(f"> 💡 **心智进化（强化卡牌）**：  \n> {intro['promoted']['thought']}\n")
+                    lines.append(f"> **增选卡牌**：{intro['promoted']['thought']}\n")
         else:
             lines.append("> 初始探索代数已稳定收敛。\n")
 
-        lines.append("### 2. 最终精选 30 张实战卡牌及神经网络评估全景表\n")
+        lines.append("### 2. 30 张卡牌配置与评估表\n")
         lines.append("| ID | 卡牌名称 | 费用 | 类型 | DP/数值 | 最终入选 | Actor出牌偏好 | Critic价值增益 (ΔV) | PPO综合评分 |")
         lines.append("| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |")
         for c in deck.get("card_details", []):
@@ -466,7 +462,7 @@ def export_introspection_report(decks_result: dict, output_path: str = "ppo_intr
             lines.append(f"| {c['id']} | **{c['name']}** | {c['cost']} | {c['card_type']} | {dp_str} | **{c['count']} 张** | {play_p} | {val_g} | {score_v} |")
         lines.append("\n")
 
-        lines.append("### 3. PPO 自主规整的法力曲线 (Mana Curve)\n")
+        lines.append("### 3. 法力曲线 (Mana Curve)\n")
         lines.append("```text")
         for cost in range(1, 8):
             cnt = deck["mana_curve"].get(cost, 0)
@@ -481,7 +477,7 @@ def export_introspection_report(decks_result: dict, output_path: str = "ppo_intr
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
-    print(f"📑 PPO 心智自省图文全景报告已导出至: {os.path.abspath(output_path)}")
+    print(f"PPO 选卡报告已导出至: {os.path.abspath(output_path)}")
 
 def main():
     parser = argparse.ArgumentParser(description="PPO 强化学习智能体自主选卡构筑系统 (PPO Deckbuilder)")
@@ -498,12 +494,12 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_path = find_model_path(args.model, args.stage)
     if not model_path:
-        print("❌ 未检测到可用的 PPO 权重模型！请先确认模型文件存在。")
+        print("未检测到可用的 PPO 权重模型，请确认模型文件存在。")
         return
 
     print("=" * 85)
-    print("🤖 PPO 强化学习智能体自主选卡系统启动 (Self-Play Autonomous Deckbuilding)")
-    print(f"⚙️ 核心权重: {model_path} | 运行设备: {device}")
+    print("PPO 自博弈选卡工具启动")
+    print(f"模型权重: {model_path} | 设备: {device}")
     print("=" * 85)
 
     cards_db = load_card_pool(args.cards)
@@ -524,7 +520,7 @@ def main():
             pass
 
     for faction_name in factions_to_build:
-        print(f"\n🔍 [阶段 1/2] 正在提取【{faction_name}】候选卡池，启动神经网络效用探针...")
+        print(f"\n[1/2] 正在评估【{faction_name}】候选卡池...")
         candidates = get_faction_candidates(cards_db, faction_name)
         f_enum = Faction.RED if faction_name == "Red" else (Faction.BLUE if faction_name == "Blue" else Faction.GREEN)
 
@@ -533,7 +529,7 @@ def main():
             st = evaluate_card_neural_utility(model, device, c, f_enum, args.cards, samples=20)
             neural_stats.append(st)
 
-        print("⚔️ [阶段 2/2] 正在执行 PPO 实机自博弈对抗与卡组进化筛选...")
+        print("[2/2] 正在执行 PPO 自博弈对决与卡组微调...")
         alloc, decision_logs, introspections = ppo_self_play_deck_search(
             faction=faction_name,
             candidates=candidates,
@@ -553,7 +549,7 @@ def main():
         json.dump(decks_result, f, indent=2, ensure_ascii=False)
 
     abs_out = os.path.abspath(args.output)
-    print(f"💾 PPO 自主选卡构筑成果已成功同步保存至: {abs_out}")
+    print(f"PPO 选卡结果已保存至: {abs_out}")
 
     # 导出心智自省报告
     if args.report:
