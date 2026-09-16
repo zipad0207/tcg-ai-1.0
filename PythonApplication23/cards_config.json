@@ -9,7 +9,6 @@
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "RUSH",
         "DEATH_DRAW_1"
       ]
     },
@@ -29,7 +28,7 @@
       "id": 102,
       "name": "自爆",
       "card_type": "SPELL",
-      "cost": 1,
+      "cost": 2,
       "base_dp": 0,
       "atk_spell_val": 0,
       "def_spell_val": 0,
@@ -42,9 +41,9 @@
       "id": 103,
       "name": "射线",
       "card_type": "SPELL",
-      "cost": 2,
+      "cost": 1,
       "base_dp": 0,
-      "atk_spell_val": 3,
+      "atk_spell_val": 2,
       "def_spell_val": 0,
       "tags": []
     },
@@ -64,8 +63,8 @@
       "id": 105,
       "name": "掠夺者",
       "card_type": "MINION",
-      "cost": 5,
-      "base_dp": 5,
+      "cost": 6,
+      "base_dp": 4,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -81,7 +80,71 @@
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "DISCARD_1"
+        "DISCARD_2"
+      ]
+    },
+    {
+      "id": 107,
+      "name": "赤红疾锋",
+      "card_type": "MINION",
+      "cost": 1,
+      "base_dp": 1,
+      "atk_spell_val": 0,
+      "def_spell_val": 0,
+      "tags": [
+        "RUSH"
+      ]
+    },
+    {
+      "id": 108,
+      "name": "裂甲掷斧手",
+      "card_type": "MINION",
+      "cost": 2,
+      "base_dp": 1,
+      "atk_spell_val": 0,
+      "def_spell_val": 0,
+      "tags": [
+        "RUSH",
+        "DEGRADE_1"
+      ]
+    },
+    {
+      "id": 109,
+      "name": "破阵狂徒",
+      "card_type": "MINION",
+      "cost": 3,
+      "base_dp": 3,
+      "atk_spell_val": 0,
+      "def_spell_val": 0,
+      "tags": [
+        "RUSH",
+        "DEGRADE_1"
+      ]
+    },
+    {
+      "id": 110,
+      "name": "血祭爆燃",
+      "card_type": "SPELL",
+      "cost": 4,
+      "base_dp": 0,
+      "atk_spell_val": 3,
+      "def_spell_val": 0,
+      "tags": [
+        "SACRIFICE_1_KILL_1",
+        "ATTACK_ONLY"
+      ]
+    },
+    {
+      "id": 111,
+      "name": "赤红掠袭者",
+      "card_type": "MINION",
+      "cost": 5,
+      "base_dp": 3,
+      "atk_spell_val": 0,
+      "def_spell_val": 0,
+      "tags": [
+        "RUSH",
+        "BONUS_SCORE_1"
       ]
     }
   ],
@@ -90,8 +153,8 @@
       "id": 200,
       "name": "蔚蓝卫士",
       "card_type": "MINION",
-      "cost": 3,
-      "base_dp": 3,
+      "cost": 2,
+      "base_dp": 2,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -102,8 +165,8 @@
       "id": 201,
       "name": "盾兵",
       "card_type": "MINION",
-      "cost": 2,
-      "base_dp": 2,
+      "cost": 1,
+      "base_dp": 1,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -115,7 +178,7 @@
       "name": "弓箭手",
       "card_type": "MINION",
       "cost": 3,
-      "base_dp": 2,
+      "base_dp": 3,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -126,10 +189,10 @@
       "id": 203,
       "name": "防御！",
       "card_type": "SPELL",
-      "cost": 2,
+      "cost": 1,
       "base_dp": 0,
       "atk_spell_val": 0,
-      "def_spell_val": 3,
+      "def_spell_val": 2,
       "tags": []
     },
     {
@@ -146,7 +209,7 @@
       "id": 205,
       "name": "藤甲兵",
       "card_type": "MINION",
-      "cost": 5,
+      "cost": 4,
       "base_dp": 4,
       "atk_spell_val": 0,
       "def_spell_val": 0,
@@ -163,6 +226,66 @@
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
+        "SUPPORT_ATK_2"
+      ]
+    },
+    {
+      "id": 207,
+      "name": "霜盾见习官",
+      "card_type": "MINION",
+      "cost": 2,
+      "base_dp": 1,
+      "atk_spell_val": 0,
+      "def_spell_val": 0,
+      "tags": [
+        "FORTIFY_1",
+        "SUPPORT_ATK_1"
+      ]
+    },
+    {
+      "id": 208,
+      "name": "壁垒工匠",
+      "card_type": "MINION",
+      "cost": 3,
+      "base_dp": 3,
+      "atk_spell_val": 0,
+      "def_spell_val": 0,
+      "tags": [
+        "FORTIFY_2"
+      ]
+    },
+    {
+      "id": 209,
+      "name": "寒晶护壁",
+      "card_type": "SPELL",
+      "cost": 2,
+      "base_dp": 0,
+      "atk_spell_val": 0,
+      "def_spell_val": 2,
+      "tags": [
+        "DRAW_1"
+      ]
+    },
+    {
+      "id": 210,
+      "name": "冰封禁制",
+      "card_type": "SPELL",
+      "cost": 3,
+      "base_dp": 0,
+      "atk_spell_val": 2,
+      "def_spell_val": 2,
+      "tags": []
+    },
+    {
+      "id": 211,
+      "name": "蔚蓝要塞",
+      "card_type": "MINION",
+      "cost": 6,
+      "base_dp": 5,
+      "atk_spell_val": 0,
+      "def_spell_val": 0,
+      "tags": [
+        "FORTIFY_3",
         "SUPPORT_ATK_1"
       ]
     }
@@ -245,6 +368,67 @@
       "atk_spell_val": 2,
       "def_spell_val": 0,
       "tags": []
+    },
+    {
+      "id": 307,
+      "name": "芽苗祭司",
+      "card_type": "MINION",
+      "cost": 3,
+      "base_dp": 2,
+      "atk_spell_val": 0,
+      "def_spell_val": 0,
+      "tags": [
+        "RAMP_1"
+      ]
+    },
+    {
+      "id": 308,
+      "name": "孢子播种者",
+      "card_type": "MINION",
+      "cost": 4,
+      "base_dp": 3,
+      "atk_spell_val": 0,
+      "def_spell_val": 0,
+      "tags": [
+        "SPAWN_1_2"
+      ]
+    },
+    {
+      "id": 309,
+      "name": "翡翠幼龙",
+      "card_type": "MINION",
+      "cost": 5,
+      "base_dp": 3,
+      "atk_spell_val": 0,
+      "def_spell_val": 0,
+      "tags": [
+        "RUSH",
+        "DEATH_MANA_1"
+      ]
+    },
+    {
+      "id": 310,
+      "name": "远古龙母",
+      "card_type": "MINION",
+      "cost": 9,
+      "base_dp": 8,
+      "atk_spell_val": 0,
+      "def_spell_val": 0,
+      "tags": [
+        "SPAWN_3_2"
+      ]
+    },
+    {
+      "id": 311,
+      "name": "世界树恩泽",
+      "card_type": "SPELL",
+      "cost": 4,
+      "base_dp": 0,
+      "atk_spell_val": 0,
+      "def_spell_val": 3,
+      "tags": [
+        "RAMP_1"
+      ]
     }
   ],
   "Neutral": [
@@ -252,7 +436,7 @@
       "id": 900,
       "name": "商人",
       "card_type": "MINION",
-      "cost": 3,
+      "cost": 2,
       "base_dp": 2,
       "atk_spell_val": 0,
       "def_spell_val": 0,
@@ -265,7 +449,7 @@
       "name": "雇佣兵",
       "card_type": "MINION",
       "cost": 3,
-      "base_dp": 4,
+      "base_dp": 5,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": []
@@ -279,6 +463,45 @@
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": []
+    },
+    {
+      "id": 903,
+      "name": "酒馆密账",
+      "card_type": "SPELL",
+      "cost": 1,
+      "base_dp": 0,
+      "atk_spell_val": 0,
+      "def_spell_val": 0,
+      "tags": [
+        "DRAW_2",
+        "DISCARD_1"
+      ]
+    },
+    {
+      "id": 904,
+      "name": "拾荒盾卫",
+      "card_type": "MINION",
+      "cost": 3,
+      "base_dp": 3,
+      "atk_spell_val": 0,
+      "def_spell_val": 0,
+      "tags": [
+        "FORTIFY_1",
+        "DEATH_DRAW_1"
+      ]
+    },
+    {
+      "id": 905,
+      "name": "佣兵斥候",
+      "card_type": "MINION",
+      "cost": 2,
+      "base_dp": 1,
+      "atk_spell_val": 0,
+      "def_spell_val": 0,
+      "tags": [
+        "RUSH",
+        "DRAW_1"
+      ]
     }
   ]
 }

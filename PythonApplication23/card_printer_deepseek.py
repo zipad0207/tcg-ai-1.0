@@ -71,8 +71,7 @@ def build_prompt(current_pool: dict, faction: str, count: int, theme: str) -> st
         "Red": "红方（赤红军团）：特色为快攻冲锋、突袭（RUSH）、破甲削弱（DEGRADE）、牺牲自爆与空场高伤突破。",
         "Blue": "蓝方（蔚蓝守卫）：特色为高额阻挡（高DP/坚守FORTIFY）、阵地驻防光环（SUPPORT_ATK）、控制护盾与防线延阻。",
         "Green": "绿方（翡翠林野）：特色为跳费成长（RAMP）、高费巨兽/远古巨龙、衍生物召唤（SPAWN）与法术治愈强化。",
-        "Neutral": "中立（雇佣酒馆）：提供过牌抽卡（DRAW）、通用阻挡身材与战术润滑单卡。",
-        "all": "全阵营：为红、蓝、绿及中立阵营设计各具阵营辨识度的协同单卡。"
+        "Neutral": "中立（雇佣酒馆）：提供过牌抽卡（DRAW）、通用阻挡身材与战术润滑单卡。"
     }.get(faction, f"{faction} 阵营")
 
     return f"""
@@ -120,7 +119,7 @@ def build_prompt(current_pool: dict, faction: str, count: int, theme: str) -> st
 必须严格输出纯合法 JSON，结构如下：
 {{
   "new_cards": {{
-    "{faction if faction != 'all' else 'Green'}": [
+    "{faction}": [
       {{
         "id": 0,
         "name": "卡牌名",
@@ -146,11 +145,11 @@ def build_prompt(current_pool: dict, faction: str, count: int, theme: str) -> st
 def print_card_table(cards_dict: Dict[str, List[dict]], design_notes: List[dict]):
     """在终端渲染清晰美观的印卡战报"""
     notes_map = {n.get("card_name"): n.get("flavor_and_strategy", "") for n in design_notes}
-    print("\n" + "═" * 90)
+    print("\n" + "═" * 95)
     print("🖨️  【TCG-AI 印卡工坊】全新生成卡牌一览")
-    print("═" * 90)
-    print(f"{'ID':<6}{'阵营':<8}{'名称':<12}{'类型':<8}{'费用':<6}{'DP/数值':<10}{'词条 (Tags)':<26}{'设计意图'}")
-    print("─" * 90)
+    print("═" * 95)
+    print(f"{'ID':<6}{'阵营':<8}{'名称':<14}{'类型':<8}{'费用':<6}{'DP/数值':<10}{'词条 (Tags)':<26}{'设计意图'}")
+    print("─" * 95)
     
     for f, cards in cards_dict.items():
         for c in cards:
@@ -160,9 +159,9 @@ def print_card_table(cards_dict: Dict[str, List[dict]], design_notes: List[dict]
             cost = c.get("cost", 0)
             dp_str = f"DP:{c.get('base_dp', 0)}" if ctype == "MINION" else f"攻{c.get('atk_spell_val',0)}/防{c.get('def_spell_val',0)}"
             tags_str = ",".join(c.get("tags", [])) if c.get("tags") else "无"
-            note = notes_map.get(name, "")[:20]
-            print(f"{cid:<6}{f:<8}{name:<12}{ctype:<8}{cost:<6}{dp_str:<10}{tags_str:<26}{note}")
-    print("═" * 90 + "\n")
+            note = notes_map.get(name, "")[:22]
+            print(f"{cid:<6}{f:<8}{name:<14}{ctype:<8}{cost:<6}{dp_str:<10}{tags_str:<26}{note}")
+    print("═" * 95 + "\n")
 
 def main():
     parser = argparse.ArgumentParser(description="TCG-AI 独立印卡工坊 (Card Designer & Expander)")
@@ -170,12 +169,12 @@ def main():
                         help="参考基础卡池文件 (默认 cards_config_baseline.json)")
     parser.add_argument("--output", type=str, default="cards_config_expanded.json",
                         help="扩写后导出的目标卡池文件 (默认 cards_config_expanded.json)")
-    parser.add_argument("--faction", type=str, default="Green",
+    parser.add_argument("--faction", type=str, default="all",
                         choices=["Red", "Blue", "Green", "Neutral", "all"],
-                        help="目标扩充阵营 (默认 Green 德鲁伊林野)")
-    parser.add_argument("--count", type=int, default=3,
-                        help="印刷新卡数量 (默认 3 张)")
-    parser.add_argument("--theme", type=str, default="高费龙族巨兽与跳费召唤体系",
+                        help="目标扩充阵营 (默认 all 全阵营)")
+    parser.add_argument("--count", type=int, default=5,
+                        help="各阵营印刷新卡数量 (默认 5 张)")
+    parser.add_argument("--theme", type=str, default=None,
                         help="自定义设计主题或特色需求描述")
     parser.add_argument("--merge-into", type=str, default=None,
                         help="可选：将新卡直接合并写入到指定卡池文件 (如 cards_config.json)")
@@ -197,81 +196,101 @@ def main():
         base_url="https://api.deepseek.com"
     )
 
-    prompt = build_prompt(current_pool, args.faction, args.count, args.theme)
-    print(f"🤖 正在调用 [{MODEL_NAME}] 进行创意印卡...")
-    print(f"🎯 目标阵营: {args.faction} | 印刷数量: {args.count} 张 | 设计主题: {args.theme}")
+    faction_id_starts = {
+        "Red": 100,
+        "Blue": 200,
+        "Green": 300,
+        "Neutral": 900
+    }
 
-    response = client.chat.completions.create(
-        model=MODEL_NAME,
-        messages=[
-            {"role": "system", "content": "You are a professional TCG game designer. Output ONLY valid JSON."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.7  # 适度提高采样温度以激发卡牌创意与机制组合
-    )
+    if args.faction == "all":
+        factions_to_process = [
+            ("Red", args.count, "红方：强化快攻冲锋（RUSH）、破甲削弱（DEGRADE）与牺牲直伤斩杀"),
+            ("Blue", args.count, "蓝方：强化阵地驻防（FORTIFY）、光环增益（SUPPORT_ATK）与护盾控制"),
+            ("Green", args.count, "绿方：强化跳费成长（RAMP）、远古巨兽巨龙与衍生物召唤（SPAWN）"),
+            ("Neutral", max(2, args.count - 2), "中立：强化战术润滑、通用过牌抽卡（DRAW）与身材博弈")
+        ]
+    else:
+        theme = args.theme if args.theme else f"{args.faction} 阵营核心机制扩充"
+        factions_to_process = [(args.faction, args.count, theme)]
 
-    raw_output = response.choices[0].message.content
-    cleaned = clean_json_response(raw_output)
+    expanded_pool = json.loads(json.dumps(current_pool))
+    all_printed_cards = {}
+    all_design_notes = []
 
-    try:
-        res_data = json.loads(cleaned)
-        new_cards_dict = res_data.get("new_cards", {})
-        design_notes = res_data.get("design_notes", [])
+    for f_name, f_count, f_theme in factions_to_process:
+        print(f"\n" + "─" * 70)
+        print(f"🤖 正在调用 [{MODEL_NAME}] 印刷阵营: 【{f_name}】 (目标: {f_count} 张)...")
+        print(f"🎯 设计特色主题: {f_theme}")
 
-        # 安全防撞号：自动分配不冲突的合法 ID 范围
-        faction_id_starts = {
-            "Red": 100,
-            "Blue": 200,
-            "Green": 300,
-            "Neutral": 900
-        }
+        prompt = build_prompt(expanded_pool, f_name, f_count, f_theme)
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "system", "content": "You are a professional TCG game designer. Output ONLY valid JSON."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7
+        )
 
-        # 深拷贝当前卡池作为扩充载体
-        expanded_pool = json.loads(json.dumps(current_pool))
-        sanitized_new_cards = {}
+        raw_output = response.choices[0].message.content
+        cleaned = clean_json_response(raw_output)
 
-        for f_name, cards in new_cards_dict.items():
+        try:
+            res_data = json.loads(cleaned)
+            new_cards_dict = res_data.get("new_cards", {})
+            notes = res_data.get("design_notes", [])
+            all_design_notes.extend(notes)
+
             if f_name not in expanded_pool:
                 expanded_pool[f_name] = []
-            sanitized_new_cards[f_name] = []
+            if f_name not in all_printed_cards:
+                all_printed_cards[f_name] = []
 
-            for c in cards:
-                # 1. 自动分配唯一安全 ID
+            cards_list = new_cards_dict.get(f_name, [])
+            if not cards_list and len(new_cards_dict) > 0:
+                cards_list = list(new_cards_dict.values())[0]
+
+            for c in cards_list:
                 allocated_id = get_next_id(expanded_pool[f_name], faction_id_starts.get(f_name, 500))
                 c["id"] = allocated_id
-                
-                # 2. 过滤非法或幻想词条
-                filtered_tags = [t for t in c.get("tags", []) if is_legal_tag(t)]
-                c["tags"] = filtered_tags
-
-                # 3. 规范字段类型
+                c["tags"] = [t for t in c.get("tags", []) if is_legal_tag(t)]
                 c["cost"] = max(0, int(c.get("cost", 1)))
                 c["base_dp"] = max(0, int(c.get("base_dp", 0)))
                 c["atk_spell_val"] = max(0, int(c.get("atk_spell_val", 0)))
                 c["def_spell_val"] = max(0, int(c.get("def_spell_val", 0)))
 
                 expanded_pool[f_name].append(c)
-                sanitized_new_cards[f_name].append(c)
+                all_printed_cards[f_name].append(c)
 
-        # 打印可视化印卡表
-        print_card_table(sanitized_new_cards, design_notes)
+            print(f"✅ 【{f_name}】阵营成功印制 {len(cards_list)} 张新卡！")
 
-        # 写入独立扩充卡池文件
-        output_file = args.output
-        with open(output_file, "w", encoding="utf-8") as f:
+        except json.JSONDecodeError as e:
+            print(f"❌ 解析【{f_name}】大模型返回 JSON 异常: {e}")
+            print("原始返回内容：\n", raw_output)
+
+    # 打印全局可视化印卡总表
+    print_card_table(all_printed_cards, all_design_notes)
+
+    # 写入独立扩充卡池文件
+    output_file = args.output
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(expanded_pool, f, indent=2, ensure_ascii=False)
+    print(f"💾 全阵营扩充后卡池已保存至专属文件: {output_file}")
+    print(f"🔒 原基准卡池 {base_path} 处于只读保护，未受影响。")
+
+    # 统计卡池总数
+    print(f"\n📊 扩充后卡池总规模统计:")
+    total_cards = sum(len(cards) for cards in expanded_pool.values())
+    print(f"   总卡牌数: {total_cards} 张")
+    for f, c_list in expanded_pool.items():
+        print(f"   └─ {f}: {len(c_list)} 张 (新增 {len(all_printed_cards.get(f, []))} 张)")
+
+    # 若指定了合并写入
+    if args.merge_into:
+        with open(args.merge_into, "w", encoding="utf-8") as f:
             json.dump(expanded_pool, f, indent=2, ensure_ascii=False)
-        print(f"💾 扩充后卡池已保存至专属文件: {output_file}")
-        print(f"🔒 原基准卡池 {base_path} 处于只读保护，未受影响。")
-
-        # 若指定了合并写入
-        if args.merge_into:
-            with open(args.merge_into, "w", encoding="utf-8") as f:
-                json.dump(expanded_pool, f, indent=2, ensure_ascii=False)
-            print(f"🔗 已同步合并更新至生产卡池: {args.merge_into}")
-
-    except json.JSONDecodeError as e:
-        print(f"❌ 解析大模型返回 JSON 失败: {e}")
-        print("原始返回内容：\n", raw_output)
+        print(f"🔗 已同步合并更新至生产卡池: {args.merge_into}")
 
 if __name__ == "__main__":
     main()
