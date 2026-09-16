@@ -360,9 +360,9 @@ def main():
         name0 = faction_names[f0]
         name1 = faction_names[f1]
 
-        # 2. 50% 概率选用 PPO 演进成熟 30 张套牌，50% 概率动态卡池构建
-        d0 = prebuilt_decks[name0] if (name0 in prebuilt_decks and random.random() < 0.5) else None
-        d1 = prebuilt_decks[name1] if (name1 in prebuilt_decks and random.random() < 0.5) else None
+        # 2. 100% 选用该颜色卡组对应的 30 张专属构筑套牌（绝不随机掺杂杂牌）
+        d0 = prebuilt_decks[name0]
+        d1 = prebuilt_decks[name1]
 
         # 动态更新环境配置并重置
         env.p0_faction = f0
