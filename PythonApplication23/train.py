@@ -26,6 +26,8 @@ parser.add_argument("--stage", type=str, default="tuned", choices=["baseline", "
                     help="设置当前训练阶段: baseline(基准) 或 tuned(调优后)")
 parser.add_argument("--episodes", type=int, default=1000,
                     help="训练总对局轮数 (默认 1000)")
+parser.add_argument("--cards", type=str, default=None,
+                    help="自定义指定训练卡池配置文件路径 (默认根据 stage 自动匹配)")
 args = parser.parse_args()
 STAGE = args.stage
 
@@ -216,7 +218,7 @@ def auto_generate_plot():
 # ==========================================
 def main():
     print(f"[系统] 当前运行阶段: {STAGE.upper()} | 运算设备: {DEVICE}")
-    cards_file = "cards_config_baseline.json" if STAGE == "baseline" and os.path.exists("cards_config_baseline.json") else ("cards_config_tuned.json" if STAGE == "tuned" and os.path.exists("cards_config_tuned.json") else "cards_config.json")
+    cards_file = args.cards if args.cards else ("cards_config_baseline.json" if STAGE == "baseline" and os.path.exists("cards_config_baseline.json") else ("cards_config_tuned.json" if STAGE == "tuned" and os.path.exists("cards_config_tuned.json") else "cards_config.json"))
     print(f"📦 [卡池加载] 阶段: {STAGE.upper()} | 锁定卡池文件: {cards_file}")
     env = DuelEnv(p0_faction=Faction.RED, p1_faction=Faction.BLUE, cards_path=cards_file)
     trainer = PPOTrainer(action_dim=env.action_space_size)
