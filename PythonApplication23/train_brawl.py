@@ -236,24 +236,24 @@ def generate_brawl_plots(metrics: dict):
         ax1.annotate(f"{height:.1f}%\n({count}局)", xy=(bar.get_x() + bar.get_width() / 2, height),
                      xytext=(0, 4), textcoords="offset points", ha='center', va='bottom', fontsize=9.5, fontweight="bold")
 
-    # 2. 跨阵营对战克制矩阵热力图 (3x3 Matrix)
+    # 2. 跨阵营对战克制矩阵热力图 (3x3 对称双向汇总)
     ax2 = fig.add_subplot(gs[1])
     matrix = np.zeros((3, 3))
     for i, fA in enumerate(factions):
         for j, fB in enumerate(factions):
-            match_key = f"{fA}_vs_{fB}"
-            rev_key = f"{fB}_vs_{fA}"
-            rec = metrics["matchups"].get(match_key) or metrics["matchups"].get(rev_key)
-            if rec:
-                if rec["total"] > 0:
-                    wr_A = (rec[f"{fA}_wins"] / rec["total"]) * 100
-                    matrix[i, j] = wr_A
-                else:
-                    matrix[i, j] = 50.0
-            else:
+            if i == j:
+                # 内战（自己打自己）理论基准必然为 50.0%
                 matrix[i, j] = 50.0
+            else:
+                k1 = f"{fA}_vs_{fB}"
+                k2 = f"{fB}_vs_{fA}"
+                r1 = metrics["matchups"].get(k1, {"total": 0})
+                r2 = metrics["matchups"].get(k2, {"total": 0})
+                total_games = r1.get("total", 0) + r2.get("total", 0)
+                fA_wins = r1.get(f"{fA}_wins", 0) + r2.get(f"{fA}_wins", 0)
+                matrix[i, j] = (fA_wins / total_games) * 100 if total_games > 0 else 50.0
 
-    im = ax2.imshow(matrix, cmap="RdYlGn", vmin=30, vmax=70)
+    im = ax2.imshow(matrix, cmap="RdYlGn", vmin=35, vmax=65)
     ax2.set_xticks(range(3))
     ax2.set_yticks(range(3))
     ax2.set_xticklabels(["对手: 赤红", "对手: 蔚蓝", "对手: 翠绿"], fontsize=9.5)
@@ -263,8 +263,9 @@ def generate_brawl_plots(metrics: dict):
     for i in range(3):
         for j in range(3):
             val = matrix[i, j]
-            text_color = "black" if 40 <= val <= 60 else "white"
-            ax2.text(j, i, f"{val:.1f}%", ha="center", va="center", color=text_color, fontweight="bold", fontsize=10.5)
+            text_color = "black" if 42 <= val <= 58 else "white"
+            label = "50.0%\n(内战)" if i == j else f"{val:.1f}%"
+            ax2.text(j, i, label, ha="center", va="center", color=text_color, fontweight="bold", fontsize=10)
 
     # 3. 全局高频出牌热度 Top 10
     ax3 = fig.add_subplot(gs[2])
@@ -429,13 +430,27 @@ def main():
 
         # 对战矩阵统计
         m_key = f"{name0}_vs_{name1}"
-        if m_key not in metrics["matchups"]:
-            metrics["matchups"][m_key] = {"total": 0, f"{name0}_wins": 0, f"{name1}_wins": 0}
-        metrics["matchups"][m_key]["total"] += 1
-        if p0_won:
-            metrics["matchups"][m_key][f"{name0}_wins"] += 1
+        if name0 == name1:
+            if m_key not in metrics["matchups"]:
+                metrics["matchups"][m_key] = {
+                    "total": 0,
+                    "p0_first_wins": 0,
+                    "p1_second_wins": 0,
+                    "winrate": 50.0
+                }
+            metrics["matchups"][m_key]["total"] += 1
+            if p0_won:
+                metrics["matchups"][m_key]["p0_first_wins"] += 1
+            else:
+                metrics["matchups"][m_key]["p1_second_wins"] += 1
         else:
-            metrics["matchups"][m_key][f"{name1}_wins"] += 1
+            if m_key not in metrics["matchups"]:
+                metrics["matchups"][m_key] = {"total": 0, f"{name0}_wins": 0, f"{name1}_wins": 0}
+            metrics["matchups"][m_key]["total"] += 1
+            if p0_won:
+                metrics["matchups"][m_key][f"{name0}_wins"] += 1
+            else:
+                metrics["matchups"][m_key][f"{name1}_wins"] += 1
 
         # 进度打印
         if ep % 50 == 0 or ep == 1:

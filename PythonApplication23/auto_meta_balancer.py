@@ -279,13 +279,27 @@ def step2_run_6000_brawl(prebuilt_decks: dict):
             metrics["faction_stats"][name1]["wins"] += 1
 
         m_key = f"{name0}_vs_{name1}"
-        if m_key not in metrics["matchups"]:
-            metrics["matchups"][m_key] = {"total": 0, f"{name0}_wins": 0, f"{name1}_wins": 0}
-        metrics["matchups"][m_key]["total"] += 1
-        if p0_won:
-            metrics["matchups"][m_key][f"{name0}_wins"] += 1
+        if name0 == name1:
+            if m_key not in metrics["matchups"]:
+                metrics["matchups"][m_key] = {
+                    "total": 0,
+                    "p0_first_wins": 0,
+                    "p1_second_wins": 0,
+                    "winrate": 50.0
+                }
+            metrics["matchups"][m_key]["total"] += 1
+            if p0_won:
+                metrics["matchups"][m_key]["p0_first_wins"] += 1
+            else:
+                metrics["matchups"][m_key]["p1_second_wins"] += 1
         else:
-            metrics["matchups"][m_key][f"{name1}_wins"] += 1
+            if m_key not in metrics["matchups"]:
+                metrics["matchups"][m_key] = {"total": 0, f"{name0}_wins": 0, f"{name1}_wins": 0}
+            metrics["matchups"][m_key]["total"] += 1
+            if p0_won:
+                metrics["matchups"][m_key][f"{name0}_wins"] += 1
+            else:
+                metrics["matchups"][m_key][f"{name1}_wins"] += 1
 
         if ep % 500 == 0 or ep == 100:
             wr_r = (metrics["faction_stats"]["Red"]["wins"] / max(1, metrics["faction_stats"]["Red"]["matches"])) * 100
@@ -336,18 +350,23 @@ def step3_generate_academic_plot(metrics: dict):
         ax1.annotate(f"{h:.1f}%\n({count}局)", xy=(bar.get_x() + bar.get_width() / 2, h),
                      xytext=(0, 4), textcoords="offset points", ha='center', va='bottom', fontsize=9.5, fontweight="bold")
 
-    # 2. 跨阵营对弈胜率矩阵 (3x3)
+    # 2. 跨阵营对弈胜率矩阵 (3x3 对称双向汇总)
     ax2 = fig.add_subplot(gs[1])
     matrix = np.zeros((3, 3))
     for i, fA in enumerate(factions):
         for j, fB in enumerate(factions):
-            match_key = f"{fA}_vs_{fB}"
-            rev_key = f"{fB}_vs_{fA}"
-            rec = metrics["matchups"].get(match_key) or metrics["matchups"].get(rev_key)
-            if rec and rec["total"] > 0:
-                matrix[i, j] = (rec[f"{fA}_wins"] / rec["total"]) * 100
-            else:
+            if i == j:
+                # 内战（自己打自己）在数学和博弈论上必为 50.0% 理论基准
                 matrix[i, j] = 50.0
+            else:
+                # 严格汇总 fA 与 fB 双向交锋场次（同时包含 fA 为 P0 和 fA 为 P1 的总对局）
+                k1 = f"{fA}_vs_{fB}"
+                k2 = f"{fB}_vs_{fA}"
+                r1 = metrics["matchups"].get(k1, {"total": 0})
+                r2 = metrics["matchups"].get(k2, {"total": 0})
+                total_games = r1.get("total", 0) + r2.get("total", 0)
+                fA_wins = r1.get(f"{fA}_wins", 0) + r2.get(f"{fA}_wins", 0)
+                matrix[i, j] = (fA_wins / total_games) * 100 if total_games > 0 else 50.0
 
     im = ax2.imshow(matrix, cmap="RdYlGn", vmin=35, vmax=65)
     ax2.set_xticks(range(3))
@@ -360,7 +379,8 @@ def step3_generate_academic_plot(metrics: dict):
         for j in range(3):
             val = matrix[i, j]
             text_color = "black" if 42 <= val <= 58 else "white"
-            ax2.text(j, i, f"{val:.1f}%", ha="center", va="center", color=text_color, fontweight="bold", fontsize=10.5)
+            label = "50.0%\n(内战)" if i == j else f"{val:.1f}%"
+            ax2.text(j, i, label, ha="center", va="center", color=text_color, fontweight="bold", fontsize=10)
 
     # 3. 高频核心卡牌 Top 10
     ax3 = fig.add_subplot(gs[2])

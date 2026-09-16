@@ -17,6 +17,23 @@
       "winrate": 48.15
     }
   },
+  "non_mirror_stats": {
+    "Red": {
+      "matches": 2723,
+      "wins": 1186,
+      "winrate": 43.56
+    },
+    "Blue": {
+      "matches": 2602,
+      "wins": 1551,
+      "winrate": 59.61
+    },
+    "Green": {
+      "matches": 2641,
+      "wins": 1246,
+      "winrate": 47.18
+    }
+  },
   "matchups": {
     "Blue_vs_Red": {
       "total": 681,
@@ -35,11 +52,15 @@
     },
     "Green_vs_Green": {
       "total": 688,
-      "Green_wins": 688
+      "p0_first_wins": 356,
+      "p1_second_wins": 332,
+      "faction_winrate": 50.0
     },
     "Blue_vs_Blue": {
       "total": 674,
-      "Blue_wins": 674
+      "p0_first_wins": 348,
+      "p1_second_wins": 326,
+      "faction_winrate": 50.0
     },
     "Green_vs_Red": {
       "total": 698,
@@ -53,7 +74,9 @@
     },
     "Red_vs_Red": {
       "total": 655,
-      "Red_wins": 655
+      "p0_first_wins": 341,
+      "p1_second_wins": 314,
+      "faction_winrate": 50.0
     },
     "Red_vs_Green": {
       "total": 683,
