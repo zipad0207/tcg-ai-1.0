@@ -68,9 +68,9 @@ def get_next_id(existing_cards: List[dict], default_start: int) -> int:
 
 def build_prompt(current_pool: dict, faction: str, count: int, theme: str) -> str:
     faction_desc = {
-        "Red": "红方（赤红军团）：特色为快攻冲锋、突袭（RUSH）、破甲削弱（DEGRADE）、牺牲自爆与空场高伤突破。",
+        "Red": "红方（赤红军团）：特色为快攻冲锋、突袭（RUSH）、召唤炮灰小怪（SPAWN_X_Y）、牺牲自爆以小换大（SACRIFICE_1_KILL_1）、破甲削弱（DEGRADE）与空场高伤突破。必须有小怪生成机制来配合自爆与血祭牺牲！",
         "Blue": "蓝方（蔚蓝守卫）：特色为高额阻挡（高DP/坚守FORTIFY）、阵地驻防光环（SUPPORT_ATK）、控制护盾与防线延阻。",
-        "Green": "绿方（翡翠林野）：特色为跳费成长（RAMP）、高费巨兽/远古巨龙、衍生物召唤（SPAWN）与法术治愈强化。",
+        "Green": "绿方（翡翠林野）：特色为极致跳费成长（RAMP/DEATH_MANA）、单体超模远古巨兽/巨龙（高费高DP大怪，坚守FORTIFY）。核心打法是前期跳费、后期拍巨型大怪正面碾压，绝不生杂毛小怪！",
         "Neutral": "中立（雇佣酒馆）：提供过牌抽卡（DRAW）、通用阻挡身材与战术润滑单卡。"
     }.get(faction, f"{faction} 阵营")
 

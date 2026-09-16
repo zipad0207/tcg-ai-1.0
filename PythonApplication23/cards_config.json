@@ -85,14 +85,14 @@
     },
     {
       "id": 107,
-      "name": "赤红疾锋",
+      "name": "集结号手",
       "card_type": "MINION",
-      "cost": 1,
+      "cost": 2,
       "base_dp": 1,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "RUSH"
+        "SPAWN_1_1"
       ]
     },
     {
@@ -383,14 +383,14 @@
     },
     {
       "id": 308,
-      "name": "孢子播种者",
+      "name": "翡翠巨熊",
       "card_type": "MINION",
-      "cost": 4,
-      "base_dp": 3,
+      "cost": 6,
+      "base_dp": 7,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "SPAWN_1_2"
+        "FORTIFY_2"
       ]
     },
     {
@@ -408,14 +408,15 @@
     },
     {
       "id": 310,
-      "name": "远古龙母",
+      "name": "灭世翡翠巨龙",
       "card_type": "MINION",
       "cost": 9,
-      "base_dp": 8,
+      "base_dp": 11,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "SPAWN_3_2"
+        "RUSH",
+        "BONUS_SCORE_1"
       ]
     },
     {
