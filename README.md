@@ -96,7 +96,13 @@ timeline
 
 ### 2. 四合一全景学术对比大图
 
-![四合一全景学术对比图](PythonApplication23/figure_comparison.png)
+<p align="center">
+  <a href="./figure_comparison.png" target="_blank">
+    <img src="./figure_comparison.png" alt="四合一全景学术对比图" width="100%">
+  </a>
+  <br>
+  <sub>🔍 <b>四合一全景学术对比图</b>（点击上方图片直接在新标签页中查看 300 DPI 高清学术原图）</sub>
+</p>
 
 * **图 1（左上）**：调优前后红蓝阵营对局胜率直接对比，清晰呈现从 31.2% 攀升至 46.1% 的平衡修复过程。
 * **图 2（右上）**：失衡偏离度收敛效果，偏离理论线从 $18.8\%$ 骤降至 $3.9\%$。
