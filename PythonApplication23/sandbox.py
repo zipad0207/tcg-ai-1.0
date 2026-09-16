@@ -82,7 +82,19 @@ class DuelEnv:
 
     def _load_card_database(self) -> Dict[int, Card]:
         if not os.path.exists(self.cards_path):
-            raise FileNotFoundError(f"未找到配置文件: {self.cards_path}")
+            alt_candidates = [
+                os.path.join("PythonApplication23", self.cards_path),
+                os.path.join(os.path.dirname(__file__), os.path.basename(self.cards_path)),
+                os.path.join(os.path.dirname(__file__), self.cards_path)
+            ]
+            found = False
+            for alt in alt_candidates:
+                if os.path.exists(alt):
+                    self.cards_path = alt
+                    found = True
+                    break
+            if not found:
+                raise FileNotFoundError(f"未找到配置文件: {self.cards_path}")
         with open(self.cards_path, "r", encoding="utf-8") as f:
             raw_data = json.load(f)
 

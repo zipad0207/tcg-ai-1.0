@@ -1,26 +1,59 @@
 import os
 import json
 
+def get_faction_meta(faction_val, player_id):
+    f_str = str(faction_val).lower()
+    if "green" in f_str or "绿" in f_str:
+        return {
+            "name": f"🟢 翠绿 (P{player_id} 林野跳费流)",
+            "short": "🟢 绿方",
+            "def_label": "🛡️ 绿防",
+            "atk_label": "⚔️ 绿冲",
+            "team_class": "green",
+            "color": "#2ed573"
+        }
+    elif "blue" in f_str or "蓝" in f_str:
+        return {
+            "name": f"🔵 蔚蓝 (P{player_id} 守卫控制流)",
+            "short": "🔵 蓝方",
+            "def_label": "🛡️ 蓝防",
+            "atk_label": "⚔️ 蓝冲",
+            "team_class": "blue",
+            "color": "#1e90ff"
+        }
+    else:
+        return {
+            "name": f"🔴 赤红 (P{player_id} 快攻突破流)",
+            "short": "🔴 红方",
+            "def_label": "🛡️ 红防",
+            "atk_label": "⚔️ 红冲",
+            "team_class": "red",
+            "color": "#ff4757"
+        }
+
 def format_terminal_board(turn_count, acting_player, p0, p1, lanes, action_desc, result_log=None):
     """
-    生成高信息密度、对齐工整的双路战场控制台可视化看板
+    生成高信息密度、对齐工整的双路战场控制台可视化看板 (支持红/蓝/绿自适应阵营)
     """
     lines = []
     w = 78
     
+    m0 = get_faction_meta(p0.get("faction", "Red"), 0)
+    m1 = get_faction_meta(p1.get("faction", "Blue"), 1)
+
     # 双方比分与法力指示器
     p0_score_bar = "■" * p0["score"] + "□" * (7 - p0["score"])
     p1_score_bar = "■" * p1["score"] + "□" * (7 - p1["score"])
     
     lines.append("╔" + "═" * (w - 2) + "╗")
     
-    # 蓝方信息头 (P1)
-    b_header = f" 🔵 蓝方 (P1 控制流)  得分: [{p1_score_bar}] {p1['score']}/7  法力: 💎 {p1['mana']}/{p1['max_mana']}  手牌: {len(p1['hand'])}张"
-    lines.append(f"║{b_header:<{w-2}}║")
+    # P1 信息头
+    p1_header = f" {m1['name']}  得分: [{p1_score_bar}] {p1['score']}/7  法力: 💎 {p1['mana']}/{p1['max_mana']}  手牌: {len(p1['hand'])}张"
+    lines.append(f"║{p1_header:<{w-2}}║")
     lines.append("╠" + "═" * 38 + "╦" + "═" * 37 + "╣")
     lines.append("║                【左路战场】          ║               【右路战场】          ║")
     
-    # 蓝方防守怪
+    # P1 防守怪
     def fmt_units(units, is_atk=False):
         if not units:
             return "空"
@@ -33,34 +66,34 @@ def format_terminal_board(turn_count, acting_player, p0, p1, lanes, action_desc,
                 res.append(f"{u['name']}(DP:{u['dp']})")
         return "、".join(res)
 
-    l_b_def = fmt_units(lanes[0]["p1_defenders"])
-    r_b_def = fmt_units(lanes[1]["p1_defenders"])
-    lines.append(f"║ 🛡️ 蓝防: {l_b_def:<27} ║ 🛡️ 蓝防: {r_b_def:<26} ║")
+    l_1_def = fmt_units(lanes[0]["p1_defenders"])
+    r_1_def = fmt_units(lanes[1]["p1_defenders"])
+    lines.append(f"║ {m1['def_label']}: {l_1_def:<27} ║ {m1['def_label']}: {r_1_def:<26} ║")
 
-    l_b_atk = fmt_units(lanes[0]["p1_attackers"], is_atk=True)
-    r_b_atk = fmt_units(lanes[1]["p1_attackers"], is_atk=True)
-    lines.append(f"║ ⚔️ 蓝冲: {l_b_atk:<27} ║ ⚔️ 蓝冲: {r_b_atk:<26} ║")
+    l_1_atk = fmt_units(lanes[0]["p1_attackers"], is_atk=True)
+    r_1_atk = fmt_units(lanes[1]["p1_attackers"], is_atk=True)
+    lines.append(f"║ {m1['atk_label']}: {l_1_atk:<27} ║ {m1['atk_label']}: {r_1_atk:<26} ║")
 
     # 对撞分界线
     lines.append("║ ┄┄┄┄┄┄┄┄ ⚡ 攻防对撞线 ┄┄┄┄┄┄┄┄ ╫ ┄┄┄┄┄┄┄┄ ⚡ 攻防对撞线 ┄┄┄┄┄┄┄┄ ║")
 
-    # 红方进攻怪与防守怪
-    l_r_atk = fmt_units(lanes[0]["p0_attackers"], is_atk=True)
-    r_r_atk = fmt_units(lanes[1]["p0_attackers"], is_atk=True)
-    lines.append(f"║ ⚔️ 红冲: {l_r_atk:<27} ║ ⚔️ 红冲: {r_r_atk:<26} ║")
+    # P0 进攻怪与防守怪
+    l_0_atk = fmt_units(lanes[0]["p0_attackers"], is_atk=True)
+    r_0_atk = fmt_units(lanes[1]["p0_attackers"], is_atk=True)
+    lines.append(f"║ {m0['atk_label']}: {l_0_atk:<27} ║ {m0['atk_label']}: {r_0_atk:<26} ║")
 
-    l_r_def = fmt_units(lanes[0]["p0_defenders"])
-    r_r_def = fmt_units(lanes[1]["p0_defenders"])
-    lines.append(f"║ 🛡️ 红防: {l_r_def:<27} ║ 🛡️ 红防: {r_r_def:<26} ║")
+    l_0_def = fmt_units(lanes[0]["p0_defenders"])
+    r_0_def = fmt_units(lanes[1]["p0_defenders"])
+    lines.append(f"║ {m0['def_label']}: {l_0_def:<27} ║ {m0['def_label']}: {r_0_def:<26} ║")
 
     lines.append("╠" + "═" * 38 + "╩" + "═" * 37 + "╣")
-    # 红方信息头 (P0)
-    r_header = f" 🔴 红方 (P0 快攻流)  得分: [{p0_score_bar}] {p0['score']}/7  法力: 💎 {p0['mana']}/{p0['max_mana']}  手牌: {len(p0['hand'])}张"
-    lines.append(f"║{r_header:<{w-2}}║")
+    # P0 信息头
+    p0_header = f" {m0['name']}  得分: [{p0_score_bar}] {p0['score']}/7  法力: 💎 {p0['mana']}/{p0['max_mana']}  手牌: {len(p0['hand'])}张"
+    lines.append(f"║{p0_header:<{w-2}}║")
     lines.append("╚" + "═" * (w - 2) + "╝")
 
     # 当前动作与战况反馈
-    act_p_str = "🔴 红方" if acting_player == 0 else "🔵 蓝方"
+    act_p_str = m0['short'] if acting_player == 0 else m1['short']
     lines.append(f"👉 [第 {turn_count:02d} 回合] {act_p_str} 决策: {action_desc}")
     if result_log:
         lines.append(f"💥 {result_log}")

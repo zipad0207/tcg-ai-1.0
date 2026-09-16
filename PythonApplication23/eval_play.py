@@ -53,6 +53,7 @@ def pack_snapshot(env, turn_count, acting_player, action_desc, result_log=None):
             "score": p.score,
             "mana": p.mana,
             "max_mana": p.max_mana,
+            "faction": p.faction.value,
             "hand": [{"name": c.name, "cost": c.cost, "dp": c.base_dp, "tags": c.tags} for c in p.hand]
         }
     def pack_l(lanes):
@@ -79,12 +80,16 @@ def pack_snapshot(env, turn_count, acting_player, action_desc, result_log=None):
     }
 
 def evaluate():
-    parser = argparse.ArgumentParser(description="TCG AI 对局全景回放与评估")
+    parser = argparse.ArgumentParser(description="TCG AI 对局全景回放与评估 (支持红/蓝/绿任意阵营对决)")
     parser.add_argument("--stage", type=str, default="tuned", choices=["baseline", "tuned"],
                         help="选择评估模型阶段: tuned(调优后平衡模型) 或 baseline(基准模型)")
     parser.add_argument("--model", type=str, default=None, help="自定义指定模型权重文件路径")
     parser.add_argument("--cards", type=str, default=None, help="自定义指定卡池配置文件路径 (默认根据 stage 自动选择)")
     parser.add_argument("--decks", type=str, default="decks_config.json", help="AI 构筑卡组配置文件路径 (默认 decks_config.json)")
+    parser.add_argument("--p0", "--f0", dest="p0_faction", type=str, default="Red", choices=["Red", "Blue", "Green"],
+                        help="先手 P0 阵营: Red, Blue, Green (默认 Red)")
+    parser.add_argument("--p1", "--f1", dest="p1_faction", type=str, default="Blue", choices=["Red", "Blue", "Green"],
+                        help="后手 P1 阵营: Red, Blue, Green (默认 Blue)")
     parser.add_argument("--html", type=str, default="battle_replay.html", help="导出可交互网页回放文件名")
     args = parser.parse_args()
 
@@ -103,23 +108,38 @@ def evaluate():
         stage_cards = f"cards_config_{args.stage}.json"
         cards_path = stage_cards if os.path.exists(stage_cards) else "cards_config.json"
 
+    # 解析阵营枚举与元信息
+    f_map = {"Red": Faction.RED, "Blue": Faction.BLUE, "Green": Faction.GREEN}
+    p0_f = f_map.get(args.p0_faction, Faction.RED)
+    p1_f = f_map.get(args.p1_faction, Faction.BLUE)
+
+    faction_meta = {
+        Faction.RED: ("🔴 红方", "赤红·快攻突破流"),
+        Faction.BLUE: ("🔵 蓝方", "蔚蓝·守卫控制流"),
+        Faction.GREEN: ("🟢 绿方", "翠绿·林野跳费流")
+    }
+    p0_tag, p0_style = faction_meta.get(p0_f, ("🔴 红方", "赤红"))
+    p1_tag, p1_style = faction_meta.get(p1_f, ("🔵 蓝方", "蔚蓝"))
+
     # 加载 AI 自主构筑卡组
     p0_decklist, p1_decklist = None, None
-    red_deck_name, blue_deck_name = "默认随机卡组", "默认随机卡组"
+    p0_deck_name = f"{args.p0_faction}AI卡组"
+    p1_deck_name = f"{args.p1_faction}AI卡组"
+
     if args.decks and os.path.exists(args.decks):
         import json
         with open(args.decks, "r", encoding="utf-8") as df:
             decks_cfg = json.load(df)
-            if "Red" in decks_cfg:
-                p0_decklist = decks_cfg["Red"].get("decklist")
-                red_deck_name = decks_cfg["Red"].get("deck_name", "赤红AI卡组")
-            if "Blue" in decks_cfg:
-                p1_decklist = decks_cfg["Blue"].get("decklist")
-                blue_deck_name = decks_cfg["Blue"].get("deck_name", "蔚蓝AI卡组")
-        print(f"🃏 已加载 AI 构筑卡组: 🔴 红方《{red_deck_name}》 vs 🔵 蓝方《{blue_deck_name}》")
+            if args.p0_faction in decks_cfg:
+                p0_decklist = decks_cfg[args.p0_faction].get("decklist")
+                p0_deck_name = decks_cfg[args.p0_faction].get("deck_name", p0_deck_name)
+            if args.p1_faction in decks_cfg:
+                p1_decklist = decks_cfg[args.p1_faction].get("decklist")
+                p1_deck_name = decks_cfg[args.p1_faction].get("deck_name", p1_deck_name)
+        print(f"🃏 已加载 AI 构筑卡组: {p0_tag}《{p0_deck_name}》 vs {p1_tag}《{p1_deck_name}》")
 
     print(f"📦 正在加载智能体模型权重: {model_path} | 卡池文件: {cards_path}")
-    env = DuelEnv(p0_faction=Faction.RED, p1_faction=Faction.BLUE, cards_path=cards_path,
+    env = DuelEnv(p0_faction=p0_f, p1_faction=p1_f, cards_path=cards_path,
                   p0_decklist=p0_decklist, p1_decklist=p1_decklist)
     
     model = CardNet(action_dim=env.action_space_size).to(device)
@@ -132,15 +152,15 @@ def evaluate():
     snapshots = []
     
     print("\n" + "="*80)
-    print(f"🎮 AI 对局全景回放启动 (红方 vs 蓝方) | 模型: {os.path.basename(model_path)}")
-    print(f"⚔️ 对战阵列: 🔴 红方《{red_deck_name}》 VS 🔵 蓝方《{blue_deck_name}》")
+    print(f"🎮 AI 对局全景回放启动 ({p0_tag} vs {p1_tag}) | 模型: {os.path.basename(model_path)}")
+    print(f"⚔️ 对战阵列: {p0_tag}《{p0_deck_name}》 VS {p1_tag}《{p1_deck_name}》")
     print("="*80)
 
     while not done:
         curr_p = env.current_player
         acting_turn = env.turn_count
         p_obj = env.players[curr_p]
-        f_name = "红方" if curr_p == 0 else "蓝方"
+        f_name = p0_tag if curr_p == 0 else p1_tag
         
         mask = env.get_action_mask()
         state_t = torch.FloatTensor(obs).unsqueeze(0).to(device)
@@ -157,17 +177,19 @@ def evaluate():
         result_log = None
         if action == env.action_space_size - 1:
             gained = env.players[curr_p].score - prev_score
+            s0 = env.players[0].score
+            s1 = env.players[1].score
             if gained > 0:
-                result_log = f"⚔️ 冲锋突破！{f_name} 本回合斩获 +{gained} 分！| 实时比分 -> 🔴 红 {env.players[0].score} : {env.players[1].score} 蓝 🔵"
+                result_log = f"⚔️ 冲锋突破！{f_name} 本回合斩获 +{gained} 分！| 实时比分 -> {p0_tag} {s0} : {s1} {p1_tag}"
             else:
-                result_log = f"🛡️ 防线阻挡/蓄势完成 | 实时比分 -> 🔴 红 {env.players[0].score} : {env.players[1].score} 蓝 🔵"
+                result_log = f"🛡️ 防线阻挡/蓄势完成 | 实时比分 -> {p0_tag} {s0} : {s1} {p1_tag}"
 
             # 打印回合全景战局看板
             board_str = format_terminal_board(
                 turn_count=acting_turn,
                 acting_player=curr_p,
-                p0={"score": env.players[0].score, "mana": env.players[0].mana, "max_mana": env.players[0].max_mana, "hand": env.players[0].hand},
-                p1={"score": env.players[1].score, "mana": env.players[1].mana, "max_mana": env.players[1].max_mana, "hand": env.players[1].hand},
+                p0={"score": env.players[0].score, "mana": env.players[0].mana, "max_mana": env.players[0].max_mana, "faction": env.p0_faction.value, "hand": env.players[0].hand},
+                p1={"score": env.players[1].score, "mana": env.players[1].mana, "max_mana": env.players[1].max_mana, "faction": env.p1_faction.value, "hand": env.players[1].hand},
                 lanes=[
                     {
                         "p0_attackers": [{"name": u.card.name, "dp": u.current_dp, "ready": u.ready_to_attack} for u in env.lanes[0].attackers if u.owner == 0],
@@ -187,16 +209,16 @@ def evaluate():
             )
             print("\n" + board_str)
         else:
-            print(f"👉 [第 {acting_turn:02d} 回合] {'🔴 红方' if curr_p==0 else '🔵 蓝方'} 动作: {action_desc} (余法力: {p_obj.mana}/{p_obj.max_mana})")
+            print(f"👉 [第 {acting_turn:02d} 回合] {f_name} 动作: {action_desc} (余法力: {p_obj.mana}/{p_obj.max_mana})")
 
         # 记录每一步的快照用于生成交互式 HTML
         snap = pack_snapshot(env, acting_turn, curr_p, action_desc, result_log)
         snapshots.append(snap)
 
-    winner = "红方 (P0 - 快攻突破流)" if env.players[0].score >= env.WIN_SCORE else "蓝方 (P1 - 控制防守流)"
+    winner = f"{p0_tag} ({p0_style})" if env.players[0].score >= env.WIN_SCORE else f"{p1_tag} ({p1_style})"
     print("\n" + "="*80)
     print(f"🏁 对局结算完毕！获胜方: 【{winner}】")
-    print(f"最终比分: 🔴 红方 {env.players[0].score} : {env.players[1].score} 蓝方 🔵 (总回合数: {env.turn_count} 轮)")
+    print(f"最终比分: {p0_tag} {env.players[0].score} : {env.players[1].score} {p1_tag} (总回合数: {env.turn_count} 轮)")
     print("="*80)
 
     # 导出可交互 HTML 网页回放器

@@ -247,9 +247,6 @@ def main():
         with open(METRICS_SAVE_PATH, "w", encoding="utf-8") as f:
             json.dump(metrics, f, indent=2, ensure_ascii=False)
         print(f"📊 [指标持久化] 训练战报已同步写入: {METRICS_SAVE_PATH}")
-        if STAGE == "baseline":
-            with open("training_metrics.json", "w", encoding="utf-8") as f:
-                json.dump(metrics, f, indent=2, ensure_ascii=False)
 
     def handle_sigint(sig, frame):
         print("\n🛑 捕获中断信号，正在保存当前权重与战报数据...")

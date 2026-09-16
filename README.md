@@ -97,8 +97,8 @@ timeline
 ### 2. 四合一全景学术对比大图
 
 <p align="center">
-  <a href="./figure_comparison.png" target="_blank">
-    <img src="./figure_comparison.png" alt="四合一全景学术对比图" width="100%">
+  <a href="./PythonApplication23/figure_comparison.png" target="_blank">
+    <img src="./PythonApplication23/figure_comparison.png" alt="四合一全景学术对比图" width="100%">
   </a>
   <br>
   <sub>🔍 <b>四合一全景学术对比图</b>（点击上方图片直接在新标签页中查看 300 DPI 高清学术原图）</sub>
@@ -257,11 +257,11 @@ python deck_builder_ppo.py --factions Red,Blue --generations 4 --games-per-gen 5
 # 方案 B: 由 DeepSeek 大模型基于卡池设计哲学构建 30 张竞技卡组
 python deck_builder_deepseek.py --factions Red,Blue,Green
 
-# 2. 运行红蓝自主选卡卡组单局全景复盘对决，更新 battle_replay.html
-python eval_play.py --stage tuned --decks decks_config.json
+# 2. 运行自主卡组单局全景复盘对决，更新 battle_replay.html (支持红/蓝/绿任意对抗)
+python eval_play.py --p0 Green --p1 Red --decks decks_config.json
 
-# 3. 运行 500 局蒙特卡洛多轮竞技场压力测试，输出胜率与战术指标
-python test_deck_matchup.py --episodes 500 --decks decks_config.json
+# 3. 运行 500 局蒙特卡洛多轮竞技场压力测试，输出胜率与核心单卡 (支持 --p0 / --p1)
+python test_deck_matchup.py --p0 Green --p1 Blue --episodes 500
 ```
 
 ---
@@ -269,31 +269,38 @@ python test_deck_matchup.py --episodes 500 --decks decks_config.json
 ## 📂 项目结构概览
 
 ```text
-├── .gitignore                           # Git 忽略规则 (已安全排除权重、缓存及配置)
+├── .gitignore                           # Git 忽略规则 (已安全排除二进制权重、缓存及配置)
 ├── README.md                            # 项目全景学术报告 (本文件)
 └── PythonApplication23/
-    ├── sandbox.py                       # TCG 核心物理引擎 (DuelEnv, 支持同名卡上限3张与自定义卡组)
-    ├── train.py                         # PPO 自博弈强化学习流水线 (支持 baseline/tuned 双阶段)
+    ├── sandbox.py                       # TCG 核心物理引擎 (DuelEnv, 支持同名卡上限3张与自适应路径)
+    ├── train.py                         # PPO 强化学习统一入口 (支持 baseline/tuned/--brawl 混战)
+    ├── train_brawl.py                   # 三大阵营 30 张成熟套牌 6000+ 局自由混战 PPO 流水线
     ├── agent.py                         # 基于 PyTorch 的双头策略价值神经网络 (CardNet)
     ├── deck_builder_ppo.py              # PPO 强化学习智能体自主选卡构筑系统 (Actor-Critic偏好+自博弈进化)
-    ├── deck_builder_deepseek.py         # LLM 大模型智能选卡构筑大师 (30张牌库/单卡<=3张/曲线规划)
-    ├── test_deck_matchup.py             # 红蓝 AI 卡组多轮批处理对抗评测脚本 (Monte Carlo)
+    ├── deck_builder_deepseek.py         # LLM 大模型智能选卡构筑大师 (30张牌库/单卡<=3张/三色流派)
+    ├── test_deck_matchup.py             # 多阵营 AI 卡组多轮批处理对抗评测脚本 (支持红/蓝/绿任意对抗)
     ├── decks_config.json                # 智能体自主构筑卡组配置文件 (含红蓝绿三大流派战术定义)
-    ├── eval_play.py                     # AI 实时对抗评估与对局复盘入口 (支持 --decks)
-    ├── visualizer.py                    # 终端双路 ASCII 棋盘与 HTML5 战报生成引擎
+    ├── eval_play.py                     # AI 实时对抗评估与对局复盘入口 (支持 --p0/--p1 任意阵营对决)
+    ├── visualizer.py                    # 终端双路 ASCII 棋盘 (自适应红蓝绿) 与 HTML5 战报生成引擎
     ├── battle_replay.html               # 现代暗黑拟态交互式对局回放网页
+    ├── auto_meta_balancer.py            # 三大阵营自适应闭环调优与 6000+ 局验证流水线
     ├── card_printer_deepseek.py         # 独立创新印卡工坊 (卡牌扩充设计与机制组装)
     ├── auto_balancer_deepseek.py        # 独立数值调优平衡器 (基于对局遥测的数值收敛)
-    ├── plot_experiments.py              # 学术对比图表生成器 (含四合一对比大图)
+    ├── generate_hearthstone_tier_table.py # 竞技场大数据分色卡牌评级系统生成器
+    ├── card_tier_table.md               # 分阵营色天梯卡牌战力梯队榜 (ΔWR与出场率分析)
+    ├── hearthstone_assistant.html       # 网页端交互式竞技场单卡评级与筛选看板
+    ├── plot_experiments.py              # 学术对比图表生成器 (含四合一全景大图)
     ├── cards_config_baseline.json       # 基准卡池配置 (只读保护，用户自定义失衡态)
     ├── cards_config_tuned.json          # 调优卡池配置 (DeepSeek 闭环优化后达到均衡态)
     ├── cards_config_expanded.json       # 扩充卡池文件 (印卡工坊新卡生成产物)
-    ├── cards_config.json                # 当前沙盒默认读取卡池 (42张生态池)
+    ├── cards_config.json                # 当前沙盒默认读取卡池 (42张全生态池)
     ├── training_metrics_baseline.json   # 基准对照组 1000 局遥测数据 (31.2% vs 68.8%)
     ├── training_metrics_tuned.json      # 调优组 1000 局遥测数据 (46.1% vs 53.9%)
+    ├── training_metrics_brawl.json      # 6000 局三大阵营混战遥测数据 (纯外战与综合胜率)
     ├── figure_comparison.png            # 四合一学术全景综合对比大图
     ├── figure_baseline.png              # 基准对照组胜率与卡牌频次分布图
-    └── figure_tuned.png                 # 调优实验组胜率与卡牌频次分布图
+    ├── figure_tuned.png                 # 调优实验组胜率与卡牌频次分布图
+    └── figure_brawl.png                 # 三大阵营 6000+ 局混战纳什均衡全景看板
 ```
 
 ---

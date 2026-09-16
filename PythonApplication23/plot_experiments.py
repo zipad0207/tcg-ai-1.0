@@ -10,6 +10,21 @@ if hasattr(sys.stdout, "reconfigure"):
 plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS', 'sans-serif']
 plt.rcParams['axes.unicode_minus'] = False
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+def resolve_path(p):
+    if os.path.isabs(p) or os.path.exists(p):
+        return p
+    child_path = os.path.join(SCRIPT_DIR, p)
+    if os.path.exists(child_path):
+        return child_path
+    return p
+
+def resolve_output(p):
+    if os.path.isabs(p):
+        return p
+    return os.path.join(SCRIPT_DIR, os.path.basename(p))
+
 def plot_thesis_comparison(metrics_path, output_filename, is_tuned=False):
     """
     根据遥测数据绘制学术规范图表
@@ -17,6 +32,8 @@ def plot_thesis_comparison(metrics_path, output_filename, is_tuned=False):
     :param output_filename: 保存图片的文件名
     :param is_tuned: 是否为调优后数据 (True: 调优后, False: 基准调优前)
     """
+    metrics_path = resolve_path(metrics_path)
+    output_filename = resolve_output(output_filename)
     if not os.path.exists(metrics_path):
         print(f"❌ 找不到文件: {metrics_path}")
         return
@@ -83,6 +100,9 @@ def plot_thesis_comparison(metrics_path, output_filename, is_tuned=False):
 
 def plot_comprehensive_comparison(baseline_path="training_metrics_baseline.json", tuned_path="training_metrics_tuned.json", output_filename="figure_comparison.png"):
     """绘制四合一学术全景对比图 (2x2 画布)"""
+    baseline_path = resolve_path(baseline_path)
+    tuned_path = resolve_path(tuned_path)
+    output_filename = resolve_output(output_filename)
     if not os.path.exists(baseline_path) or not os.path.exists(tuned_path):
         print(f"❌ 数据文件缺失: {baseline_path} 或 {tuned_path}")
         return
