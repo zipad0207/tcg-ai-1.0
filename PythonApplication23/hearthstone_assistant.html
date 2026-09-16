@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>炉石助手 · TCG 智能体 42 卡牌大数据打分天梯榜</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: #0c0e14;
+      --bg-card: rgba(22, 27, 39, 0.85);
+      --border-gold: #c69b3d;
+      --gold-glow: rgba(198, 155, 61, 0.4);
+      --tier-s: #ff4757;
+      --tier-a: #ffa502;
+      --tier-b: #2ed573;
+      --tier-c: #1e90ff;
+      --tier-d: #747d8c;
+      --text-main: #f1f2f6;
+      --text-dim: #a4b0be;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background: radial-gradient(circle at 50% 10%, #1a2236 0%, #0c0e14 90%);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 24px;
+      line-height: 1.5;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .title {
+      font-family: 'Cinzel', 'Noto Sans SC', serif;
+      font-size: 2.3rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ffeaa7, #fdcb6e, #e17055);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--text-dim);
+      font-size: 0.95rem;
+      max-width: 850px;
+      margin: 0 auto 16px auto;
+    }
+
+    /* 顶栏统计条 */
+    .stat-banner {
+      max-width: 1300px;
+      margin: 0 auto 20px auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .stat-pill {
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(8px);
+    }
+
+    .stat-pill-label {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    .stat-pill-val {
+      font-size: 1.2rem;
+      font-weight: 900;
+      font-family: 'Cinzel', serif;
+    }
+
+    /* 顶栏控制板 */
+    .controls {
+      max-width: 1300px;
+      margin: 0 auto 20px auto;
+      background: var(--bg-card);
+      border: 1px solid rgba(198, 155, 61, 0.3);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .filter-label {
+      font-size: 0.85rem;
+      color: var(--border-gold);
+      font-weight: 700;
+      margin-right: 4px;
+    }
+
+    .btn-filter {
+      background: #1e2738;
+      border: 1px solid #34495e;
+      color: var(--text-main);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-filter:hover {
+      border-color: var(--border-gold);
+      color: #ffeaa7;
+    }
+
+    .btn-filter.active {
+      background: linear-gradient(135deg, #c69b3d, #e67e22);
+      border-color: #f39c12;
+      color: #fff;
+      box-shadow: 0 0 12px var(--gold-glow);
+    }
+
+    .view-select, .sort-select {
+      background: #141a29;
+      border: 1px solid #34495e;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .search-input {
+      background: #141a29;
+      border: 1px solid #2f3640;
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      width: 200px;
+      outline: none;
+    }
+    .search-input:focus {
+      border-color: var(--border-gold);
+      box-shadow: 0 0 8px var(--gold-glow);
+    }
+
+    /* 卡牌网格展示 */
+    .card-grid {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 18px;
+    }
+
+    .card-item {
+      background: var(--bg-card);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card-item:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6);
+    }
+
+    .card-item.tier-s { border-left: 4px solid var(--tier-s); }
+    .card-item.tier-a { border-left: 4px solid var(--tier-a); }
+    .card-item.tier-b { border-left: 4px solid var(--tier-b); }
+    .card-item.tier-c { border-left: 4px solid var(--tier-c); }
+    .card-item.tier-d { border-left: 4px solid var(--tier-d); opacity: 0.85; }
+
+    /* 卡牌头部 */
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .mana-gem {
+      width: 34px;
+      height: 34px;
+      background: radial-gradient(circle at 35% 35%, #00d2d3, #0984e3, #0c2461);
+      border: 2px solid #74b9ff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 1.1rem;
+      color: #fff;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+      box-shadow: 0 0 8px rgba(9, 132, 227, 0.6);
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+
+    .card-title-box {
+      flex: 1;
+    }
+
+    .card-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card-meta {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    /* 评分大徽章 */
+    .score-badge-box {
+      text-align: right;
+    }
+
+    .score-num {
+      font-family: 'Cinzel', serif;
+      font-size: 1.8rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .tier-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+
+    .tier-s .score-num { color: var(--tier-s); text-shadow: 0 0 12px rgba(255, 71, 87, 0.5); }
+    .tier-s .tier-badge { background: var(--tier-s); color: #fff; }
+
+    .tier-a .score-num { color: var(--tier-a); text-shadow: 0 0 12px rgba(255, 165, 2, 0.5); }
+    .tier-a .tier-badge { background: var(--tier-a); color: #000; }
+
+    .tier-b .score-num { color: var(--tier-b); text-shadow: 0 0 12px rgba(46, 213, 115, 0.5); }
+    .tier-b .tier-badge { background: var(--tier-b); color: #000; }
+
+    .tier-c .score-num { color: var(--tier-c); }
+    .tier-c .tier-badge { background: var(--tier-c); color: #fff; }
+
+    .tier-d .score-num { color: var(--tier-d); }
+    .tier-d .tier-badge { background: var(--tier-d); color: #fff; }
+
+    .recommendation-bar {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .rec-highlight {
+      font-weight: 700;
+      color: #ffeaa7;
+    }
+
+    .ai-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 8px;
+      border-radius: 6px;
+    }
+
+    .metric-item {
+      font-size: 0.75rem;
+    }
+
+    .metric-val {
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .comment-bubble {
+      background: rgba(198, 155, 61, 0.08);
+      border-left: 3px solid var(--border-gold);
+      padding: 8px 12px;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.8rem;
+      color: #dfe6e9;
+      font-style: italic;
+    }
+
+    /* 表格视图样式 */
+    .table-view-container {
+      max-width: 1300px;
+      margin: 0 auto;
+      background: var(--bg-card);
+      border: 1px solid rgba(198, 155, 61, 0.2);
+      border-radius: 12px;
+      overflow-x: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    table.arena-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      text-align: left;
+    }
+
+    table.arena-table th {
+      background: #141b2a;
+      color: var(--border-gold);
+      padding: 12px 14px;
+      border-bottom: 2px solid #2f3640;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    table.arena-table th:hover {
+      background: #1c263c;
+    }
+
+    table.arena-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      vertical-align: middle;
+    }
+
+    table.arena-table tr:hover td {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .table-score {
+      font-family: 'Cinzel', serif;
+      font-weight: 900;
+      font-size: 1.15rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="title">⚔️ 炉石助手 · TCG 卡牌大数据评级天梯榜</div>
+    <div class="subtitle">
+      对标《炉石传说竞技场助手》(HearthArena / 网易有爱) 打分机制 · 接入 PPO 神经网络 Actor-Critic 探针 · 42 张全生态卡牌实战量化打分
+    </div>
+  </header>
+
+  <!-- 顶栏梯队统计数据条 -->
+  <div class="stat-banner">
+    <div class="stat-pill" style="border-left: 4px solid var(--tier-s);">
+      <div>
+        <div class="stat-pill-label">🌟 S+ / S 级 (幻神)</div>
+        <div style="font-size: 0.72rem; color: #7f8c8d;">90~100分 · 必抓拉满</div>
+      </div>
+      <div class="stat-pill-val" style="color: var(--tier-s);">2 张</div>
+    </div>
+    <div class="stat-pill" style="border-left: 4px solid var(--tier-a);">
+      <div>
+        <div class="stat-pill-label">🥇 A 级 (强力主力)</div>
+        <div style="font-size: 0.72rem; color: #7f8c8d;">80~89分 · 核心满编</div>
+      </div>
+      <div class="stat-pill-val" style="color: var(--tier-a);">2 张</div>
+    </div>
+    <div class="stat-pill" style="border-left: 4px solid var(--tier-b);">
+      <div>
+        <div class="stat-pill-label">🥈 B 级 (合格拼图)</div>
+        <div style="font-size: 0.72rem; color: #7f8c8d;">70~79分 · 曲线过渡</div>
+      </div>
+      <div class="stat-pill-val" style="color: var(--tier-b);">5 张</div>
+    </div>
+    <div class="stat-pill" style="border-left: 4px solid var(--tier-c);">
+      <div>
+        <div class="stat-pill-label">🥉 C 级 (平庸备选)</div>
+        <div style="font-size: 0.72rem; color: #7f8c8d;">60~69分 · 环境针对</div>
+      </div>
+      <div class="stat-pill-val" style="color: var(--tier-c);">27 张</div>
+    </div>
+    <div class="stat-pill" style="border-left: 4px solid var(--tier-d);">
+      <div>
+        <div class="stat-pill-label">☠️ D 级 (致命陷阱)</div>
+        <div style="font-size: 0.72rem; color: #e74c3c;">&lt;60分 · 建议0张弃用</div>
+      </div>
+      <div class="stat-pill-val" style="color: var(--tier-d);">6 张</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="filter-group">
+      <span class="filter-label">阵营:</span>
+      <button class="btn-filter active" onclick="filterFaction('ALL', this)">全部 (42)</button>
+      <button class="btn-filter" onclick="filterFaction('Red', this)">赤红 (12)</button>
+      <button class="btn-filter" onclick="filterFaction('Blue', this)">蔚蓝 (12)</button>
+      <button class="btn-filter" onclick="filterFaction('Green', this)">翠绿 (12)</button>
+      <button class="btn-filter" onclick="filterFaction('Neutral', this)">中立 (6)</button>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-label">评级:</span>
+      <button class="btn-filter active" onclick="filterTier('ALL', this)">全部</button>
+      <button class="btn-filter" onclick="filterTier('S', this)">S 幻神</button>
+      <button class="btn-filter" onclick="filterTier('A', this)">A 强力</button>
+      <button class="btn-filter" onclick="filterTier('B', this)">B 合格</button>
+      <button class="btn-filter" onclick="filterTier('C', this)">C 平庸</button>
+      <button class="btn-filter" onclick="filterTier('D', this)">D 陷阱</button>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-label">视图:</span>
+      <select class="view-select" id="viewMode" onchange="switchView(this.value)">
+        <option value="grid">🎴 卡牌卡片视图</option>
+        <option value="table">📋 天梯明细大表</option>
+      </select>
+      <select class="sort-select" id="sortMode" onchange="onSortChange(this.value)">
+        <option value="score_desc">评分: 从高到低</option>
+        <option value="score_asc">评分: 从低到高</option>
+        <option value="cost_asc">费用: 从低到高</option>
+        <option value="cost_desc">费用: 从高到低</option>
+        <option value="v_desc">Critic增益: 从高到低</option>
+      </select>
+    </div>
+
+    <input type="text" class="search-input" placeholder="🔍 搜索卡牌或评语..." oninput="onSearch(this.value)">
+  </div>
+
+  <div id="contentContainer">
+    <div class="card-grid" id="cardGrid"></div>
+    <div class="table-view-container" id="tableContainer" style="display: none;"></div>
+  </div>
+
+  <script>
+    const CARDS = [
+  {
+    "id": 310,
+    "name": "灭世翡翠巨龙",
+    "faction": "Green",
+    "cost": 9,
+    "card_type": "MINION",
+    "base_dp": 11,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "RUSH",
+      "BONUS_SCORE_1"
+    ],
+    "play_prob": 30.7,
+    "value_gain": 0.588,
+    "raw_val": 0.4014481830894947,
+    "score": 98.0,
+    "tier": "S+",
+    "tier_name": "版本幻神",
+    "rec_count": "3 张 (无脑拉满)",
+    "tier_class": "tier-s",
+    "comment": "【终结重兽】终结比赛的原子弹，但极吃费用与跳费支持，没有跳费容易卡手到死。"
+  },
+  {
+    "id": 905,
+    "name": "佣兵斥候",
+    "faction": "Neutral",
+    "cost": 2,
+    "card_type": "MINION",
+    "base_dp": 1,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "RUSH",
+      "DRAW_1"
+    ],
+    "play_prob": 38.5,
+    "value_gain": 0.363,
+    "raw_val": 0.36730291628837586,
+    "score": 93.5,
+    "tier": "S",
+    "tier_name": "版本幻神",
+    "rec_count": "3 张 (无脑拉满)",
+    "tier_class": "tier-s",
+    "comment": "【版本幻神】突袭解场兼具高效滤抽！不仅抢回节奏还能补充手牌，无论快慢速必满3张！"
+  },
+  {
+    "id": 111,
+    "name": "赤红掠袭者",
+    "faction": "Red",
+    "cost": 5,
+    "card_type": "MINION",
+    "base_dp": 3,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "RUSH",
+      "BONUS_SCORE_1"
+    ],
+    "play_prob": 31.1,
+    "value_gain": 0.303,
+    "raw_val": 0.289089393272996,
+    "score": 83.2,
+    "tier": "A",
+    "tier_name": "强力主力",
+    "rec_count": "2~3 张 (核心支柱)",
+    "tier_class": "tier-a",
+    "comment": "【强力主力】身材扎实或效果针对性强，卡组的中流砥柱，推荐编入2~3张。"
+  },
+  {
+    "id": 309,
+    "name": "翡翠幼龙",
+    "faction": "Green",
+    "cost": 5,
+    "card_type": "MINION",
+    "base_dp": 3,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "RUSH",
+      "DEATH_MANA_1"
+    ],
+    "play_prob": 31.1,
+    "value_gain": 0.303,
+    "raw_val": 0.2890175254195929,
+    "score": 83.2,
+    "tier": "A",
+    "tier_name": "强力主力",
+    "rec_count": "2~3 张 (核心支柱)",
+    "tier_class": "tier-a",
+    "comment": "【强力主力】身材扎实或效果针对性强，卡组的中流砥柱，推荐编入2~3张。"
+  },
+  {
+    "id": 108,
+    "name": "裂甲掷斧手",
+    "faction": "Red",
+    "cost": 2,
+    "card_type": "MINION",
+    "base_dp": 1,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "RUSH",
+      "DEGRADE_1"
+    ],
+    "play_prob": 32.6,
+    "value_gain": 0.189,
+    "raw_val": 0.25035308438539505,
+    "score": 78.1,
+    "tier": "B",
+    "tier_name": "合格拼图",
+    "rec_count": "1~2 张 (节奏过渡)",
+    "tier_class": "tier-b",
+    "comment": "【破阵奇兵】突袭强行换怪还能削弱敌方DP，抢先手压制的无解利器，实战胜率极高！"
+  },
+  {
+    "id": 109,
+    "name": "破阵狂徒",
+    "faction": "Red",
+    "cost": 3,
+    "card_type": "MINION",
+    "base_dp": 3,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "RUSH",
+      "DEGRADE_1"
+    ],
+    "play_prob": 31.8,
+    "value_gain": 0.154,
+    "raw_val": 0.23291947010159494,
+    "score": 75.8,
+    "tier": "B",
+    "tier_name": "合格拼图",
+    "rec_count": "1~2 张 (节奏过渡)",
+    "tier_class": "tier-b",
+    "comment": "【破阵奇兵】突袭强行换怪还能削弱敌方DP，抢先手压制的无解利器，实战胜率极高！"
+  },
+  {
+    "id": 903,
+    "name": "酒馆密账",
+    "faction": "Neutral",
+    "cost": 1,
+    "card_type": "SPELL",
+    "base_dp": 0,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "DRAW_2",
+      "DISCARD_1"
+    ],
+    "play_prob": 33.1,
+    "value_gain": 0.086,
+    "raw_val": 0.2043244241774082,
+    "score": 72.0,
+    "tier": "B",
+    "tier_name": "合格拼图",
+    "rec_count": "1~2 张 (节奏过渡)",
+    "tier_class": "tier-b",
+    "comment": "【滤抽润滑】1费过2滤牌极佳，前期润滑牌库神器；但在资源匮乏时需防卡手。"
+  },
+  {
+    "id": 900,
+    "name": "商人",
+    "faction": "Neutral",
+    "cost": 2,
+    "card_type": "MINION",
+    "base_dp": 2,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "DRAW_1"
+    ],
+    "play_prob": 33.6,
+    "value_gain": 0.074,
+    "raw_val": 0.20196209727227687,
+    "score": 71.7,
+    "tier": "B",
+    "tier_name": "合格拼图",
+    "rec_count": "1~2 张 (节奏过渡)",
+    "tier_class": "tier-b",
+    "comment": "【扎实过渡】2费标准身材还送抽牌，不亏手牌的优质节奏基石，构筑万金油。"
+  },
+  {
+    "id": 107,
+    "name": "集结号手",
+    "faction": "Red",
+    "cost": 2,
+    "card_type": "MINION",
+    "base_dp": 1,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "SPAWN_1_1"
+    ],
+    "play_prob": 36.5,
+    "value_gain": -0.015,
+    "raw_val": 0.1896765926629305,
+    "score": 70.1,
+    "tier": "B",
+    "tier_name": "合格拼图",
+    "rec_count": "1~2 张 (节奏过渡)",
+    "tier_class": "tier-b",
+    "comment": "【频率之王】一张卡提供双倍场面频率，完美契合攻防对撞机制，实测胜率超90%的进攻神卡！"
+  },
+  {
+    "id": 902,
+    "name": "训练假人",
+    "faction": "Neutral",
+    "cost": 1,
+    "card_type": "MINION",
+    "base_dp": 1,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [],
+    "play_prob": 38.0,
+    "value_gain": -0.002,
+    "raw_val": 0.1874163207411766,
+    "score": 69.8,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 101,
+    "name": "红色小队长",
+    "faction": "Red",
+    "cost": 3,
+    "card_type": "MINION",
+    "base_dp": 3,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "SPAWN_1_1"
+    ],
+    "play_prob": 31.3,
+    "value_gain": 0.017,
+    "raw_val": 0.17923626796901226,
+    "score": 68.7,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【频率之王】一张卡提供双倍场面频率，完美契合攻防对撞机制，实测胜率超90%的进攻神卡！"
+  },
+  {
+    "id": 901,
+    "name": "雇佣兵",
+    "faction": "Neutral",
+    "cost": 3,
+    "card_type": "MINION",
+    "base_dp": 5,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [],
+    "play_prob": 37.9,
+    "value_gain": 0.003,
+    "raw_val": 0.1718014331907034,
+    "score": 67.8,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 201,
+    "name": "盾兵",
+    "faction": "Blue",
+    "cost": 1,
+    "card_type": "MINION",
+    "base_dp": 1,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "FORTIFY_1"
+    ],
+    "play_prob": 36.2,
+    "value_gain": -0.041,
+    "raw_val": 0.1641109563410282,
+    "score": 66.8,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 100,
+    "name": "赤红突击手",
+    "faction": "Red",
+    "cost": 1,
+    "card_type": "MINION",
+    "base_dp": 1,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "DEATH_DRAW_1"
+    ],
+    "play_prob": 36.4,
+    "value_gain": -0.046,
+    "raw_val": 0.16265204064548014,
+    "score": 66.6,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【快攻先锋】1费站场带亡语补牌，倒下也不亏卡，抢血压制不可或缺的1费核心。"
+  },
+  {
+    "id": 200,
+    "name": "蔚蓝卫士",
+    "faction": "Blue",
+    "cost": 2,
+    "card_type": "MINION",
+    "base_dp": 2,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "FORTIFY_1"
+    ],
+    "play_prob": 39.1,
+    "value_gain": -0.035,
+    "raw_val": 0.16205437786877155,
+    "score": 66.5,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 209,
+    "name": "寒晶护壁",
+    "faction": "Blue",
+    "cost": 2,
+    "card_type": "SPELL",
+    "base_dp": 0,
+    "atk_val": 0,
+    "def_val": 2,
+    "tags": [
+      "DRAW_1"
+    ],
+    "play_prob": 31.8,
+    "value_gain": -0.006,
+    "raw_val": 0.16188383406400683,
+    "score": 66.5,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【扎实过渡】2费标准身材还送抽牌，不亏手牌的优质节奏基石，构筑万金油。"
+  },
+  {
+    "id": 103,
+    "name": "射线",
+    "faction": "Red",
+    "cost": 1,
+    "card_type": "SPELL",
+    "base_dp": 0,
+    "atk_val": 2,
+    "def_val": 0,
+    "tags": [],
+    "play_prob": 38.5,
+    "value_gain": -0.051,
+    "raw_val": 0.15288327097892762,
+    "score": 65.3,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 207,
+    "name": "霜盾见习官",
+    "faction": "Blue",
+    "cost": 2,
+    "card_type": "MINION",
+    "base_dp": 1,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "FORTIFY_1",
+      "SUPPORT_ATK_1"
+    ],
+    "play_prob": 36.7,
+    "value_gain": -0.051,
+    "raw_val": 0.14495232358574867,
+    "score": 64.2,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 301,
+    "name": "树人",
+    "faction": "Green",
+    "cost": 3,
+    "card_type": "MINION",
+    "base_dp": 2,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "FORTIFY_1"
+    ],
+    "play_prob": 33.1,
+    "value_gain": -0.022,
+    "raw_val": 0.140194173976779,
+    "score": 63.6,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 904,
+    "name": "拾荒盾卫",
+    "faction": "Neutral",
+    "cost": 3,
+    "card_type": "MINION",
+    "base_dp": 3,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "FORTIFY_1",
+      "DEATH_DRAW_1"
+    ],
+    "play_prob": 33.0,
+    "value_gain": -0.034,
+    "raw_val": 0.1351855878531933,
+    "score": 62.9,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 203,
+    "name": "防御！",
+    "faction": "Blue",
+    "cost": 1,
+    "card_type": "SPELL",
+    "base_dp": 0,
+    "atk_val": 0,
+    "def_val": 2,
+    "tags": [],
+    "play_prob": 33.8,
+    "value_gain": -0.051,
+    "raw_val": 0.13148617759346964,
+    "score": 62.5,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 304,
+    "name": "森林之狼",
+    "faction": "Green",
+    "cost": 4,
+    "card_type": "MINION",
+    "base_dp": 4,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [],
+    "play_prob": 30.6,
+    "value_gain": -0.017,
+    "raw_val": 0.13086282059550286,
+    "score": 62.4,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 306,
+    "name": "荆棘缠绕",
+    "faction": "Green",
+    "cost": 2,
+    "card_type": "SPELL",
+    "base_dp": 0,
+    "atk_val": 2,
+    "def_val": 0,
+    "tags": [],
+    "play_prob": 35.6,
+    "value_gain": -0.077,
+    "raw_val": 0.12933308959007264,
+    "score": 62.2,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 307,
+    "name": "芽苗祭司",
+    "faction": "Green",
+    "cost": 3,
+    "card_type": "MINION",
+    "base_dp": 2,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "RAMP_1"
+    ],
+    "play_prob": 32.2,
+    "value_gain": -0.039,
+    "raw_val": 0.1293591433763504,
+    "score": 62.2,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【跳费核心】绿色跳费体系的关键发动机，先手下场能让你提前打出高费大哥。"
+  },
+  {
+    "id": 206,
+    "name": "火铳手",
+    "faction": "Blue",
+    "cost": 4,
+    "card_type": "MINION",
+    "base_dp": 4,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "SUPPORT_ATK_2"
+    ],
+    "play_prob": 32.2,
+    "value_gain": -0.04,
+    "raw_val": 0.12888916917145252,
+    "score": 62.1,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 208,
+    "name": "壁垒工匠",
+    "faction": "Blue",
+    "cost": 3,
+    "card_type": "MINION",
+    "base_dp": 3,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "FORTIFY_2"
+    ],
+    "play_prob": 31.5,
+    "value_gain": -0.033,
+    "raw_val": 0.12820671655237675,
+    "score": 62.0,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 104,
+    "name": "切割者",
+    "faction": "Red",
+    "cost": 2,
+    "card_type": "MINION",
+    "base_dp": 2,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "DEGRADE_1"
+    ],
+    "play_prob": 33.1,
+    "value_gain": -0.055,
+    "raw_val": 0.12683687932789325,
+    "score": 61.8,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 202,
+    "name": "弓箭手",
+    "faction": "Blue",
+    "cost": 3,
+    "card_type": "MINION",
+    "base_dp": 3,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "SUPPORT_ATK_1"
+    ],
+    "play_prob": 30.9,
+    "value_gain": -0.032,
+    "raw_val": 0.12611485600471498,
+    "score": 61.8,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 102,
+    "name": "自爆",
+    "faction": "Red",
+    "cost": 2,
+    "card_type": "SPELL",
+    "base_dp": 0,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "SACRIFICE_1_KILL_1",
+      "ATTACK_ONLY"
+    ],
+    "play_prob": 31.5,
+    "value_gain": -0.046,
+    "raw_val": 0.12338361773639918,
+    "score": 61.4,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 302,
+    "name": "剧毒花",
+    "faction": "Green",
+    "cost": 2,
+    "card_type": "MINION",
+    "base_dp": 1,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "DEGRADE_2"
+    ],
+    "play_prob": 31.8,
+    "value_gain": -0.049,
+    "raw_val": 0.12346965797245504,
+    "score": 61.4,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 211,
+    "name": "蔚蓝要塞",
+    "faction": "Blue",
+    "cost": 6,
+    "card_type": "MINION",
+    "base_dp": 5,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "FORTIFY_3",
+      "SUPPORT_ATK_1"
+    ],
+    "play_prob": 30.1,
+    "value_gain": -0.033,
+    "raw_val": 0.12242206543684006,
+    "score": 61.3,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【后期叹息之墙】超高护甲身板，但由于费用过高面对快攻容易卡死在手里，环境对策卡。"
+  },
+  {
+    "id": 205,
+    "name": "藤甲兵",
+    "faction": "Blue",
+    "cost": 4,
+    "card_type": "MINION",
+    "base_dp": 4,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "FORTIFY_2"
+    ],
+    "play_prob": 30.4,
+    "value_gain": -0.038,
+    "raw_val": 0.12149851627647876,
+    "score": 61.1,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 300,
+    "name": "翠绿萌芽",
+    "faction": "Green",
+    "cost": 2,
+    "card_type": "SPELL",
+    "base_dp": 0,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "RAMP_1"
+    ],
+    "play_prob": 31.7,
+    "value_gain": -0.054,
+    "raw_val": 0.1207447224855423,
+    "score": 61.0,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【跳费核心】绿色跳费体系的关键发动机，先手下场能让你提前打出高费大哥。"
+  },
+  {
+    "id": 210,
+    "name": "冰封禁制",
+    "faction": "Blue",
+    "cost": 3,
+    "card_type": "SPELL",
+    "base_dp": 0,
+    "atk_val": 2,
+    "def_val": 2,
+    "tags": [],
+    "play_prob": 30.5,
+    "value_gain": -0.052,
+    "raw_val": 0.11650949425995351,
+    "score": 60.5,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 303,
+    "name": "狂暴生长",
+    "faction": "Green",
+    "cost": 3,
+    "card_type": "SPELL",
+    "base_dp": 0,
+    "atk_val": 0,
+    "def_val": 3,
+    "tags": [],
+    "play_prob": 32.0,
+    "value_gain": -0.068,
+    "raw_val": 0.1166556103527546,
+    "score": 60.5,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【平庸填充】实战表现中规中矩，缺乏改变战局的爆点，无更好替代时才抓。"
+  },
+  {
+    "id": 311,
+    "name": "世界树恩泽",
+    "faction": "Green",
+    "cost": 4,
+    "card_type": "SPELL",
+    "base_dp": 0,
+    "atk_val": 0,
+    "def_val": 3,
+    "tags": [
+      "RAMP_1"
+    ],
+    "play_prob": 30.9,
+    "value_gain": -0.059,
+    "raw_val": 0.11529716514050962,
+    "score": 60.3,
+    "tier": "C",
+    "tier_name": "平庸填充",
+    "rec_count": "0~1 张 (看曲线带)",
+    "tier_class": "tier-c",
+    "comment": "【跳费核心】绿色跳费体系的关键发动机，先手下场能让你提前打出高费大哥。"
+  },
+  {
+    "id": 305,
+    "name": "远古巨树",
+    "faction": "Green",
+    "cost": 7,
+    "card_type": "MINION",
+    "base_dp": 8,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "FORTIFY_2"
+    ],
+    "play_prob": 30.5,
+    "value_gain": -0.002,
+    "raw_val": 0.10141685046255589,
+    "score": 58.5,
+    "tier": "D",
+    "tier_name": "陷阱避坑",
+    "rec_count": "0 张 (千万别抓)",
+    "tier_class": "tier-d",
+    "comment": "【后期叹息之墙】超高护甲身板，但由于费用过高面对快攻容易卡死在手里，环境对策卡。"
+  },
+  {
+    "id": 308,
+    "name": "翡翠巨熊",
+    "faction": "Green",
+    "cost": 6,
+    "card_type": "MINION",
+    "base_dp": 7,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "FORTIFY_2"
+    ],
+    "play_prob": 30.6,
+    "value_gain": -0.011,
+    "raw_val": 0.09841756492853163,
+    "score": 58.1,
+    "tier": "D",
+    "tier_name": "陷阱避坑",
+    "rec_count": "0 张 (千万别抓)",
+    "tier_class": "tier-d",
+    "comment": "【后期叹息之墙】超高护甲身板，但由于费用过高面对快攻容易卡死在手里，环境对策卡。"
+  },
+  {
+    "id": 105,
+    "name": "掠夺者",
+    "faction": "Red",
+    "cost": 6,
+    "card_type": "MINION",
+    "base_dp": 4,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "BONUS_SCORE_1"
+    ],
+    "play_prob": 30.5,
+    "value_gain": -0.012,
+    "raw_val": 0.09730400137603284,
+    "score": 58.0,
+    "tier": "D",
+    "tier_name": "陷阱避坑",
+    "rec_count": "0 张 (千万别抓)",
+    "tier_class": "tier-d",
+    "comment": "【低效避坑】费用偏高或收益不稳定，实测负收益频发，PPO建议直接放弃。"
+  },
+  {
+    "id": 204,
+    "name": "石像鬼",
+    "faction": "Blue",
+    "cost": 6,
+    "card_type": "MINION",
+    "base_dp": 8,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [],
+    "play_prob": 30.0,
+    "value_gain": -0.03,
+    "raw_val": 0.08804814465343952,
+    "score": 56.7,
+    "tier": "D",
+    "tier_name": "陷阱避坑",
+    "rec_count": "0 张 (千万别抓)",
+    "tier_class": "tier-d",
+    "comment": "【低效避坑】费用偏高或收益不稳定，实测负收益频发，PPO建议直接放弃。"
+  },
+  {
+    "id": 110,
+    "name": "血祭爆燃",
+    "faction": "Red",
+    "cost": 4,
+    "card_type": "SPELL",
+    "base_dp": 0,
+    "atk_val": 3,
+    "def_val": 0,
+    "tags": [
+      "SACRIFICE_1_KILL_1",
+      "ATTACK_ONLY"
+    ],
+    "play_prob": 28.6,
+    "value_gain": -0.067,
+    "raw_val": 0.05980707558989526,
+    "score": 53.0,
+    "tier": "D",
+    "tier_name": "陷阱避坑",
+    "rec_count": "0 张 (千万别抓)",
+    "tier_class": "tier-d",
+    "comment": "【高费亏卡】需要牺牲己方随从且费用高昂，一旦场面逆风完全打不出去，极度卡手。"
+  },
+  {
+    "id": 106,
+    "name": "大块头",
+    "faction": "Red",
+    "cost": 6,
+    "card_type": "MINION",
+    "base_dp": 10,
+    "atk_val": 0,
+    "def_val": 0,
+    "tags": [
+      "DISCARD_2"
+    ],
+    "play_prob": 30.7,
+    "value_gain": -0.232,
+    "raw_val": -0.07708882018923759,
+    "score": 35.0,
+    "tier": "D",
+    "tier_name": "陷阱避坑",
+    "rec_count": "0 张 (千万别抓)",
+    "tier_class": "tier-d",
+    "comment": "【严重陷阱卡】虽有高额身材，但强制丢弃2张手牌直接破产，Critic估值全场垫底，千万别抓！"
+  }
+];
+    let currentFaction = 'ALL';
+    let currentTier = 'ALL';
+    let currentKeyword = '';
+    let currentSort = 'score_desc';
+    let currentView = 'grid';
+
+    function getFilteredAndSortedCards() {
+      let res = CARDS.filter(c => {
+        if (currentFaction !== 'ALL' && c.faction !== currentFaction) return false;
+        if (currentTier !== 'ALL' && !c.tier.startsWith(currentTier)) return false;
+        if (currentKeyword && !c.name.includes(currentKeyword) && !c.comment.includes(currentKeyword) && !c.faction.includes(currentKeyword)) return false;
+        return true;
+      });
+
+      if (currentSort === 'score_desc') res.sort((a, b) => b.score - a.score);
+      else if (currentSort === 'score_asc') res.sort((a, b) => a.score - b.score);
+      else if (currentSort === 'cost_asc') res.sort((a, b) => a.cost - b.cost);
+      else if (currentSort === 'cost_desc') res.sort((a, b) => b.cost - a.cost);
+      else if (currentSort === 'v_desc') res.sort((a, b) => b.value_gain - a.value_gain);
+
+      return res;
+    }
+
+    function renderView() {
+      const cards = getFilteredAndSortedCards();
+      const grid = document.getElementById('cardGrid');
+      const tableBox = document.getElementById('tableContainer');
+
+      if (currentView === 'grid') {
+        grid.style.display = 'grid';
+        tableBox.style.display = 'none';
+        grid.innerHTML = '';
+
+        if (cards.length === 0) {
+          grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #a4b0be; padding: 40px;">没有找到匹配的卡牌</div>';
+          return;
+        }
+
+        cards.forEach(c => {
+          const cardEl = document.createElement('div');
+          cardEl.className = `card-item ${c.tier_class}`;
+
+          const statsText = c.card_type === 'MINION' ? `DP: ${c.base_dp} 随从` : `攻${c.atk_val} / 防${c.def_val} 法术`;
+          const vSign = c.value_gain > 0 ? `+${c.value_gain}` : `${c.value_gain}`;
+
+          cardEl.innerHTML = `
+            <div>
+              <div class="card-header">
+                <div style="display: flex; align-items: center;">
+                  <div class="mana-gem">${c.cost}</div>
+                  <div class="card-title-box">
+                    <div class="card-name">${c.name}</div>
+                    <div class="card-meta">${c.faction} · ${statsText}</div>
+                  </div>
+                </div>
+                <div class="score-badge-box">
+                  <div class="score-num">${c.score}</div>
+                  <span class="tier-badge">${c.tier}级 · ${c.tier_name}</span>
+                </div>
+              </div>
+
+              <div class="recommendation-bar">
+                <span>抓取建议: <span class="rec-highlight">${c.rec_count}</span></span>
+                <span>ID: #${c.id}</span>
+              </div>
+
+              <div class="ai-metrics">
+                <div class="metric-item">
+                  <span>Actor 出牌意愿:</span>
+                  <span class="metric-val" style="color: #55efc4;">${c.play_prob}%</span>
+                </div>
+                <div class="metric-item">
+                  <span>Critic 局势增益:</span>
+                  <span class="metric-val" style="color: ${c.value_gain >= 0 ? '#55efc4' : '#ff7675'};">${vSign}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="comment-bubble">
+              💬 ${c.comment}
+            </div>
+          `;
+          grid.appendChild(cardEl);
+        });
+      } else {
+        grid.style.display = 'none';
+        tableBox.style.display = 'block';
+
+        let html = `
+          <table class="arena-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>卡牌名称</th>
+                <th>阵营</th>
+                <th>费用</th>
+                <th>类型</th>
+                <th>身材/数值</th>
+                <th>综合评分</th>
+                <th>评级</th>
+                <th>建议抓取</th>
+                <th>Actor意愿</th>
+                <th>Critic增益 (ΔV)</th>
+                <th>AI 独家短评</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        cards.forEach((c, idx) => {
+          const statsText = c.card_type === 'MINION' ? `DP: ${c.base_dp}` : `攻${c.atk_val}/防${c.def_val}`;
+          const vSign = c.value_gain > 0 ? `+${c.value_gain}` : `${c.value_gain}`;
+          const tierColor = c.tier.startsWith('S') ? 'var(--tier-s)' : (c.tier === 'A' ? 'var(--tier-a)' : (c.tier === 'B' ? 'var(--tier-b)' : (c.tier === 'C' ? 'var(--tier-c)' : 'var(--tier-d)')));
+
+          html += `
+            <tr>
+              <td>${idx + 1}</td>
+              <td><strong>${c.name}</strong></td>
+              <td>${c.faction}</td>
+              <td><span style="color: #74b9ff; font-weight: bold;">${c.cost} 费</span></td>
+              <td>${c.card_type}</td>
+              <td>${statsText}</td>
+              <td class="table-score" style="color: ${tierColor};">${c.score}</td>
+              <td><span style="background: ${tierColor}; color: ${c.tier === 'A' || c.tier === 'B' ? '#000' : '#fff'}; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">${c.tier}</span></td>
+              <td style="color: #ffeaa7; font-weight: 500;">${c.rec_count}</td>
+              <td>${c.play_prob}%</td>
+              <td style="color: ${c.value_gain >= 0 ? '#55efc4' : '#ff7675'};">${vSign}</td>
+              <td style="font-size: 0.8rem; color: #dfe6e9; max-width: 320px;">${c.comment}</td>
+            </tr>
+          `;
+        });
+
+        html += `</tbody></table>`;
+        tableBox.innerHTML = html;
+      }
+    }
+
+    function filterFaction(f, btn) {
+      currentFaction = f;
+      document.querySelectorAll('.filter-group:nth-child(1) .btn-filter').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderView();
+    }
+
+    function filterTier(t, btn) {
+      currentTier = t;
+      document.querySelectorAll('.filter-group:nth-child(2) .btn-filter').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderView();
+    }
+
+    function switchView(mode) {
+      currentView = mode;
+      renderView();
+    }
+
+    function onSortChange(sort) {
+      currentSort = sort;
+      renderView();
+    }
+
+    function onSearch(kw) {
+      currentKeyword = kw.trim();
+      renderView();
+    }
+
+    renderView();
+  </script>
+</body>
+</html>
