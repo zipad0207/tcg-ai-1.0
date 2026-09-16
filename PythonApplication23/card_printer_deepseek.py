@@ -2,9 +2,15 @@ import os
 import re
 import sys
 import json
+import time
 import argparse
 from typing import Dict, List, Any
+from collections import Counter
+import torch
+import numpy as np
 from openai import OpenAI
+from sandbox import DuelEnv, Faction
+from agent import CardNet
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -163,6 +169,177 @@ def print_card_table(cards_dict: Dict[str, List[dict]], design_notes: List[dict]
             print(f"{cid:<6}{f:<8}{name:<14}{ctype:<8}{cost:<6}{dp_str:<10}{tags_str:<26}{note}")
     print("═" * 95 + "\n")
 
+def find_model_path() -> str:
+    candidates = [
+        "card_ppo_model_tuned.pth",
+        "PythonApplication23/card_ppo_model_tuned.pth",
+        "card_ppo_model.pth",
+        "PythonApplication23/card_ppo_model.pth",
+        "card_ppo_model_baseline.pth",
+        "PythonApplication23/card_ppo_model_baseline.pth"
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            return p
+    return None
+
+def run_post_print_benchmark(cards_path: str, all_printed_cards: Dict[str, List[dict]],
+                             episodes: int = 1000, auto_balance: bool = False):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model_file = find_model_path()
+
+    print("\n" + "═" * 85)
+    print(f"⚡ 启动【印后即时数值平衡实测 (Post-Printing 1000-Game Benchmark)】")
+    print(f"📦 实测卡池: {cards_path} | 对战规模: {episodes} 局 | 运算加速: {device}")
+    if model_file:
+        print(f"🧠 决策权重: {model_file}")
+    print("═" * 85)
+
+    new_card_info = {}
+    for f_name, cards in all_printed_cards.items():
+        for c in cards:
+            cid = c["id"]
+            new_card_info[cid] = {
+                "name": c["name"],
+                "faction": f_name,
+                "cost": c["cost"],
+                "type": c["card_type"],
+                "dp": c.get("base_dp", 0)
+            }
+
+    has_green = "Green" in all_printed_cards and len(all_printed_cards["Green"]) > 0
+    if has_green:
+        matchups = [
+            (Faction.RED, Faction.BLUE, episodes // 2),
+            (Faction.GREEN, Faction.BLUE, episodes // 2)
+        ]
+    else:
+        matchups = [(Faction.RED, Faction.BLUE, episodes)]
+
+    card_played_total = Counter()
+    card_played_win = Counter()
+    total_turns = []
+    red_wins = 0
+    blue_wins = 0
+    green_wins = 0
+    total_played_games = 0
+
+    start_time = time.time()
+
+    for p0_f, p1_f, sub_eps in matchups:
+        env = DuelEnv(p0_faction=p0_f, p1_faction=p1_f, cards_path=cards_path)
+        model = CardNet(action_dim=env.action_space_size).to(device)
+        if model_file and os.path.exists(model_file):
+            state_dict = torch.load(model_file, map_location=device, weights_only=True)
+            model.load_state_dict(state_dict)
+        model.eval()
+
+        for ep in range(1, sub_eps + 1):
+            total_played_games += 1
+            obs = env.reset()
+            done = False
+            p0_played = set()
+            p1_played = set()
+
+            while not done:
+                curr_p = env.current_player
+                mask = env.get_action_mask()
+                state_t = torch.FloatTensor(obs).unsqueeze(0).to(device)
+                mask_t = torch.FloatTensor(mask).unsqueeze(0).to(device)
+
+                with torch.no_grad():
+                    logits, _ = model(state_t, mask_t)
+                    act = torch.argmax(logits, dim=-1).item()
+
+                if act != env.action_space_size - 1:
+                    h_idx = act // 4
+                    hand = env.players[curr_p].hand
+                    if h_idx < len(hand):
+                        card = hand[h_idx]
+                        card_played_total[card.name] += 1
+                        if curr_p == 0:
+                            p0_played.add(card.name)
+                        else:
+                            p1_played.add(card.name)
+
+                obs, _, done, _ = env.step(act)
+
+            total_turns.append(env.turn_count)
+            s0 = env.players[0].score
+            s1 = env.players[1].score
+
+            if s0 > s1 and s0 >= env.WIN_SCORE:
+                if p0_f == Faction.RED: red_wins += 1
+                elif p0_f == Faction.GREEN: green_wins += 1
+                for cname in p0_played: card_played_win[cname] += 1
+            elif s1 > s0 and s1 >= env.WIN_SCORE:
+                if p1_f == Faction.BLUE: blue_wins += 1
+                for cname in p1_played: card_played_win[cname] += 1
+
+            if total_played_games % 250 == 0 or total_played_games == episodes:
+                print(f"   ⏳ 评测进度: {total_played_games:4d}/{episodes} 局...")
+
+    elapsed = time.time() - start_time
+    avg_turns = float(np.mean(total_turns)) if total_turns else 0.0
+
+    p0_rate = (red_wins / max(1, total_played_games)) * 100
+    p1_rate = (blue_wins / max(1, total_played_games)) * 100
+
+    print("\n" + "═" * 85)
+    print("📊 【印后数值平衡遥测快报 (Post-Printing Balance Verification)】")
+    print("═" * 85)
+    print(f"⏱️ 测试总耗时: {elapsed:.2f} 秒 ({total_played_games/max(0.01, elapsed):.1f} 局/秒)")
+    print(f"🏁 战报概览: 🔴 红方胜 {red_wins} 场 ({p0_rate:.1f}%) | 🔵 蓝方胜 {blue_wins} 场 ({p1_rate:.1f}%)" + (f" | 🟢 绿方胜 {green_wins} 场" if has_green else ""))
+    print(f"⌛ 平均对局回合: {avg_turns:.1f} 轮")
+    print("─" * 85)
+    print("🔍 新印卡牌实战表现追踪与健康度评估:")
+    print(f"{'ID':<6}{'阵营':<8}{'名称':<14}{'费用':<6}{'出牌频次':<20}{'实战胜率':<12}{'健康度裁决'}")
+    print("─" * 85)
+
+    has_imbalance = False
+    for cid, info in sorted(new_card_info.items(), key=lambda x: x[0]):
+        cname = info["name"]
+        played = card_played_total.get(cname, 0)
+        wins = card_played_win.get(cname, 0)
+        win_pct = (wins / played * 100) if played > 0 else 0.0
+
+        if played == 0:
+            health = "⚪ 未出场 (费用过高或被冷落)"
+        elif win_pct >= 65.0 and played >= 10:
+            health = "🔴 过于强势 (OP，需削弱)"
+            has_imbalance = True
+        elif win_pct <= 35.0 and played >= 10:
+            health = "🟡 偏弱 (需适当强化)"
+        else:
+            health = "🟢 表现健康 (数值均衡)"
+
+        played_str = f"{played} 次 (局均{played/max(1, total_played_games):.2f})"
+        win_str = f"{win_pct:.1f}%" if played > 0 else "-"
+        print(f"{cid:<6}{info['faction']:<8}{cname:<14}{info['cost']:<6}{played_str:<20}{win_str:<12}{health}")
+
+    print("─" * 85)
+    if not has_imbalance:
+        print("⚖️ 【总体平衡性裁决】: 🟢 [环境健康] 新卡引入后表现平稳适度，未引发破坏性数值膨胀！")
+    else:
+        print("⚖️ 【总体平衡性裁决】: ⚠️ [失衡预警] 部分新卡实测胜率显著超标 (OP)，建议立即微调！")
+        print("💡 解决方案：可直接运行 python auto_balancer_deepseek.py 进行闭环数值微调。")
+
+    print("═" * 85)
+
+    metrics_export = {
+        "total_episodes": total_played_games,
+        "p0_wins": red_wins,
+        "p1_wins": blue_wins,
+        "p0_winrate": round((red_wins / max(1, total_played_games)) * 100, 2),
+        "p1_winrate": round((blue_wins / max(1, total_played_games)) * 100, 2),
+        "avg_steps_per_episode": round(avg_turns, 2),
+        "card_play_count": dict(card_played_total)
+    }
+    with open("training_metrics_post_print.json", "w", encoding="utf-8") as mf:
+        json.dump(metrics_export, mf, indent=2, ensure_ascii=False)
+    print(f"📈 印后对战遥测数据已保存至: training_metrics_post_print.json\n")
+
+
 def main():
     parser = argparse.ArgumentParser(description="TCG-AI 独立印卡工坊 (Card Designer & Expander)")
     parser.add_argument("--base", type=str, default="cards_config_baseline.json",
@@ -178,6 +355,10 @@ def main():
                         help="自定义设计主题或特色需求描述")
     parser.add_argument("--merge-into", type=str, default=None,
                         help="可选：将新卡直接合并写入到指定卡池文件 (如 cards_config.json)")
+    parser.add_argument("--test-episodes", type=int, default=1000,
+                        help="印卡后自动实机运行对局评估轮数 (默认 1000 局，设为 0 跳过)")
+    parser.add_argument("--auto-balance", action="store_true",
+                        help="若检测到新卡导致严重失衡，提示或启动闭环调优")
     args = parser.parse_args()
 
     if not DEEPSEEK_API_KEY:
@@ -291,6 +472,16 @@ def main():
         with open(args.merge_into, "w", encoding="utf-8") as f:
             json.dump(expanded_pool, f, indent=2, ensure_ascii=False)
         print(f"🔗 已同步合并更新至生产卡池: {args.merge_into}")
+
+    # 印完卡后立即先跑 1000 局对抗压力测试，严密监控平衡性
+    if args.test_episodes > 0 and any(len(cards) > 0 for cards in all_printed_cards.values()):
+        target_test_pool = args.merge_into if args.merge_into else output_file
+        run_post_print_benchmark(
+            cards_path=target_test_pool,
+            all_printed_cards=all_printed_cards,
+            episodes=args.test_episodes,
+            auto_balance=args.auto_balance
+        )
 
 if __name__ == "__main__":
     main()

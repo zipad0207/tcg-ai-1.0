@@ -223,15 +223,18 @@ python train.py --stage tuned --episodes 1000
 ```
 
 ### 6. 执行独立创新印卡工坊 (Card Designer & Expander)
-彻底将**新卡创意设计/印卡扩充**与**既有数值平衡调优**解耦分离：
+彻底将**新卡创意设计/印卡扩充**与**既有数值平衡调优**解耦分离。**默认在印完新卡后立即自动执行 1000 局即时数值平衡实测**，严密追踪新卡实战出场率与胜率贡献，防止数值膨胀导致环境失衡：
 ```bash
 cd PythonApplication23
 
-# 为绿色林野阵营印刷 2 张高费巨龙与幼龙守护者卡牌
+# 印制新卡并立即自动触发 1000 局即时数值平衡实测（默认 --test-episodes 1000）
+python card_printer_deepseek.py --faction Red --count 2 --theme "低费自爆突袭突破兵"
+
+# 为绿色林野阵营印卡并自动实测
 python card_printer_deepseek.py --faction Green --count 2 --theme "远古翡翠巨龙与幼龙守护者"
 
-# 为红方印刷 2 张低费突袭与直伤突破卡牌
-python card_printer_deepseek.py --faction Red --count 2 --theme "低费自爆突袭突破兵"
+# 可选：仅印刷新卡，不执行印后对战实测
+python card_printer_deepseek.py --faction Blue --count 2 --test-episodes 0
 ```
 
 ### 7. 执行 LLM 闭环数值自动平衡
