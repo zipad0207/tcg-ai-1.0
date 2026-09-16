@@ -373,11 +373,12 @@ class DuelEnv:
                         def_spell_val=0,
                         tags=[]
                     )
+                    can_token_rush = "RUSH" in card.tags
                     container.append(MinionInstance(
                         card=token_card,
                         current_dp=spawn_dp,
                         owner=player.player_id,
-                        ready_to_attack=is_attack
+                        ready_to_attack=can_token_rush
                     ))
 
     def _trigger_deathrattle(self, minion: MinionInstance):
