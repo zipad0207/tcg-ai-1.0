@@ -84,6 +84,7 @@ def evaluate():
                         help="选择评估模型阶段: tuned(调优后平衡模型) 或 baseline(基准模型)")
     parser.add_argument("--model", type=str, default=None, help="自定义指定模型权重文件路径")
     parser.add_argument("--cards", type=str, default=None, help="自定义指定卡池配置文件路径 (默认根据 stage 自动选择)")
+    parser.add_argument("--decks", type=str, default="decks_config.json", help="AI 构筑卡组配置文件路径 (默认 decks_config.json)")
     parser.add_argument("--html", type=str, default="battle_replay.html", help="导出可交互网页回放文件名")
     args = parser.parse_args()
 
@@ -102,8 +103,24 @@ def evaluate():
         stage_cards = f"cards_config_{args.stage}.json"
         cards_path = stage_cards if os.path.exists(stage_cards) else "cards_config.json"
 
+    # 加载 AI 自主构筑卡组
+    p0_decklist, p1_decklist = None, None
+    red_deck_name, blue_deck_name = "默认随机卡组", "默认随机卡组"
+    if args.decks and os.path.exists(args.decks):
+        import json
+        with open(args.decks, "r", encoding="utf-8") as df:
+            decks_cfg = json.load(df)
+            if "Red" in decks_cfg:
+                p0_decklist = decks_cfg["Red"].get("decklist")
+                red_deck_name = decks_cfg["Red"].get("deck_name", "赤红AI卡组")
+            if "Blue" in decks_cfg:
+                p1_decklist = decks_cfg["Blue"].get("decklist")
+                blue_deck_name = decks_cfg["Blue"].get("deck_name", "蔚蓝AI卡组")
+        print(f"🃏 已加载 AI 构筑卡组: 🔴 红方《{red_deck_name}》 vs 🔵 蓝方《{blue_deck_name}》")
+
     print(f"📦 正在加载智能体模型权重: {model_path} | 卡池文件: {cards_path}")
-    env = DuelEnv(p0_faction=Faction.RED, p1_faction=Faction.BLUE, cards_path=cards_path)
+    env = DuelEnv(p0_faction=Faction.RED, p1_faction=Faction.BLUE, cards_path=cards_path,
+                  p0_decklist=p0_decklist, p1_decklist=p1_decklist)
     
     model = CardNet(action_dim=env.action_space_size).to(device)
     state_dict = torch.load(model_path, map_location=device, weights_only=True)
@@ -116,6 +133,7 @@ def evaluate():
     
     print("\n" + "="*80)
     print(f"🎮 AI 对局全景回放启动 (红方 vs 蓝方) | 模型: {os.path.basename(model_path)}")
+    print(f"⚔️ 对战阵列: 🔴 红方《{red_deck_name}》 VS 🔵 蓝方《{blue_deck_name}》")
     print("="*80)
 
     while not done:

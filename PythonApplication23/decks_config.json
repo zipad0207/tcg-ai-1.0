@@ -1,0 +1,701 @@
+{
+  "Red": {
+    "deck_name": "赤红血祭闪袭",
+    "archetype": "Aggro/Sacrifice",
+    "tactical_concept": "低费铺场配合RUSH抢血，自爆与血祭爆燃以小换大清除高防随从，SPAWN与抽牌维持手牌，快速累积7分取胜。",
+    "key_combos": [
+      "红色小队长或集结号手铺场后，用自爆牺牲小兵消灭对方高防随从，突破防线。",
+      "裂甲掷斧手或破阵狂徒RUSH配合DEGRADE_1削弱敌方，再以射线或血祭爆燃完成斩杀。"
+    ],
+    "total_cards": 30,
+    "minion_count": 22,
+    "spell_count": 8,
+    "avg_cost": 2.13,
+    "mana_curve": {
+      "0": 0,
+      "1": 6,
+      "2": 16,
+      "3": 6,
+      "4": 2,
+      "5": 0,
+      "6": 0,
+      "7": 0,
+      "8": 0,
+      "9": 0
+    },
+    "card_allocation": {
+      "100": 3,
+      "101": 3,
+      "102": 3,
+      "103": 3,
+      "104": 3,
+      "107": 3,
+      "108": 3,
+      "109": 3,
+      "110": 2,
+      "900": 2,
+      "905": 2
+    },
+    "card_details": [
+      {
+        "id": 100,
+        "name": "赤红突击手",
+        "cost": 1,
+        "card_type": "MINION",
+        "base_dp": 1,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "DEATH_DRAW_1"
+        ],
+        "count": 3
+      },
+      {
+        "id": 103,
+        "name": "射线",
+        "cost": 1,
+        "card_type": "SPELL",
+        "base_dp": 0,
+        "atk_spell_val": 2,
+        "def_spell_val": 0,
+        "tags": [],
+        "count": 3
+      },
+      {
+        "id": 102,
+        "name": "自爆",
+        "cost": 2,
+        "card_type": "SPELL",
+        "base_dp": 0,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "SACRIFICE_1_KILL_1",
+          "ATTACK_ONLY"
+        ],
+        "count": 3
+      },
+      {
+        "id": 104,
+        "name": "切割者",
+        "cost": 2,
+        "card_type": "MINION",
+        "base_dp": 2,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "DEGRADE_1"
+        ],
+        "count": 3
+      },
+      {
+        "id": 107,
+        "name": "集结号手",
+        "cost": 2,
+        "card_type": "MINION",
+        "base_dp": 1,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "SPAWN_1_1"
+        ],
+        "count": 3
+      },
+      {
+        "id": 108,
+        "name": "裂甲掷斧手",
+        "cost": 2,
+        "card_type": "MINION",
+        "base_dp": 1,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "RUSH",
+          "DEGRADE_1"
+        ],
+        "count": 3
+      },
+      {
+        "id": 900,
+        "name": "商人",
+        "cost": 2,
+        "card_type": "MINION",
+        "base_dp": 2,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "DRAW_1"
+        ],
+        "count": 2
+      },
+      {
+        "id": 905,
+        "name": "佣兵斥候",
+        "cost": 2,
+        "card_type": "MINION",
+        "base_dp": 1,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "RUSH",
+          "DRAW_1"
+        ],
+        "count": 2
+      },
+      {
+        "id": 101,
+        "name": "红色小队长",
+        "cost": 3,
+        "card_type": "MINION",
+        "base_dp": 3,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "SPAWN_1_1"
+        ],
+        "count": 3
+      },
+      {
+        "id": 109,
+        "name": "破阵狂徒",
+        "cost": 3,
+        "card_type": "MINION",
+        "base_dp": 3,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "RUSH",
+          "DEGRADE_1"
+        ],
+        "count": 3
+      },
+      {
+        "id": 110,
+        "name": "血祭爆燃",
+        "cost": 4,
+        "card_type": "SPELL",
+        "base_dp": 0,
+        "atk_spell_val": 3,
+        "def_spell_val": 0,
+        "tags": [
+          "SACRIFICE_1_KILL_1",
+          "ATTACK_ONLY"
+        ],
+        "count": 2
+      }
+    ],
+    "decklist": [
+      100,
+      100,
+      100,
+      103,
+      103,
+      103,
+      102,
+      102,
+      102,
+      104,
+      104,
+      104,
+      107,
+      107,
+      107,
+      108,
+      108,
+      108,
+      900,
+      900,
+      905,
+      905,
+      101,
+      101,
+      101,
+      109,
+      109,
+      109,
+      110,
+      110
+    ]
+  },
+  "Blue": {
+    "deck_name": "蔚蓝铁壁要塞",
+    "archetype": "Control",
+    "tactical_concept": "以FORTIFY坚守与SUPPORT_ATK光环构筑高DP双路壁垒，用冰封禁制与寒晶护壁延阻敌方，中期石像鬼与蔚蓝要塞压场，靠高质量随从交换与资源差稳健取胜。",
+    "key_combos": [
+      "蔚蓝卫士/壁垒工匠/藤甲兵站场叠加FORTIFY，配合弓箭手/火铳手SUPPORT_ATK光环，让高DP随从同时具备反击威胁。",
+      "寒晶护壁抽牌找关键随从，冰封禁制冻结敌方攻势，拖到6费连续拍下石像鬼与蔚蓝要塞完成双路压制。"
+    ],
+    "total_cards": 30,
+    "minion_count": 24,
+    "spell_count": 6,
+    "avg_cost": 3.0,
+    "mana_curve": {
+      "0": 0,
+      "1": 4,
+      "2": 9,
+      "3": 8,
+      "4": 5,
+      "5": 0,
+      "6": 4,
+      "7": 0,
+      "8": 0,
+      "9": 0
+    },
+    "card_allocation": {
+      "200": 3,
+      "201": 2,
+      "202": 3,
+      "203": 2,
+      "204": 2,
+      "205": 3,
+      "206": 2,
+      "207": 2,
+      "208": 3,
+      "209": 2,
+      "210": 2,
+      "211": 2,
+      "900": 2
+    },
+    "card_details": [
+      {
+        "id": 201,
+        "name": "盾兵",
+        "cost": 1,
+        "card_type": "MINION",
+        "base_dp": 1,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "FORTIFY_1"
+        ],
+        "count": 2
+      },
+      {
+        "id": 203,
+        "name": "防御！",
+        "cost": 1,
+        "card_type": "SPELL",
+        "base_dp": 0,
+        "atk_spell_val": 0,
+        "def_spell_val": 2,
+        "tags": [],
+        "count": 2
+      },
+      {
+        "id": 200,
+        "name": "蔚蓝卫士",
+        "cost": 2,
+        "card_type": "MINION",
+        "base_dp": 2,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "FORTIFY_1"
+        ],
+        "count": 3
+      },
+      {
+        "id": 207,
+        "name": "霜盾见习官",
+        "cost": 2,
+        "card_type": "MINION",
+        "base_dp": 1,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "FORTIFY_1",
+          "SUPPORT_ATK_1"
+        ],
+        "count": 2
+      },
+      {
+        "id": 209,
+        "name": "寒晶护壁",
+        "cost": 2,
+        "card_type": "SPELL",
+        "base_dp": 0,
+        "atk_spell_val": 0,
+        "def_spell_val": 2,
+        "tags": [
+          "DRAW_1"
+        ],
+        "count": 2
+      },
+      {
+        "id": 900,
+        "name": "商人",
+        "cost": 2,
+        "card_type": "MINION",
+        "base_dp": 2,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "DRAW_1"
+        ],
+        "count": 2
+      },
+      {
+        "id": 202,
+        "name": "弓箭手",
+        "cost": 3,
+        "card_type": "MINION",
+        "base_dp": 3,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "SUPPORT_ATK_1"
+        ],
+        "count": 3
+      },
+      {
+        "id": 208,
+        "name": "壁垒工匠",
+        "cost": 3,
+        "card_type": "MINION",
+        "base_dp": 3,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "FORTIFY_2"
+        ],
+        "count": 3
+      },
+      {
+        "id": 210,
+        "name": "冰封禁制",
+        "cost": 3,
+        "card_type": "SPELL",
+        "base_dp": 0,
+        "atk_spell_val": 2,
+        "def_spell_val": 2,
+        "tags": [],
+        "count": 2
+      },
+      {
+        "id": 205,
+        "name": "藤甲兵",
+        "cost": 4,
+        "card_type": "MINION",
+        "base_dp": 4,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "FORTIFY_2"
+        ],
+        "count": 3
+      },
+      {
+        "id": 206,
+        "name": "火铳手",
+        "cost": 4,
+        "card_type": "MINION",
+        "base_dp": 4,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "SUPPORT_ATK_2"
+        ],
+        "count": 2
+      },
+      {
+        "id": 204,
+        "name": "石像鬼",
+        "cost": 6,
+        "card_type": "MINION",
+        "base_dp": 8,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [],
+        "count": 2
+      },
+      {
+        "id": 211,
+        "name": "蔚蓝要塞",
+        "cost": 6,
+        "card_type": "MINION",
+        "base_dp": 5,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "FORTIFY_3",
+          "SUPPORT_ATK_1"
+        ],
+        "count": 2
+      }
+    ],
+    "decklist": [
+      201,
+      201,
+      203,
+      203,
+      200,
+      200,
+      200,
+      207,
+      207,
+      209,
+      209,
+      900,
+      900,
+      202,
+      202,
+      202,
+      208,
+      208,
+      208,
+      210,
+      210,
+      205,
+      205,
+      205,
+      206,
+      206,
+      204,
+      204,
+      211,
+      211
+    ]
+  },
+  "Green": {
+    "deck_name": "翡翠天穹·古树跳费",
+    "archetype": "Ramp",
+    "tactical_concept": "前期以低费跳费与过牌快速攀升法力，中期用嘲讽与解场稳住双路，后期连续拍下远古巨树与灭世翡翠巨龙，以高额DP和额外得分完成7分压制。",
+    "key_combos": [
+      "翠绿萌芽/芽苗祭司/世界树恩泽连续跳费，提前2-3回合进入高费回合，抢先拍出远古巨树或灭世翡翠巨龙。",
+      "拾荒盾卫与树人提供前期防线，配合荆棘缠绕控场，保护跳费节奏并拖入巨兽回合。"
+    ],
+    "total_cards": 30,
+    "minion_count": 22,
+    "spell_count": 8,
+    "avg_cost": 4.2,
+    "mana_curve": {
+      "0": 0,
+      "1": 0,
+      "2": 9,
+      "3": 6,
+      "4": 5,
+      "5": 2,
+      "6": 2,
+      "7": 3,
+      "8": 0,
+      "9": 3
+    },
+    "card_allocation": {
+      "300": 3,
+      "301": 2,
+      "302": 2,
+      "304": 2,
+      "305": 3,
+      "306": 2,
+      "307": 3,
+      "308": 2,
+      "309": 2,
+      "310": 3,
+      "311": 3,
+      "900": 2,
+      "904": 1
+    },
+    "card_details": [
+      {
+        "id": 300,
+        "name": "翠绿萌芽",
+        "cost": 2,
+        "card_type": "SPELL",
+        "base_dp": 0,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "RAMP_1"
+        ],
+        "count": 3
+      },
+      {
+        "id": 302,
+        "name": "剧毒花",
+        "cost": 2,
+        "card_type": "MINION",
+        "base_dp": 1,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "DEGRADE_2"
+        ],
+        "count": 2
+      },
+      {
+        "id": 306,
+        "name": "荆棘缠绕",
+        "cost": 2,
+        "card_type": "SPELL",
+        "base_dp": 0,
+        "atk_spell_val": 2,
+        "def_spell_val": 0,
+        "tags": [],
+        "count": 2
+      },
+      {
+        "id": 900,
+        "name": "商人",
+        "cost": 2,
+        "card_type": "MINION",
+        "base_dp": 2,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "DRAW_1"
+        ],
+        "count": 2
+      },
+      {
+        "id": 301,
+        "name": "树人",
+        "cost": 3,
+        "card_type": "MINION",
+        "base_dp": 2,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "FORTIFY_1"
+        ],
+        "count": 2
+      },
+      {
+        "id": 307,
+        "name": "芽苗祭司",
+        "cost": 3,
+        "card_type": "MINION",
+        "base_dp": 2,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "RAMP_1"
+        ],
+        "count": 3
+      },
+      {
+        "id": 904,
+        "name": "拾荒盾卫",
+        "cost": 3,
+        "card_type": "MINION",
+        "base_dp": 3,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "FORTIFY_1",
+          "DEATH_DRAW_1"
+        ],
+        "count": 1
+      },
+      {
+        "id": 304,
+        "name": "森林之狼",
+        "cost": 4,
+        "card_type": "MINION",
+        "base_dp": 4,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [],
+        "count": 2
+      },
+      {
+        "id": 311,
+        "name": "世界树恩泽",
+        "cost": 4,
+        "card_type": "SPELL",
+        "base_dp": 0,
+        "atk_spell_val": 0,
+        "def_spell_val": 3,
+        "tags": [
+          "RAMP_1"
+        ],
+        "count": 3
+      },
+      {
+        "id": 309,
+        "name": "翡翠幼龙",
+        "cost": 5,
+        "card_type": "MINION",
+        "base_dp": 3,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "RUSH",
+          "DEATH_MANA_1"
+        ],
+        "count": 2
+      },
+      {
+        "id": 308,
+        "name": "翡翠巨熊",
+        "cost": 6,
+        "card_type": "MINION",
+        "base_dp": 7,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "FORTIFY_2"
+        ],
+        "count": 2
+      },
+      {
+        "id": 305,
+        "name": "远古巨树",
+        "cost": 7,
+        "card_type": "MINION",
+        "base_dp": 8,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "FORTIFY_2"
+        ],
+        "count": 3
+      },
+      {
+        "id": 310,
+        "name": "灭世翡翠巨龙",
+        "cost": 9,
+        "card_type": "MINION",
+        "base_dp": 11,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "RUSH",
+          "BONUS_SCORE_1"
+        ],
+        "count": 3
+      }
+    ],
+    "decklist": [
+      300,
+      300,
+      300,
+      302,
+      302,
+      306,
+      306,
+      900,
+      900,
+      301,
+      301,
+      307,
+      307,
+      307,
+      904,
+      304,
+      304,
+      311,
+      311,
+      311,
+      309,
+      309,
+      308,
+      308,
+      305,
+      305,
+      305,
+      310,
+      310,
+      310
+    ]
+  }
+}

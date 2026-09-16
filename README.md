@@ -239,12 +239,23 @@ python card_printer_deepseek.py --faction Red --count 2 --theme "低费自爆突
 ```bash
 cd PythonApplication23
 
-# 配置 DeepSeek API Key (如已配置系统环境变量则可跳过)
-$env:DEEPSEEK_API_KEY="your_api_key_here"      # Windows PowerShell
-export DEEPSEEK_API_KEY="your_api_key_here"    # Linux / macOS
-
 # 执行自适应平衡微调
 python auto_balancer_deepseek.py
+```
+
+### 8. 执行 AI 自主选卡构筑与竞技场对抗 (AI Deckbuilder & Matchup Arena)
+彻底实现**大模型自主组牌 + 30 张牌库硬性合规 + 红蓝竞技场多轮对抗验证**：
+```bash
+cd PythonApplication23
+
+# 1. 让 AI 大模型为三大阵营（赤红、蔚蓝、翡翠）自主构建 30 张竞技卡组
+python deck_builder_deepseek.py --factions Red,Blue,Green
+
+# 2. 运行红蓝 AI 卡组单局全景复盘对决，更新 battle_replay.html
+python eval_play.py --stage tuned --decks decks_config.json
+
+# 3. 运行 500 局蒙特卡洛多轮竞技场压力测试，输出胜率与战术指标
+python test_deck_matchup.py --episodes 500 --decks decks_config.json
 ```
 
 ---
@@ -255,10 +266,13 @@ python auto_balancer_deepseek.py
 ├── .gitignore                           # Git 忽略规则 (已安全排除权重、缓存及配置)
 ├── README.md                            # 项目全景学术报告 (本文件)
 └── PythonApplication23/
-    ├── sandbox.py                       # TCG 核心物理引擎 (DuelEnv, 支持同名卡上限3张)
+    ├── sandbox.py                       # TCG 核心物理引擎 (DuelEnv, 支持同名卡上限3张与自定义卡组)
     ├── train.py                         # PPO 自博弈强化学习流水线 (支持 baseline/tuned 双阶段)
     ├── agent.py                         # 基于 PyTorch 的双头策略价值神经网络 (CardNet)
-    ├── eval_play.py                     # AI 实时对抗评估与对局复盘入口
+    ├── deck_builder_deepseek.py         # AI 智能选卡构筑大师 (30张牌库/单卡<=3张/曲线规划)
+    ├── test_deck_matchup.py             # 红蓝 AI 卡组多轮批处理对抗评测脚本 (Monte Carlo)
+    ├── decks_config.json                # AI 构筑卡组配置文件 (含红蓝绿三大流派战术定义)
+    ├── eval_play.py                     # AI 实时对抗评估与对局复盘入口 (支持 --decks)
     ├── visualizer.py                    # 终端双路 ASCII 棋盘与 HTML5 战报生成引擎
     ├── battle_replay.html               # 现代暗黑拟态交互式对局回放网页
     ├── card_printer_deepseek.py         # 独立创新印卡工坊 (卡牌扩充设计与机制组装)
@@ -267,7 +281,7 @@ python auto_balancer_deepseek.py
     ├── cards_config_baseline.json       # 基准卡池配置 (只读保护，用户自定义失衡态)
     ├── cards_config_tuned.json          # 调优卡池配置 (DeepSeek 闭环优化后达到均衡态)
     ├── cards_config_expanded.json       # 扩充卡池文件 (印卡工坊新卡生成产物)
-    ├── cards_config.json                # 当前沙盒默认读取卡池
+    ├── cards_config.json                # 当前沙盒默认读取卡池 (42张生态池)
     ├── training_metrics_baseline.json   # 基准对照组 1000 局遥测数据 (31.2% vs 68.8%)
     ├── training_metrics_tuned.json      # 调优组 1000 局遥测数据 (46.1% vs 53.9%)
     ├── figure_comparison.png            # 四合一学术全景综合对比大图
