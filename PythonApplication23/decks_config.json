@@ -1,23 +1,25 @@
 {
   "Red": {
-    "deck_name": "赤红血祭闪袭",
-    "archetype": "Aggro/Sacrifice",
-    "tactical_concept": "低费铺场配合RUSH抢血，自爆与血祭爆燃以小换大清除高防随从，SPAWN与抽牌维持手牌，快速累积7分取胜。",
-    "key_combos": [
-      "红色小队长或集结号手铺场后，用自爆牺牲小兵消灭对方高防随从，突破防线。",
-      "裂甲掷斧手或破阵狂徒RUSH配合DEGRADE_1削弱敌方，再以射线或血祭爆燃完成斩杀。"
+    "deck_name": "赤红·PPO特训突破流",
+    "archetype": "PPO-Reinforcement-Learned",
+    "tactical_concept": "由 PPO 强化学习智能体自主经过神经网络效用评估与实机对战进化遴选所得。全套构筑最大化 PPO 决策置信度与状态价值增益 (ΔV)，平均费用 2.13 费。",
+    "decision_evolution_logs": [
+      "第 1 代微调: 增选高效卡 [红色小队长] (+1张)，减选低效卡 [酒馆密账] (-1张)",
+      "第 2 代微调: 增选高效卡 [集结号手] (+1张)，减选低效卡 [商人] (-1张)",
+      "第 3 代微调: 增选高效卡 [赤红掠袭者] (+1张)，减选低效卡 [射线] (-1张)",
+      "第 4 代微调: 增选高效卡 [红色小队长] (+1张)，减选低效卡 [佣兵斥候] (-1张)"
     ],
     "total_cards": 30,
-    "minion_count": 22,
-    "spell_count": 8,
+    "minion_count": 26,
+    "spell_count": 4,
     "avg_cost": 2.13,
     "mana_curve": {
       "0": 0,
-      "1": 6,
-      "2": 16,
-      "3": 6,
-      "4": 2,
-      "5": 0,
+      "1": 10,
+      "2": 12,
+      "3": 5,
+      "4": 0,
+      "5": 3,
       "6": 0,
       "7": 0,
       "8": 0,
@@ -26,14 +28,15 @@
     "card_allocation": {
       "100": 3,
       "101": 3,
-      "102": 3,
-      "103": 3,
-      "104": 3,
+      "103": 2,
+      "104": 2,
       "107": 3,
       "108": 3,
-      "109": 3,
-      "110": 2,
+      "109": 2,
+      "111": 3,
       "900": 2,
+      "902": 3,
+      "903": 2,
       "905": 2
     },
     "card_details": [
@@ -48,7 +51,10 @@
         "tags": [
           "DEATH_DRAW_1"
         ],
-        "count": 3
+        "count": 3,
+        "ppo_play_prob": 29.6,
+        "ppo_value_gain": -0.044,
+        "ppo_score": 36.0
       },
       {
         "id": 103,
@@ -59,21 +65,41 @@
         "atk_spell_val": 2,
         "def_spell_val": 0,
         "tags": [],
-        "count": 3
+        "count": 2,
+        "ppo_play_prob": 25.2,
+        "ppo_value_gain": -0.025,
+        "ppo_score": 33.44
       },
       {
-        "id": 102,
-        "name": "自爆",
-        "cost": 2,
+        "id": 902,
+        "name": "训练假人",
+        "cost": 1,
+        "card_type": "MINION",
+        "base_dp": 1,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [],
+        "count": 3,
+        "ppo_play_prob": 25.8,
+        "ppo_value_gain": -0.038,
+        "ppo_score": 33.62
+      },
+      {
+        "id": 903,
+        "name": "酒馆密账",
+        "cost": 1,
         "card_type": "SPELL",
         "base_dp": 0,
         "atk_spell_val": 0,
         "def_spell_val": 0,
         "tags": [
-          "SACRIFICE_1_KILL_1",
-          "ATTACK_ONLY"
+          "DRAW_2",
+          "DISCARD_1"
         ],
-        "count": 3
+        "count": 2,
+        "ppo_play_prob": 28.3,
+        "ppo_value_gain": 0.045,
+        "ppo_score": 36.67
       },
       {
         "id": 104,
@@ -86,7 +112,10 @@
         "tags": [
           "DEGRADE_1"
         ],
-        "count": 3
+        "count": 2,
+        "ppo_play_prob": 23.9,
+        "ppo_value_gain": -0.043,
+        "ppo_score": 32.27
       },
       {
         "id": 107,
@@ -99,7 +128,10 @@
         "tags": [
           "SPAWN_1_1"
         ],
-        "count": 3
+        "count": 3,
+        "ppo_play_prob": 22.3,
+        "ppo_value_gain": -0.034,
+        "ppo_score": 31.39
       },
       {
         "id": 108,
@@ -113,7 +145,10 @@
           "RUSH",
           "DEGRADE_1"
         ],
-        "count": 3
+        "count": 3,
+        "ppo_play_prob": 22.2,
+        "ppo_value_gain": 0.04,
+        "ppo_score": 32.63
       },
       {
         "id": 900,
@@ -126,7 +161,10 @@
         "tags": [
           "DRAW_1"
         ],
-        "count": 2
+        "count": 2,
+        "ppo_play_prob": 23.8,
+        "ppo_value_gain": -0.0,
+        "ppo_score": 32.95
       },
       {
         "id": 905,
@@ -140,7 +178,10 @@
           "RUSH",
           "DRAW_1"
         ],
-        "count": 2
+        "count": 2,
+        "ppo_play_prob": 21.4,
+        "ppo_value_gain": 0.062,
+        "ppo_score": 32.47
       },
       {
         "id": 101,
@@ -153,7 +194,10 @@
         "tags": [
           "SPAWN_1_1"
         ],
-        "count": 3
+        "count": 3,
+        "ppo_play_prob": 22.2,
+        "ppo_value_gain": -0.032,
+        "ppo_score": 31.36
       },
       {
         "id": 109,
@@ -167,21 +211,27 @@
           "RUSH",
           "DEGRADE_1"
         ],
-        "count": 3
+        "count": 2,
+        "ppo_play_prob": 20.9,
+        "ppo_value_gain": 0.042,
+        "ppo_score": 31.85
       },
       {
-        "id": 110,
-        "name": "血祭爆燃",
-        "cost": 4,
-        "card_type": "SPELL",
-        "base_dp": 0,
-        "atk_spell_val": 3,
+        "id": 111,
+        "name": "赤红掠袭者",
+        "cost": 5,
+        "card_type": "MINION",
+        "base_dp": 3,
+        "atk_spell_val": 0,
         "def_spell_val": 0,
         "tags": [
-          "SACRIFICE_1_KILL_1",
-          "ATTACK_ONLY"
+          "RUSH",
+          "BONUS_SCORE_1"
         ],
-        "count": 2
+        "count": 3,
+        "ppo_play_prob": 21.2,
+        "ppo_value_gain": 0.046,
+        "ppo_score": 32.08
       }
     ],
     "decklist": [
@@ -190,11 +240,11 @@
       100,
       103,
       103,
-      103,
-      102,
-      102,
-      102,
-      104,
+      902,
+      902,
+      902,
+      903,
+      903,
       104,
       104,
       107,
@@ -212,49 +262,50 @@
       101,
       109,
       109,
-      109,
-      110,
-      110
+      111,
+      111,
+      111
     ]
   },
   "Blue": {
-    "deck_name": "蔚蓝铁壁要塞",
-    "archetype": "Control",
-    "tactical_concept": "以FORTIFY坚守与SUPPORT_ATK光环构筑高DP双路壁垒，用冰封禁制与寒晶护壁延阻敌方，中期石像鬼与蔚蓝要塞压场，靠高质量随从交换与资源差稳健取胜。",
-    "key_combos": [
-      "蔚蓝卫士/壁垒工匠/藤甲兵站场叠加FORTIFY，配合弓箭手/火铳手SUPPORT_ATK光环，让高DP随从同时具备反击威胁。",
-      "寒晶护壁抽牌找关键随从，冰封禁制冻结敌方攻势，拖到6费连续拍下石像鬼与蔚蓝要塞完成双路压制。"
+    "deck_name": "蔚蓝·PPO特训要塞流",
+    "archetype": "PPO-Reinforcement-Learned",
+    "tactical_concept": "由 PPO 强化学习智能体自主经过神经网络效用评估与实机对战进化遴选所得。全套构筑最大化 PPO 决策置信度与状态价值增益 (ΔV)，平均费用 2.07 费。",
+    "decision_evolution_logs": [
+      "第 1 代微调: 增选高效卡 [藤甲兵] (+1张)，减选低效卡 [酒馆密账] (-1张)",
+      "第 2 代微调: 增选高效卡 [壁垒工匠] (+1张)，减选低效卡 [防御！] (-1张)",
+      "第 3 代微调: 增选高效卡 [霜盾见习官] (+1张)，减选低效卡 [佣兵斥候] (-1张)",
+      "第 4 代微调: 增选高效卡 [壁垒工匠] (+1张)，减选低效卡 [训练假人] (-1张)"
     ],
     "total_cards": 30,
-    "minion_count": 24,
-    "spell_count": 6,
-    "avg_cost": 3.0,
+    "minion_count": 23,
+    "spell_count": 7,
+    "avg_cost": 2.07,
     "mana_curve": {
       "0": 0,
-      "1": 4,
-      "2": 9,
-      "3": 8,
-      "4": 5,
+      "1": 9,
+      "2": 13,
+      "3": 5,
+      "4": 3,
       "5": 0,
-      "6": 4,
+      "6": 0,
       "7": 0,
       "8": 0,
       "9": 0
     },
     "card_allocation": {
-      "200": 3,
-      "201": 2,
-      "202": 3,
+      "200": 2,
+      "201": 3,
       "203": 2,
-      "204": 2,
       "205": 3,
-      "206": 2,
-      "207": 2,
+      "207": 3,
       "208": 3,
-      "209": 2,
-      "210": 2,
-      "211": 2,
-      "900": 2
+      "209": 3,
+      "900": 3,
+      "901": 2,
+      "902": 2,
+      "903": 2,
+      "905": 2
     },
     "card_details": [
       {
@@ -268,7 +319,10 @@
         "tags": [
           "FORTIFY_1"
         ],
-        "count": 2
+        "count": 3,
+        "ppo_play_prob": 26.8,
+        "ppo_value_gain": -0.041,
+        "ppo_score": 34.18
       },
       {
         "id": 203,
@@ -279,7 +333,41 @@
         "atk_spell_val": 0,
         "def_spell_val": 2,
         "tags": [],
-        "count": 2
+        "count": 2,
+        "ppo_play_prob": 26.3,
+        "ppo_value_gain": -0.032,
+        "ppo_score": 34.05
+      },
+      {
+        "id": 902,
+        "name": "训练假人",
+        "cost": 1,
+        "card_type": "MINION",
+        "base_dp": 1,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [],
+        "count": 2,
+        "ppo_play_prob": 27.7,
+        "ppo_value_gain": -0.035,
+        "ppo_score": 34.91
+      },
+      {
+        "id": 903,
+        "name": "酒馆密账",
+        "cost": 1,
+        "card_type": "SPELL",
+        "base_dp": 0,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "DRAW_2",
+          "DISCARD_1"
+        ],
+        "count": 2,
+        "ppo_play_prob": 22.6,
+        "ppo_value_gain": 0.043,
+        "ppo_score": 32.95
       },
       {
         "id": 200,
@@ -292,7 +380,10 @@
         "tags": [
           "FORTIFY_1"
         ],
-        "count": 3
+        "count": 2,
+        "ppo_play_prob": 22.4,
+        "ppo_value_gain": -0.029,
+        "ppo_score": 31.55
       },
       {
         "id": 207,
@@ -306,7 +397,10 @@
           "FORTIFY_1",
           "SUPPORT_ATK_1"
         ],
-        "count": 2
+        "count": 3,
+        "ppo_play_prob": 21.7,
+        "ppo_value_gain": -0.046,
+        "ppo_score": 30.78
       },
       {
         "id": 209,
@@ -319,7 +413,10 @@
         "tags": [
           "DRAW_1"
         ],
-        "count": 2
+        "count": 3,
+        "ppo_play_prob": 22.1,
+        "ppo_value_gain": 0.023,
+        "ppo_score": 32.25
       },
       {
         "id": 900,
@@ -332,20 +429,27 @@
         "tags": [
           "DRAW_1"
         ],
-        "count": 2
+        "count": 3,
+        "ppo_play_prob": 22.1,
+        "ppo_value_gain": 0.02,
+        "ppo_score": 32.2
       },
       {
-        "id": 202,
-        "name": "弓箭手",
-        "cost": 3,
+        "id": 905,
+        "name": "佣兵斥候",
+        "cost": 2,
         "card_type": "MINION",
-        "base_dp": 3,
+        "base_dp": 1,
         "atk_spell_val": 0,
         "def_spell_val": 0,
         "tags": [
-          "SUPPORT_ATK_1"
+          "RUSH",
+          "DRAW_1"
         ],
-        "count": 3
+        "count": 2,
+        "ppo_play_prob": 25.5,
+        "ppo_value_gain": 0.061,
+        "ppo_score": 35.12
       },
       {
         "id": 208,
@@ -358,18 +462,24 @@
         "tags": [
           "FORTIFY_2"
         ],
-        "count": 3
+        "count": 3,
+        "ppo_play_prob": 20.8,
+        "ppo_value_gain": -0.029,
+        "ppo_score": 30.54
       },
       {
-        "id": 210,
-        "name": "冰封禁制",
+        "id": 901,
+        "name": "雇佣兵",
         "cost": 3,
-        "card_type": "SPELL",
-        "base_dp": 0,
-        "atk_spell_val": 2,
-        "def_spell_val": 2,
+        "card_type": "MINION",
+        "base_dp": 5,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
         "tags": [],
-        "count": 2
+        "count": 2,
+        "ppo_play_prob": 21.0,
+        "ppo_value_gain": -0.019,
+        "ppo_score": 30.85
       },
       {
         "id": 205,
@@ -382,78 +492,43 @@
         "tags": [
           "FORTIFY_2"
         ],
-        "count": 3
-      },
-      {
-        "id": 206,
-        "name": "火铳手",
-        "cost": 4,
-        "card_type": "MINION",
-        "base_dp": 4,
-        "atk_spell_val": 0,
-        "def_spell_val": 0,
-        "tags": [
-          "SUPPORT_ATK_2"
-        ],
-        "count": 2
-      },
-      {
-        "id": 204,
-        "name": "石像鬼",
-        "cost": 6,
-        "card_type": "MINION",
-        "base_dp": 8,
-        "atk_spell_val": 0,
-        "def_spell_val": 0,
-        "tags": [],
-        "count": 2
-      },
-      {
-        "id": 211,
-        "name": "蔚蓝要塞",
-        "cost": 6,
-        "card_type": "MINION",
-        "base_dp": 5,
-        "atk_spell_val": 0,
-        "def_spell_val": 0,
-        "tags": [
-          "FORTIFY_3",
-          "SUPPORT_ATK_1"
-        ],
-        "count": 2
+        "count": 3,
+        "ppo_play_prob": 21.7,
+        "ppo_value_gain": -0.031,
+        "ppo_score": 31.07
       }
     ],
     "decklist": [
       201,
       201,
+      201,
       203,
       203,
-      200,
+      902,
+      902,
+      903,
+      903,
       200,
       200,
       207,
       207,
+      207,
+      209,
       209,
       209,
       900,
       900,
-      202,
-      202,
-      202,
+      900,
+      905,
+      905,
       208,
       208,
       208,
-      210,
-      210,
+      901,
+      901,
       205,
       205,
-      205,
-      206,
-      206,
-      204,
-      204,
-      211,
-      211
+      205
     ]
   },
   "Green": {

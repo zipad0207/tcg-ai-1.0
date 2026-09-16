@@ -243,15 +243,18 @@ cd PythonApplication23
 python auto_balancer_deepseek.py
 ```
 
-### 8. 执行 AI 自主选卡构筑与竞技场对抗 (AI Deckbuilder & Matchup Arena)
-彻底实现**大模型自主组牌 + 30 张牌库硬性合规 + 红蓝竞技场多轮对抗验证**：
+### 8. 执行 AI / PPO 自主选卡构筑与竞技场对抗 (Autonomous Deckbuilder & Matchup Arena)
+彻底实现**PPO 智能体自博弈选牌 / 大模型自主组牌 + 30 张牌库硬性合规 + 红蓝竞技场多轮对抗验证**：
 ```bash
 cd PythonApplication23
 
-# 1. 让 AI 大模型为三大阵营（赤红、蔚蓝、翡翠）自主构建 30 张竞技卡组
+# 方案 A: 由 PPO 强化学习智能体（Actor-Critic 价值偏好 + 蒙特卡洛实机进化）自主选卡构建 30 张实战卡组
+python deck_builder_ppo.py --factions Red,Blue --generations 4 --games-per-gen 50
+
+# 方案 B: 由 DeepSeek 大模型基于卡池设计哲学构建 30 张竞技卡组
 python deck_builder_deepseek.py --factions Red,Blue,Green
 
-# 2. 运行红蓝 AI 卡组单局全景复盘对决，更新 battle_replay.html
+# 2. 运行红蓝自主选卡卡组单局全景复盘对决，更新 battle_replay.html
 python eval_play.py --stage tuned --decks decks_config.json
 
 # 3. 运行 500 局蒙特卡洛多轮竞技场压力测试，输出胜率与战术指标
@@ -269,9 +272,10 @@ python test_deck_matchup.py --episodes 500 --decks decks_config.json
     ├── sandbox.py                       # TCG 核心物理引擎 (DuelEnv, 支持同名卡上限3张与自定义卡组)
     ├── train.py                         # PPO 自博弈强化学习流水线 (支持 baseline/tuned 双阶段)
     ├── agent.py                         # 基于 PyTorch 的双头策略价值神经网络 (CardNet)
-    ├── deck_builder_deepseek.py         # AI 智能选卡构筑大师 (30张牌库/单卡<=3张/曲线规划)
+    ├── deck_builder_ppo.py              # PPO 强化学习智能体自主选卡构筑系统 (Actor-Critic偏好+自博弈进化)
+    ├── deck_builder_deepseek.py         # LLM 大模型智能选卡构筑大师 (30张牌库/单卡<=3张/曲线规划)
     ├── test_deck_matchup.py             # 红蓝 AI 卡组多轮批处理对抗评测脚本 (Monte Carlo)
-    ├── decks_config.json                # AI 构筑卡组配置文件 (含红蓝绿三大流派战术定义)
+    ├── decks_config.json                # 智能体自主构筑卡组配置文件 (含红蓝绿三大流派战术定义)
     ├── eval_play.py                     # AI 实时对抗评估与对局复盘入口 (支持 --decks)
     ├── visualizer.py                    # 终端双路 ASCII 棋盘与 HTML5 战报生成引擎
     ├── battle_replay.html               # 现代暗黑拟态交互式对局回放网页
