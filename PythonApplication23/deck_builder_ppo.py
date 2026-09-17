@@ -39,27 +39,43 @@ def load_card_pool(cards_path: str = "cards_config.json") -> dict:
         return json.load(f)
 
 def get_faction_candidates(pool_data: dict, faction: str) -> List[dict]:
-    f_cards = pool_data.get(faction, [])
-    n_cards = pool_data.get("Neutral", [])
-    dual_cards = []
-    # 扫描卡池中所有双色卡 (支持存在于 Dual 分组或匹配 4xx/5xx/6xx 前缀的卡牌)
-    for k, card_list in pool_data.items():
+    """
+    根据卡牌 factions 归属列表搜寻目标阵营的所有可用候选卡牌 (支持单阵营 >100 张卡及任意编号区间)
+    包含：本阵营纯色卡、中立卡 (Neutral)、以及包含本阵营的双色卡 (Dual)
+    """
+    candidates = []
+    seen_ids = set()
+
+    for category, card_list in pool_data.items():
         for c in card_list:
-            c_f = c.get("id", 0) // 100
+            cid = c.get("id", 0)
+            if cid in seen_ids:
+                continue
+
             facs = c.get("factions", [])
-            if faction in facs:
-                if c not in dual_cards and c not in f_cards and c not in n_cards:
-                    dual_cards.append(c)
+            # 1. 优先依据 factions 属性判定
+            if facs:
+                if faction in facs or "Neutral" in facs:
+                    candidates.append(c)
+                    seen_ids.add(cid)
+                    continue
+
+            # 2. 向下兼容旧分类 key 与前缀
+            c_f = cid // 100
+            if category == faction or category == "Neutral":
+                candidates.append(c)
+                seen_ids.add(cid)
             elif c_f == 4 and faction in ("Red", "Blue"):
-                if c not in dual_cards and c not in f_cards and c not in n_cards:
-                    dual_cards.append(c)
+                candidates.append(c)
+                seen_ids.add(cid)
             elif c_f == 5 and faction in ("Blue", "Green"):
-                if c not in dual_cards and c not in f_cards and c not in n_cards:
-                    dual_cards.append(c)
+                candidates.append(c)
+                seen_ids.add(cid)
             elif c_f == 6 and faction in ("Red", "Green"):
-                if c not in dual_cards and c not in f_cards and c not in n_cards:
-                    dual_cards.append(c)
-    return f_cards + n_cards + dual_cards
+                candidates.append(c)
+                seen_ids.add(cid)
+
+    return candidates
 
 def evaluate_card_neural_utility(model: CardNet, device: torch.device, candidate: dict, 
                                  faction: Faction, cards_path: str, samples: int = 15) -> dict:
@@ -208,19 +224,31 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
     target_low, target_mid, target_high = curve_quotas
     current_counts: Dict[int, int] = {cid: 0 for cid in candidate_ids}
 
-    # 1. 优先按分段装填最高 PPO 效用卡牌
-    def fill_bracket(bracket_cids, quota):
-        rem = quota
-        for cid in bracket_cids:
-            take = min(MAX_COPIES_PER_CARD, rem)
-            current_counts[cid] = take
-            rem -= take
-            if rem <= 0:
-                break
+    # 1. 优先检查既有卡组：若存在上一轮实战卡组则继承既有构筑进行增量微调；否则按法力曲线贪心初始化
+    has_existing = False
+    if existing_decks and faction in existing_decks and "decklist" in existing_decks[faction]:
+        existing_list = existing_decks[faction]["decklist"]
+        if len(existing_list) == DECK_SIZE:
+            for cid in existing_list:
+                if cid in current_counts:
+                    current_counts[cid] += 1
+            if sum(current_counts.values()) == DECK_SIZE:
+                has_existing = True
+                print(f"[*] 【{faction}】成功继承既有实战卡组，启动 PPO 增量自适应微调演进...")
 
-    fill_bracket(sorted_low, target_low)
-    fill_bracket(sorted_mid, target_mid)
-    fill_bracket(sorted_high, target_high)
+    if not has_existing:
+        def fill_bracket(bracket_cids, quota):
+            rem = quota
+            for cid in bracket_cids:
+                take = min(MAX_COPIES_PER_CARD, rem)
+                current_counts[cid] = take
+                rem -= take
+                if rem <= 0:
+                    break
+
+        fill_bracket(sorted_low, target_low)
+        fill_bracket(sorted_mid, target_mid)
+        fill_bracket(sorted_high, target_high)
 
     current_counts = normalize_deck_allocation(current_counts, candidate_ids, priority_order)
     decision_logs = []

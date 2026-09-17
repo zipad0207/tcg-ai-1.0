@@ -58,6 +58,8 @@ def load_json(filepath: str) -> dict:
 
 def clean_json_response(raw_text: str) -> str:
     """提取 Markdown 代码块中的纯 JSON 内容"""
+    if not raw_text:
+        return "{}"
     match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw_text, re.DOTALL)
     if match:
         return match.group(1).strip()
@@ -415,7 +417,10 @@ def main():
                 {"role": "system", "content": "You are a professional TCG game designer. Output ONLY valid JSON."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.7
+            temperature=0.7,
+            max_tokens=4000,
+            response_format={"type": "json_object"},
+            extra_body={"thinking": {"type": "disabled"}}
         )
 
         raw_output = response.choices[0].message.content

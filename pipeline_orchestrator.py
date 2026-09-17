@@ -30,15 +30,36 @@ if hasattr(sys.stdout, "reconfigure"):
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def resolve_path(p: str) -> str:
-    if os.path.isabs(p) or os.path.exists(p):
+    if not p:
         return p
-    child_path = os.path.join(SCRIPT_DIR, p)
-    if os.path.exists(child_path):
-        return child_path
-    parent_path = os.path.join(os.path.dirname(SCRIPT_DIR), p)
-    if os.path.exists(parent_path):
-        return parent_path
-    return child_path
+    if os.path.isabs(p) and os.path.exists(p):
+        return p
+    candidates = [
+        p,
+        os.path.join(SCRIPT_DIR, p),
+        os.path.join(SCRIPT_DIR, "PythonApplication23", p),
+        os.path.join(os.path.dirname(SCRIPT_DIR), p),
+        os.path.join(os.path.dirname(SCRIPT_DIR), "PythonApplication23", p),
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return os.path.abspath(c)
+    return os.path.abspath(os.path.join(SCRIPT_DIR, p))
+
+def get_subprocess_env() -> dict:
+    env = os.environ.copy()
+    py_paths = [
+        SCRIPT_DIR,
+        os.path.join(SCRIPT_DIR, "PythonApplication23"),
+        os.path.dirname(SCRIPT_DIR),
+        os.path.join(os.path.dirname(SCRIPT_DIR), "PythonApplication23"),
+    ]
+    cur_pypath = env.get("PYTHONPATH", "")
+    all_paths = [p for p in py_paths if os.path.exists(p)]
+    if cur_pypath:
+        all_paths.append(cur_pypath)
+    env["PYTHONPATH"] = os.pathsep.join(all_paths)
+    return env
 
 def get_api_key() -> str:
     key = os.environ.get("DEEPSEEK_API_KEY", "")
@@ -73,6 +94,8 @@ def is_legal_tag(tag: str) -> bool:
     return any(re.match(p, tag) for p in LEGAL_TAG_PATTERNS)
 
 def clean_json_response(raw_text: str) -> str:
+    if not raw_text:
+        return "{}"
     match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw_text, re.DOTALL)
     if match:
         return match.group(1).strip()
@@ -165,8 +188,7 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
         "def_spell_val": 0,
         "tags": ["RUSH"],
         "is_dual": false,
-        "factions": ["Red"],
-        "tactical_role": "定位说明"
+        "factions": ["Red"]
       }},
       {{
         "name": "赤蓝交织者",
@@ -177,8 +199,7 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
         "def_spell_val": 0,
         "tags": ["SUPPORT_ATK_1"],
         "is_dual": true,
-        "factions": ["Red", "Blue"],
-        "tactical_role": "红蓝双色战术纽带"
+        "factions": ["Red", "Blue"]
       }}
     ],
     "Blue": [
@@ -197,10 +218,20 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
         model="deepseek-flash",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.7,
-        max_tokens=4000
+        max_tokens=8192,
+        response_format={"type": "json_object"},
+        extra_body={"thinking": {"type": "disabled"}}
     )
 
-    raw_text = response.choices[0].message.content
+    raw_text = response.choices[0].message.content or ""
+    if not raw_text.strip():
+        reasoning = getattr(response.choices[0].message, "reasoning_content", "")
+        finish_reason = response.choices[0].finish_reason
+        raise RuntimeError(
+            f"DeepSeek 模型返回内容为空 (finish_reason='{finish_reason}')！\n"
+            f"原因分析: 模型启用了思考模式并在思考阶段耗尽了 token 配额 ({len(reasoning)} 字思考)，未能输出正式内容。"
+        )
+
     cleaned = clean_json_response(raw_text)
     data = json.loads(cleaned)
 
@@ -276,8 +307,7 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
                 "atk_spell_val": max(0, int(c.get("atk_spell_val", 0))) if c_type == "SPELL" else 0,
                 "def_spell_val": max(0, int(c.get("def_spell_val", 0))) if c_type == "SPELL" else 0,
                 "tags": valid_tags,
-                "factions": fac_list,
-                "tactical_role": c.get("tactical_role", "")
+                "factions": fac_list
             }
 
             if is_dual:
@@ -297,14 +327,13 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
     print("\n" + "═" * 105)
     print(f"【{pack_name}】全套共 {len(final_pack)} 张新卡详细属性一览 (每阵营 6 卡: 4单位+2法术，含1张双色卡)")
     print("═" * 105)
-    print(f"{'ID':<6}{'阵营':<14}{'卡牌名称':<16}{'类型':<8}{'费用':<6}{'身材/数值':<12}{'词条 (Tags)':<28}{'设计定位'}")
+    print(f"{'ID':<6}{'阵营':<14}{'卡牌名称':<16}{'类型':<8}{'费用':<6}{'身材/数值':<12}{'词条 (Tags)':<28}")
     print("─" * 105)
     for c in final_pack:
         fac_str = "/".join(c.get("factions", [])) if "factions" in c else ("双色" if c["id"]//100 in (4,5,6) else "常规")
         val_str = f"DP:{c['base_dp']}" if c["card_type"] == "MINION" else f"攻{c['atk_spell_val']}/防{c['def_spell_val']}"
         tags_str = ",".join(c["tags"]) if c["tags"] else "无"
-        note = notes_dict.get(c["name"], "")[:24]
-        print(f"{c['id']:<6}{fac_str:<14}{c['name']:<16}{c['card_type']:<8}{c['cost']:<6}{val_str:<12}{tags_str:<28}{note}")
+        print(f"{c['id']:<6}{fac_str:<14}{c['name']:<16}{c['card_type']:<8}{c['cost']:<6}{val_str:<12}{tags_str:<28}")
     print("═" * 105 + "\n")
 
     return current_pool, final_pack
@@ -325,7 +354,7 @@ def step2_generate_prebuild_decks(cards_file: str, decks_file: str):
         "--factions", "Red,Blue,Green"
     ]
     print(f"  [执行指令] {' '.join(cmd)}")
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd, check=True, env=get_subprocess_env())
     print("  [OK] DeepSeek 30 张初始预构筑已生成并更新至 decks_config.json")
 
 # ==============================================================================
@@ -346,7 +375,7 @@ def step3_ppo_deck_evolution(cards_file: str, decks_file: str, generations: int 
         "--games-per-gen", str(games_per_gen)
     ]
     print(f"  [执行指令] {' '.join(cmd)}")
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd, check=True, env=get_subprocess_env())
     print("  [OK] PPO 智能体已根据对局胜率与 Critic 价值评估完成 30 张实战构筑自主更新！")
 
 # ==============================================================================
@@ -365,7 +394,7 @@ def step4_run_brawl_audit(cards_file: str, decks_file: str, metrics_file: str, e
         "--episodes", str(episodes)
     ]
     print(f"  [执行指令] {' '.join(cmd)}")
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd, check=True, env=get_subprocess_env())
 
     with open(metrics_file, "r", encoding="utf-8") as f:
         metrics = json.load(f)
@@ -380,23 +409,32 @@ def step4_run_brawl_audit(cards_file: str, decks_file: str, metrics_file: str, e
     return metrics
 
 # ==============================================================================
-# Phase 5: 自平衡判定与 DeepSeek 数值微调
+# Phase 5: 自平衡状态审计与 DeepSeek 外环数值微调
 # ==============================================================================
-def step5_check_and_balance(metrics: dict, cards_file: str, target_tolerance: float = 2.5) -> Tuple[bool, float]:
-    f_stats = metrics["faction_stats"]
-    deviations = {f: abs(f_stats[f]["winrate"] - 50.0) for f in ["Red", "Blue", "Green"]}
+def check_balance_status(metrics: dict, target_tolerance: float = 2.8) -> Tuple[bool, float]:
+    f_stats = metrics.get("faction_stats", {})
+    deviations = {f: abs(f_stats.get(f, {}).get("winrate", 50.0) - 50.0) for f in ["Red", "Blue", "Green"]}
     max_dev = max(deviations.values())
 
     print(f"\n[平衡偏离度审计] 最大偏离: {max_dev:.2f}% | 允许目标: <= {target_tolerance:.2f}%")
+    for f in ["Red", "Blue", "Green"]:
+        wr = f_stats.get(f, {}).get("winrate", 50.0)
+        dev = deviations[f]
+        flag = "✅" if dev <= target_tolerance else "❌"
+        print(f"  {flag} 【{f:<5}】当前胜率: {wr:5.1f}% (偏离 50% 达 {dev:4.1f}%)")
 
     if max_dev <= target_tolerance:
-        print("🎉 恭喜！三大阵营综合胜率均落入黄金平衡带，达成纳什自平衡！无需进一步修改数值。")
+        print("🎉 恭喜！三大阵营综合胜率均落入黄金平衡带，达成纳什自平衡！")
         return True, max_dev
 
-    print(f"⚠️ 环境仍处于失衡状态 (偏离 {max_dev:.2f}% > 目标 {target_tolerance:.2f}%)，触发 DeepSeek 数值外环微调！")
+    return False, max_dev
+
+def step5_deepseek_rebalance_cards(cards_file: str, metrics_file: str):
+    print("\n" + "═" * 80)
+    print("【阶段五·外环触发】构筑优化已达瓶颈，遥测战报扔回 DeepSeek 执行卡牌数值靶向微调")
+    print("═" * 80)
     
     balancer_script = resolve_path("auto_balancer_deepseek.py")
-    metrics_file = resolve_path("training_metrics_brawl.json")
     cmd = [
         sys.executable, balancer_script,
         "--cards", cards_file,
@@ -404,9 +442,8 @@ def step5_check_and_balance(metrics: dict, cards_file: str, target_tolerance: fl
         "--output", cards_file
     ]
     print(f"  [执行指令] {' '.join(cmd)}")
-    subprocess.run(cmd, check=True)
-    print("  [OK] DeepSeek 已根据最新遥测数据完成卡牌属性与费用靶向微调！")
-    return False, max_dev
+    subprocess.run(cmd, check=True, env=get_subprocess_env())
+    print("  [OK] DeepSeek 已根据最新 3,000 局对战遥测数据完成卡牌属性与费用靶向微调！")
 
 # ==============================================================================
 # Phase 6: 自动可视化导出与全景战报打包
@@ -421,7 +458,7 @@ def step6_export_reports_and_charts(cards_file: str, metrics_file: str, history_
     if os.path.exists(tier_script):
         try:
             print("  [1/3] 正在生成单卡贡献天梯榜 (card_tier_table.md)...")
-            subprocess.run([sys.executable, tier_script], check=True)
+            subprocess.run([sys.executable, tier_script], check=True, env=get_subprocess_env())
         except Exception as e:
             print(f"  [警告] 梯队榜生成异常: {e}")
 
@@ -506,33 +543,41 @@ def step6_export_reports_and_charts(cards_file: str, metrics_file: str, history_
     except Exception as e:
         print(f"  [警告] 对比大屏图表生成异常: {e}")
 
-    # 3. 根目录与子目录同步
+    # 3. 根目录与子目录双向资产同步
     try:
         import shutil
         root_dir = os.path.dirname(SCRIPT_DIR)
-        for fname in ["figure_brawl.png", "figure_brawl_comparison.png", "training_metrics_brawl.json", "cards_config.json", "decks_config.json"]:
+        sync_files = [
+            "figure_brawl.png", "figure_brawl_comparison.png", "training_metrics_brawl.json",
+            "cards_config.json", "decks_config.json", "card_tier_table.md", "ppo_introspection_report.md",
+            "pipeline_orchestrator.py", "deck_builder_ppo.py", "auto_balancer_deepseek.py"
+        ]
+        for fname in sync_files:
             src = resolve_path(fname)
             dst = os.path.join(root_dir, fname)
             if os.path.exists(src) and src != dst:
                 shutil.copy(src, dst)
-        print("  [3/3] 数据资产已自动双向同步至工作区根目录与子目录！")
+        print("  [3/3] 核心资产与战报已自动同步至工作区根目录与子目录！")
     except Exception as e:
         print(f"  [警告] 资产同步异常: {e}")
 
 # ==============================================================================
-# Main 流水线总控入口
+# Main 流水线总控入口 (双环嵌套闭环系统)
 # ==============================================================================
 def main():
-    parser = argparse.ArgumentParser(description="TCG-AI 全自动扩展包印制与自平衡协同流水线 (Pipeline Orchestrator)")
+    parser = argparse.ArgumentParser(description="TCG-AI 全自动扩展包印制与双环自平衡协同流水线 (Pipeline Orchestrator)")
     parser.add_argument("--pack-name", type=str, default="破晓对决补充包", help="扩展包名称")
     parser.add_argument("--theme", type=str, default="环境数据驱动缺啥补啥与双色协同", help="设计主题")
     parser.add_argument("--episodes", type=int, default=3000, help="每轮自博弈混战对局规模 (默认 3000)")
     parser.add_argument("--target-balance", type=float, default=2.8, help="目标平衡偏离容差 (默认 2.8 百分点)")
-    parser.add_argument("--max-iterations", type=int, default=3, help="最大闭环微调迭代轮次 (默认 3)")
+    parser.add_argument("--max-deck-attempts", type=int, default=3, help="同一卡池下 PPO 自主微调构筑的尝试次数 (默认 3 次，即尝试调 2~3 次构筑)")
+    parser.add_argument("--max-outer-iterations", type=int, default=10, help="最大 DeepSeek 外环数值微调迭代轮次 (默认 10 轮)")
+    parser.add_argument("--max-iterations", type=int, default=None, help="(兼容旧参数) 等价于 --max-outer-iterations")
     parser.add_argument("--skip-print", action="store_true", help="跳过印卡阶段，直接基于现有卡池开始闭环调优")
     parser.add_argument("--dry-run", action="store_true", help="快速演练模式 (小规模局数快速验证端到端状态机)")
     args = parser.parse_args()
 
+    max_outer = args.max_iterations if args.max_iterations is not None else args.max_outer_iterations
     cards_file = resolve_path("cards_config.json")
     decks_file = resolve_path("decks_config.json")
     metrics_file = resolve_path("training_metrics_brawl.json")
@@ -540,11 +585,13 @@ def main():
     brawl_episodes = 60 if args.dry_run else args.episodes
     ppo_gens = 2 if args.dry_run else 5
     ppo_games = 15 if args.dry_run else 50
+    deck_attempts = 2 if args.dry_run else args.max_deck_attempts
 
     print("=" * 85)
     print(" 🚀 TCG-AI 端到端全自动扩展包演化流水线 (Pipeline Orchestrator) 启动")
     print(f" 运作模式: {'[DRY-RUN 快速演练]' if args.dry_run else '[FULL PRODUCTION 实机全量]'}")
-    print(f" 混战规模: {brawl_episodes} 局/轮 | 目标平衡容差: ±{args.target_balance:.1f}% | 最大迭代: {args.max_iterations} 轮")
+    print(f" 混战规模: {brawl_episodes} 局/轮 | 目标平衡容差: ±{args.target_balance:.1f}%")
+    print(f" 嵌套架构: PPO 内环连续演化构筑 {deck_attempts} 次 -> 若失衡则触发 DeepSeek 外环改卡 (上限 {max_outer} 轮)")
     print("=" * 85)
 
     # 1. 阶段一：DeepSeek 诊断与印卡
@@ -553,15 +600,22 @@ def main():
     else:
         print("\n[*] 跳过印卡阶段，沿用当前卡池进行闭环平衡。")
 
-    # 2. 阶段二：DeepSeek 初始预构筑
-    step2_generate_prebuild_decks(cards_file, decks_file)
+    # 2. 阶段二：DeepSeek 初始预构筑 (仅在 decks_config 不存在时创建)
+    if not os.path.exists(decks_file):
+        step2_generate_prebuild_decks(cards_file, decks_file)
+    else:
+        print(f"\n[*] 检测到既有卡组配置 ({decks_file})，保留作为 PPO 初始种群基底。")
 
-    # 3. 记录初始胜率历史
+    # 3. 记录初始胜率历史与基准偏离度
     history_records = []
+    latest_max_dev = 25.0
     if os.path.exists(metrics_file):
         try:
             with open(metrics_file, "r", encoding="utf-8") as f:
                 old_m = json.load(f)
+            f_stats = old_m.get("faction_stats", {})
+            if f_stats:
+                latest_max_dev = max(abs(s.get("winrate", 50.0) - 50.0) for s in f_stats.values())
             history_records.append({
                 "Red": old_m["faction_stats"]["Red"]["winrate"],
                 "Blue": old_m["faction_stats"]["Blue"]["winrate"],
@@ -572,32 +626,87 @@ def main():
     else:
         history_records.append({"Red": 50.0, "Blue": 50.0, "Green": 50.0})
 
-    # 4. 阶段三~五：双环闭环状态机 (While 循环)
-    for iteration in range(1, args.max_iterations + 1):
-        print("\n" + "█" * 80)
-        print(f"【自适应平衡双环闭环】第 {iteration} / {args.max_iterations} 轮迭代启动")
-        print("█" * 80)
+    # 4. 阶段三~五：双环嵌套自适应平衡状态机
+    # 外环：DeepSeek 卡牌数值版本迭代 (Patch Era)
+    # 内环：PPO 智能体自主构筑演化微调 (2~3 次尝试，自适应局数实测)
+    outer_round = 1
+    is_balanced = False
+    latest_metrics = None
 
-        # 3A: PPO 智能体自主调构筑 ("谁打的谁构筑")
-        step3_ppo_deck_evolution(cards_file, decks_file, generations=ppo_gens, games_per_gen=ppo_games)
+    while not is_balanced and outer_round <= max_outer:
+        print("\n" + "█" * 85)
+        print(f"【外环·版本周期】第 {outer_round} / {max_outer} 轮卡牌数值补丁启动")
+        print("█" * 85)
 
-        # 3B: 3,000 局实机混战对抗遥测
-        metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=brawl_episodes)
+        for attempt in range(1, deck_attempts + 1):
+            print("\n" + "─" * 70)
+            print(f"  ▶【内环·构筑演进】第 {attempt} / {deck_attempts} 次 PPO 智能体自主微调构筑 ('谁打的谁构筑')")
+            print("─" * 70)
 
-        curr_stats = {
-            "Red": metrics["faction_stats"]["Red"]["winrate"],
-            "Blue": metrics["faction_stats"]["Blue"]["winrate"],
-            "Green": metrics["faction_stats"]["Green"]["winrate"]
-        }
-        history_records.append(curr_stats)
+            # 3A: PPO 智能体自主调构筑 (增量演化)
+            step3_ppo_deck_evolution(cards_file, decks_file, generations=ppo_gens, games_per_gen=ppo_games)
 
-        # 3C: 黄金平衡带判定
-        is_balanced, max_dev = step5_check_and_balance(metrics, cards_file, target_tolerance=args.target_balance)
+            # 自适应混战局数设定：失衡越严重，用越少的局数快速捕获方向，成倍节省时间
+            if args.dry_run:
+                current_brawl_episodes = 60
+            elif latest_max_dev >= 12.0:
+                current_brawl_episodes = 500
+                print(f"  ⚡ [自适应加速] 检测到严重失衡 (偏离度 {latest_max_dev:.1f}%)，采用高速遥测模式 ({current_brawl_episodes} 局/轮)...")
+            elif latest_max_dev >= 6.0:
+                current_brawl_episodes = 1200
+                print(f"  ⚡ [自适应平衡] 检测到中度失衡 (偏离度 {latest_max_dev:.1f}%)，采用中度遥测模式 ({current_brawl_episodes} 局/轮)...")
+            else:
+                current_brawl_episodes = args.episodes
+                print(f"  🎯 [黄金带精准验证] 生态已接近平衡 (偏离度 {latest_max_dev:.1f}%)，采用高精度混战 ({current_brawl_episodes} 局/轮)...")
+
+            # 3B: 实机混战对抗遥测
+            metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=current_brawl_episodes)
+            latest_metrics = metrics
+
+            curr_stats = {
+                "Red": metrics["faction_stats"]["Red"]["winrate"],
+                "Blue": metrics["faction_stats"]["Blue"]["winrate"],
+                "Green": metrics["faction_stats"]["Green"]["winrate"]
+            }
+            history_records.append(curr_stats)
+
+            # 3C: 平衡带审计判定
+            is_balanced, max_dev = check_balance_status(metrics, target_tolerance=args.target_balance)
+            latest_max_dev = max_dev
+
+            if is_balanced:
+                print("\n" + "★" * 70)
+                print(f"🎉 完美达成纳什自平衡！(第 {attempt} 次构筑微调收敛)")
+                print(f"   三大阵营最大偏离度仅 {max_dev:.2f}% <= 目标容差 {args.target_balance:.2f}%！")
+                print("   全生态自平衡达成，立即退出双环迭代！")
+                print("★" * 70)
+                break
+            else:
+                # 严重失衡断崖判定：如果偏离度 >= 16.0%，即使在第 1 次构筑尝试，也无需徒劳重跑构筑，直接呼叫 DeepSeek 大刀阔斧改卡
+                if max_dev >= 16.0 and attempt == 1 and deck_attempts > 1:
+                    print(f"\n🚨【底层数值严重失衡预警 (偏离度 {max_dev:.2f}% >= 16.0%)】")
+                    print(f"   胜率存在断层级鸿沟，卡组构筑已无法跨越此结构性差距！")
+                    print(f"   ⚡ 立即跳过剩余构筑尝试，直接提前呼叫 DeepSeek 启动【重拳大刀阔斧调优模式】！")
+                    break
+
+                if attempt < deck_attempts:
+                    print(f"\n⚠️ 当前构筑下胜率偏离度 {max_dev:.2f}% > 目标 {args.target_balance:.2f}%，生态尚未平衡。")
+                    print(f"   💡 让 PPO 智能体继续在现有卡池中自博弈演化构筑 (进行第 {attempt + 1} / {deck_attempts} 次尝试)...")
+                else:
+                    print(f"\n⚠️ PPO 智能体已在当前卡池下连续微调构筑 {deck_attempts} 次，胜率偏离度仍为 {max_dev:.2f}%！")
+                    print("   🚨【判定：发现构筑不行】纯靠卡组构筑已达调优瓶颈，确认存在底层单卡数值失衡！")
+                    print("   📦 准备将遥测数据扔回 DeepSeek 进行底层数值与费用大刀阔斧调优...")
+
         if is_balanced:
-            print(f"\n🎉 流水线在第 {iteration} 轮成功达成自平衡收敛，退出循环！")
             break
-        elif iteration == args.max_iterations:
-            print(f"\n⚠️ 达到最大迭代轮次 ({args.max_iterations})，结束闭环迭代。")
+
+        # 若内环尝试后依然失衡，扔回 DeepSeek 调数据
+        if outer_round < max_outer:
+            step5_deepseek_rebalance_cards(cards_file, metrics_file)
+            outer_round += 1
+        else:
+            print(f"\n⚠️ 已达到外环最大迭代轮次 ({max_outer})，结束微调循环。")
+            break
 
     # 5. 阶段六：自动导出成果与报表
     step6_export_reports_and_charts(cards_file, metrics_file, history_records)

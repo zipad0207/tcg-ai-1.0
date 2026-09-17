@@ -33,6 +33,8 @@ def load_json(filepath: str) -> dict:
         return json.load(f)
 
 def clean_json_response(raw_text: str) -> str:
+    if not raw_text:
+        return "{}"
     match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw_text, re.DOTALL)
     if match:
         return match.group(1).strip()
@@ -161,7 +163,9 @@ def call_deepseek_deckbuild(faction: str, pool: List[dict]) -> dict:
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
-            max_tokens=1500
+            max_tokens=4000,
+            response_format={"type": "json_object"},
+            extra_body={"thinking": {"type": "disabled"}}
         )
         content = response.choices[0].message.content
         cleaned = clean_json_response(content)
