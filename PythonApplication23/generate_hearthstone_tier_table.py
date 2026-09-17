@@ -86,7 +86,10 @@ def simulate_card_in_faction(card_info: dict, faction_name: str, model: CardNet,
         env.current_player = 0
         p0 = env.players[0]
 
-        sim_mana = random.randint(max(1, card_obj.cost), 10)
+        if card_obj.cost >= 10:
+            sim_mana = max(1, card_obj.cost)
+        else:
+            sim_mana = random.randint(max(1, card_obj.cost), 10)
         p0.mana = sim_mana
         p0.max_mana = sim_mana
         p0.hand = [card_obj] + p0.hand[:3]

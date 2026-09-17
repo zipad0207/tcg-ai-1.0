@@ -332,7 +332,7 @@ def main():
                         new_val = new_c[field]
                         if field == "cost":
                             try:
-                                new_val = max(1, int(new_val))
+                                new_val = min(10, max(1, int(new_val)))
                             except Exception:
                                 continue
                         elif field in ["base_dp", "atk_spell_val", "def_spell_val"]:

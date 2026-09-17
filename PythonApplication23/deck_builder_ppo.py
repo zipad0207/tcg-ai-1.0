@@ -109,8 +109,11 @@ def evaluate_card_neural_utility(model: CardNet, device: torch.device, candidate
         env.current_player = acting_p_id
         player = env.players[acting_p_id]
 
-        # 随机设置合理法力阶段 (从卡牌费用至 10 费)
-        sim_mana = random.randint(max(1, card_obj.cost), 10)
+        # 随机设置合理法力阶段 (从卡牌费用至 10 费，若费用 >= 10 则设定为该卡费用)
+        if card_obj.cost >= 10:
+            sim_mana = max(1, card_obj.cost)
+        else:
+            sim_mana = random.randint(max(1, card_obj.cost), 10)
         player.mana = sim_mana
         player.max_mana = sim_mana
 
