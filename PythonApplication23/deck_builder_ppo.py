@@ -21,6 +21,7 @@ def find_model_path(requested_path: str = None, stage: str = "tuned") -> str:
     candidates = []
     if requested_path:
         candidates.append(requested_path)
+    candidates.append("card_ppo_model_brawl.pth")
     candidates.append(f"card_ppo_model_{stage}.pth")
     candidates.append("card_ppo_model_tuned.pth")
     candidates.append("card_ppo_model.pth")
@@ -64,13 +65,13 @@ def evaluate_card_neural_utility(model: CardNet, device: torch.device, candidate
     is_playable_count = 0
 
     for _ in range(samples):
-        # 随机初始化对局环境
-        p0_f = faction if faction == Faction.RED else Faction.RED
-        p1_f = Faction.BLUE if faction == Faction.RED else faction
-        env = DuelEnv(p0_faction=p0_f, p1_faction=p1_f, cards_path=cards_path)
+        # 随机初始化对局环境 (针对多阵营生态进行候选卡压测)
+        opp_pool = [f for f in [Faction.RED, Faction.BLUE, Faction.GREEN] if f != faction]
+        opp_f = random.choice(opp_pool)
+        env = DuelEnv(p0_faction=faction, p1_faction=opp_f, cards_path=cards_path)
         obs = env.reset()
 
-        acting_p_id = 0 if faction == Faction.RED else 1
+        acting_p_id = 0
         env.current_player = acting_p_id
         player = env.players[acting_p_id]
 
@@ -119,8 +120,10 @@ def evaluate_card_neural_utility(model: CardNet, device: torch.device, candidate
     avg_v_gain = float(np.mean(value_gains)) if value_gains else 0.0
 
     # 综合 PPO 神经效用评分 (0 ~ 100 分)
-    # 结合出牌意愿 (Actor 偏好) 与 价值收益 (Critic 预期)
-    ppo_score = round(avg_play_prob * 65.0 + max(0.0, avg_v_gain + 1.0) * 17.5, 2)
+    # 强化 Critic 预期净收益 (ΔV) 权重，适度平衡 Actor 偏好，避免低费白板因容易打出而虚高
+    v_norm = (avg_v_gain + 0.05) * 400.0  # ΔV 从 -0.05~+0.05 映射为 0~40
+    p_norm = avg_play_prob * 100.0 * 0.6  # 出牌概率映射为 10~30
+    ppo_score = round(max(20.0, min(98.0, 30.0 + v_norm + p_norm)), 2)
 
     return {
         "id": candidate["id"],
@@ -161,26 +164,53 @@ def normalize_deck_allocation(counts: Dict[int, int], candidate_ids: List[int], 
 
 def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats: List[dict],
                               model: CardNet, device: torch.device, cards_path: str,
-                              generations: int = 5, games_per_gen: int = 60) -> Tuple[Dict[int, int], List[str]]:
+                              generations: int = 5, games_per_gen: int = 60,
+                              existing_decks: dict = None) -> Tuple[Dict[int, int], List[str], List[dict]]:
     """
     PPO 蒙特卡洛自博弈卡组进化搜索 (PPO Evolutionary Deck Optimizer):
-    以神经网络效用评分为先验，在实机对抗中动态统计胜率贡献与卡牌卡手率，完成最终 30 张卡组自主遴选。
+    引入法力曲线与终结者保护机制，以神经网络效用评分为先验，在实机对抗中动态统计胜率贡献与卡牌卡手率，完成最终 30 张卡组自主遴选。
     """
     candidate_ids = [c["id"] for c in candidates]
+    cand_by_id = {c["id"]: c for c in candidates}
     sorted_by_ppo = sorted(neural_stats, key=lambda x: x["ppo_score"], reverse=True)
     priority_order = [x["id"] for x in sorted_by_ppo]
 
-    # 初始化先验卡组：PPO 评分最高的卡牌优先给 3 张或 2 张
+    # 法力曲线分段 (低费 1-2 / 中费 3-4 / 高费 >= 5)
+    sorted_low = [c["id"] for c in sorted_by_ppo if cand_by_id[c["id"]]["cost"] <= 2]
+    sorted_mid = [c["id"] for c in sorted_by_ppo if 3 <= cand_by_id[c["id"]]["cost"] <= 4]
+    sorted_high = [c["id"] for c in sorted_by_ppo if cand_by_id[c["id"]]["cost"] >= 5]
+
+    # 各阵营天然法力曲线配额 (低/中/高)
+    curve_quotas = {
+        "Red": (14, 12, 4),
+        "Blue": (10, 12, 8),
+        "Green": (10, 12, 8)
+    }.get(faction, (12, 12, 6))
+
+    target_low, target_mid, target_high = curve_quotas
     current_counts: Dict[int, int] = {cid: 0 for cid in candidate_ids}
-    allocated = 0
-    for idx, cinfo in enumerate(sorted_by_ppo):
-        target_count = 3 if idx < 7 else (2 if idx < 12 else 0)
-        current_counts[cinfo["id"]] = target_count
-        allocated += target_count
+
+    # 1. 优先按分段装填最高 PPO 效用卡牌
+    def fill_bracket(bracket_cids, quota):
+        rem = quota
+        for cid in bracket_cids:
+            take = min(MAX_COPIES_PER_CARD, rem)
+            current_counts[cid] = take
+            rem -= take
+            if rem <= 0:
+                break
+
+    fill_bracket(sorted_low, target_low)
+    fill_bracket(sorted_mid, target_mid)
+    fill_bracket(sorted_high, target_high)
 
     current_counts = normalize_deck_allocation(current_counts, candidate_ids, priority_order)
     decision_logs = []
-    my_faction = Faction.RED if faction == "Red" else Faction.BLUE
+    
+    faction_map = {"Red": Faction.RED, "Blue": Faction.BLUE, "Green": Faction.GREEN}
+    name_map = {Faction.RED: "Red", Faction.BLUE: "Blue", Faction.GREEN: "Green"}
+    my_faction = faction_map.get(faction, Faction.RED)
+    opp_factions = [f for f in [Faction.RED, Faction.BLUE, Faction.GREEN] if f != my_faction]
 
     introspections = []
     prev_winrate = 50.0
@@ -193,18 +223,20 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
         for cid, count in current_counts.items():
             test_decklist.extend([cid] * count)
 
-        # 对手卡组使用全池或对称
-        p0_deck = test_decklist if my_faction == Faction.RED else None
-        p1_deck = test_decklist if my_faction == Faction.BLUE else None
-
-        env = DuelEnv(p0_faction=Faction.RED, p1_faction=Faction.BLUE, cards_path=cards_path,
-                      p0_decklist=p0_deck, p1_decklist=p1_deck)
-
         card_played_win = Counter()
         card_played_total = Counter()
         wins = 0
 
         for _ in range(games_per_gen):
+            opp_f = random.choice(opp_factions)
+            opp_name = name_map[opp_f]
+            opp_deck = None
+            if existing_decks and opp_name in existing_decks and "decklist" in existing_decks[opp_name]:
+                opp_deck = existing_decks[opp_name]["decklist"]
+
+            env = DuelEnv(p0_faction=my_faction, p1_faction=opp_f, cards_path=cards_path,
+                          p0_decklist=test_decklist, p1_decklist=opp_deck)
+
             obs = env.reset()
             done = False
             played_this_game = set()
@@ -222,16 +254,14 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
                 if act != env.action_space_size - 1:
                     h_idx = act // 4
                     hand = env.players[curr_p].hand
-                    if h_idx < len(hand):
+                    if h_idx < len(hand) and curr_p == 0:
                         c = hand[h_idx]
-                        if (my_faction == Faction.RED and curr_p == 0) or (my_faction == Faction.BLUE and curr_p == 1):
-                            card_played_total[c.id] += 1
-                            played_this_game.add(c.id)
+                        card_played_total[c.id] += 1
+                        played_this_game.add(c.id)
 
                 obs, _, done, _ = env.step(act)
 
-            my_player_idx = 0 if my_faction == Faction.RED else 1
-            is_win = (env.winner == my_player_idx) if env.winner is not None else (env.players[my_player_idx].score >= env.WIN_SCORE)
+            is_win = (env.winner == 0) if env.winner is not None else (env.players[0].score >= env.WIN_SCORE)
             if is_win:
                 wins += 1
                 for cid in played_this_game:
@@ -240,25 +270,37 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
         gen_winrate = (wins / games_per_gen) * 100
         print(f"   [进化代数 {gen}/{generations}] PPO 实战自博弈胜率: {gen_winrate:5.1f}% (上一代: {prev_winrate:5.1f}%)")
 
-        # 基于实战胜率与出场频次执行深度反思与修正
+        # 基于真实出场胜率进行多维考量（消除低费出场次数虚高偏差）
         best_candidate = None
         worst_candidate = None
         best_metric = -999.0
         worst_metric = 999.0
 
+        # 当前卡组高费牌数量统计 (避免将终结核弹全部洗出卡组)
+        curr_high_count = sum(cnt for cid, cnt in current_counts.items() if cand_by_id[cid]["cost"] >= 5)
+
         for cid in candidate_ids:
             tot = card_played_total[cid]
-            if tot > 0:
+            c_cost = cand_by_id[cid]["cost"]
+            if tot >= 3:
                 win_ratio = card_played_win[cid] / tot
-                metric = win_ratio * 10.0 + (tot / games_per_gen)
+                metric = win_ratio * 10.0
+            elif tot > 0:
+                win_ratio = card_played_win[cid] / tot
+                metric = win_ratio * 7.0 + 1.5
             else:
-                metric = 0.0
+                metric = 4.5  # 样本过少时保护，不盲目剔除
 
             if current_counts[cid] < MAX_COPIES_PER_CARD and metric > best_metric:
                 best_metric = metric
                 best_candidate = cid
 
-            if current_counts[cid] > 0 and metric < worst_metric:
+            # 约束：若高费牌数量已降至下限，则不再削减高费牌
+            can_demote = True
+            if c_cost >= 5 and curr_high_count <= (2 if faction == "Red" else 5):
+                can_demote = False
+
+            if current_counts[cid] > 0 and metric < worst_metric and can_demote:
                 worst_metric = metric
                 worst_candidate = cid
 
@@ -355,16 +397,35 @@ def build_ppo_deck_package(faction: str, candidates: List[dict], neural_stats: L
         })
 
     avg_cost = round(total_mana / max(1, len(decklist)), 2)
-    deck_name = "赤红·PPO特训突破流" if faction == "Red" else "蔚蓝·PPO特训要塞流"
+    deck_names = {
+        "Red": "赤红·PPO自主进化突破流",
+        "Blue": "蔚蓝·PPO自主进化铁壁流",
+        "Green": "翠绿·PPO自主进化古树流"
+    }
+    archetypes = {
+        "Red": "PPO-Aggro/Sacrifice",
+        "Blue": "PPO-Control/Fortify",
+        "Green": "PPO-Ramp/Behemoth"
+    }
+    deck_name = deck_names.get(faction, f"{faction}·PPO自选流")
+    archetype = archetypes.get(faction, "PPO-Reinforcement-Learned")
+
     concept = (
-        "由 PPO 强化学习智能体自主经过神经网络效用评估与实机对战进化遴选所得。"
+        f"由 PPO 强化学习智能体自主经过神经网络效用评估与实机对战进化遴选所得。"
         f"全套构筑最大化 PPO 决策置信度与状态价值增益 (ΔV)，平均费用 {avg_cost} 费。"
     )
 
+    top_cards = sorted(card_details, key=lambda x: x.get("ppo_score", 0), reverse=True)[:2]
+    key_combos = [
+        f"{top_cards[0]['name']} (PPO评分 {top_cards[0]['ppo_score']}): 作为核心驱动点，提供最大状态价值增益。",
+        f"{top_cards[1]['name']} (PPO评分 {top_cards[1]['ppo_score']}): 作为主力节奏支撑，协同完成场面压制与胜点累积。"
+    ] if len(top_cards) >= 2 else []
+
     return {
         "deck_name": deck_name,
-        "archetype": "PPO-Reinforcement-Learned",
+        "archetype": archetype,
         "tactical_concept": concept,
+        "key_combos": key_combos,
         "decision_evolution_logs": decision_logs,
         "introspections": introspections,
         "total_cards": len(decklist),
@@ -486,7 +547,7 @@ def main():
     parser.add_argument("--stage", type=str, default="tuned", choices=["baseline", "tuned"], help="选用训练模型阶段")
     parser.add_argument("--output", type=str, default="decks_config.json", help="输出卡组保存文件")
     parser.add_argument("--report", type=str, default="ppo_introspection_report.md", help="输出心智自省报告Markdown文件名")
-    parser.add_argument("--factions", type=str, default="Red,Blue", help="目标自主选卡阵营 (默认 Red,Blue)")
+    parser.add_argument("--factions", type=str, default="Red,Blue,Green", help="目标自主选卡阵营 (默认 Red,Blue,Green)")
     parser.add_argument("--generations", type=int, default=5, help="自博弈进化代数 (默认 5)")
     parser.add_argument("--games-per-gen", type=int, default=60, help="每代自博弈实机局数 (默认 60)")
     args = parser.parse_args()
@@ -529,7 +590,7 @@ def main():
             st = evaluate_card_neural_utility(model, device, c, f_enum, args.cards, samples=20)
             neural_stats.append(st)
 
-        print("[2/2] 正在执行 PPO 自博弈对决与卡组微调...")
+        print(f"[2/2] 正在执行【{faction_name}】PPO 自博弈对决与卡组微调...")
         alloc, decision_logs, introspections = ppo_self_play_deck_search(
             faction=faction_name,
             candidates=candidates,
@@ -538,7 +599,8 @@ def main():
             device=device,
             cards_path=args.cards,
             generations=args.generations,
-            games_per_gen=args.games_per_gen
+            games_per_gen=args.games_per_gen,
+            existing_decks=decks_result
         )
 
         deck_pkg = build_ppo_deck_package(faction_name, candidates, neural_stats, alloc, decision_logs, introspections)
