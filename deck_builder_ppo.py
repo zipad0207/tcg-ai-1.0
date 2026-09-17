@@ -504,50 +504,29 @@ def build_ppo_deck_package(faction: str, candidates: List[dict], neural_stats: L
     }
 
 def print_ppo_deck_report(faction: str, deck_pkg: dict, neural_stats: List[dict]):
-    print("\n" + "═" * 85)
-    print(f"【{faction}】PPO 推荐卡组: 《{deck_pkg['deck_name']}》")
-    print(f"牌库规模: {deck_pkg['total_cards']} 张 | 平均费用: {deck_pkg['avg_cost']} 费")
-    print(f"随从 {deck_pkg['minion_count']} 张 / 法术 {deck_pkg['spell_count']} 张")
-    print("─" * 85)
-    print("单卡效用评分与入选结果:")
-    print(f"{'ID':<6}{'名称':<12}{'费用':<6}{'类型':<8}{'PPO出牌偏好':<14}{'Critic收益(ΔV)':<16}{'PPO评分':<10}{'入选张数'}")
-    print("─" * 85)
-
-    sorted_stats = sorted(neural_stats, key=lambda x: x["ppo_score"], reverse=True)
-    alloc = deck_pkg["card_allocation"]
-
-    for st in sorted_stats:
-        cid = st["id"]
-        count = alloc.get(str(cid), 0)
-        status = f"{count} 张" if count > 0 else "未入选"
-        print(f"{cid:<6}{st['name']:<12}{st['cost']:<6}{st['card_type']:<8}{str(st['play_prob'])+'%':<14}{str(st['value_gain']):<16}{st['ppo_score']:<10}{status}")
-
-    print("─" * 85)
-    print("法力曲线分布:")
-    for cost in range(1, 8):
-        cnt = deck_pkg["mana_curve"].get(cost, 0)
-        bar = "█" * (cnt * 2)
-        print(f"   {cost} 费: {bar:<22} ({cnt} 张)")
-    cnt_high = sum(deck_pkg["mana_curve"].get(c, 0) for c in range(8, 10))
-    if cnt_high > 0:
-        bar = "█" * (cnt_high * 2)
-        print(f" 8+ 费: {bar:<22} ({cnt_high} 张)")
+    print("\n" + "─" * 70)
+    print(f"【{faction}】推荐卡组: 《{deck_pkg['deck_name']}》 (30 张 | 均费 {deck_pkg['avg_cost']} 费 | 随从 {deck_pkg['minion_count']} / 法术 {deck_pkg['spell_count']})")
+    curve_summary = [f"{c}费({deck_pkg['mana_curve'].get(c, 0)})" for c in range(1, 6) if deck_pkg['mana_curve'].get(c, 0) > 0]
+    high_cnt = sum(deck_pkg['mana_curve'].get(c, 0) for c in range(6, 10))
+    if high_cnt > 0:
+        curve_summary.append(f"6+费({high_cnt})")
+    print(f"  法力分布: {' '.join(curve_summary)}")
 
     if deck_pkg.get("introspections"):
-        print("─" * 85)
-        print("各轮对战调整记录:")
+        print("  微调记录:")
         for intro in deck_pkg["introspections"]:
             g = intro["generation"]
             wr = intro["winrate"]
             pwr = intro["prev_winrate"]
-            print(f"\n   第 {g} 轮测试胜率: {wr:.1f}% (变化: {wr - pwr:+.1f}%)")
+            diff = wr - pwr
+            actions = []
             if intro.get("demoted"):
-                print(f"   │  {intro['demoted']['thought']}")
+                actions.append(f"-1 [{intro['demoted']['name']}]")
             if intro.get("promoted"):
-                print(f"   │  {intro['promoted']['thought']}")
-            
-
-    print("═" * 85 + "\n")
+                actions.append(f"+1 [{intro['promoted']['name']}]")
+            action_str = " | ".join(actions) if actions else "无变动"
+            print(f"   * 第 {g} 轮胜率 {wr:.1f}% ({diff:+.1f}%): {action_str}")
+    print("─" * 70)
 
 def export_introspection_report(decks_result: dict, output_path: str = "ppo_introspection_report.md"):
     """导出 PPO 选卡与微调记录报告"""

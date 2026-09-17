@@ -213,10 +213,24 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
 {mode_banner}
 {balance_instructions}
 
-### 数据完整性与输出格式要求：
-1. 严格保持卡牌的 id、name、card_type 和 factions，绝对不要删除、新增或重命名卡牌 ID。
-2. 仅修改被选中调整卡牌的 `cost`, `base_dp`, `atk_spell_val`, `def_spell_val`, `tags` 属性。
-3. 必须输出合法且可直接解析的纯 JSON 格式（包含调整后的完整卡池或阵营卡牌列表），不要包含任何解释性文本或 Markdown 代码块以外的字符。
+### 输出格式与极致精简要求（非常重要）：
+1. **只输出实际被修改调整的卡牌列表**（严禁将未修改的几十张卡牌原样复制输出，必须精炼快速）！
+2. 必须输出合法纯 JSON 对象，格式严格如下：
+{{
+  "modifications": [
+    {{
+      "id": 103,
+      "cost": 2,
+      "base_dp": 0,
+      "atk_spell_val": 3,
+      "def_spell_val": 0,
+      "tags": ["ATTACK_ONLY"],
+      "reason": "简述调整理由"
+    }}
+  ]
+}}
+3. 严禁改动卡牌的 id 与 card_type；仅针对性调整选中的 2~8 张卡牌的 cost, base_dp, atk_spell_val, def_spell_val, tags。
+4. 严禁输出任何解释性废话。
 """
 
     print(f"\n调用 [{MODEL_NAME}] 读取训练战报，执行卡池数值调优...")
@@ -304,66 +318,80 @@ def main():
     raw_output = run_deepseek_balance_and_expand(metrics_data, current_cards, client, history_metrics=history_data)
     cleaned_json = clean_json_response(raw_output)
 
+    new_card_pool = None
     try:
         new_card_pool = json.loads(cleaned_json)
-        # 稳健合并逻辑：以原卡池为基准进行靶向覆盖，确保卡牌 ID、阵营与名称永不遗失
-        updated_pool = {}
-        for f, card_list in current_cards.items():
-            updated_pool[f] = [dict(c) for c in card_list]
-
-        # 建立 id -> (faction, index) 索引
-        id_index = {}
-        for f, card_list in updated_pool.items():
-            for idx, c in enumerate(card_list):
-                id_index[c["id"]] = (f, idx)
-
-        # 进行靶向更新与合规校验
-        updated_count = 0
-        cand_cards = extract_card_list(new_card_pool)
-        print(f"[*] 成功解析模型输出，共提取 {len(cand_cards)} 张卡牌候选属性进行稳健校验...")
-        for new_c in cand_cards:
-            cid = new_c.get("id")
-            if cid in id_index:
-                orig_f, orig_idx = id_index[cid]
-                orig_card = updated_pool[orig_f][orig_idx]
-                # 仅更新允许修改的数值与词条字段
-                for field in ["cost", "base_dp", "atk_spell_val", "def_spell_val", "tags"]:
-                    if field in new_c:
-                        new_val = new_c[field]
-                        if field == "cost":
-                            try:
-                                new_val = min(10, max(1, int(new_val)))
-                            except Exception:
-                                continue
-                        elif field in ["base_dp", "atk_spell_val", "def_spell_val"]:
-                            try:
-                                new_val = max(0, int(new_val))
-                            except Exception:
-                                continue
-                        elif field == "tags":
-                            if isinstance(new_val, list):
-                                new_val = [t for t in new_val if isinstance(t, str) and is_legal_tag(t)]
-                            else:
-                                continue
-
-                        if new_val != orig_card.get(field):
-                            print(f"  [卡牌调优] ID {cid} {orig_card['name']}: {field} 从 {orig_card.get(field)} -> {new_val}")
-                            orig_card[field] = new_val
-                            updated_count += 1
-
-        with open(output_file, "w", encoding="utf-8") as f:
-            json.dump(updated_pool, f, indent=2, ensure_ascii=False)
-            
-        print(f"\n已完成卡池数值调优 (共更新 {updated_count} 处属性/词条)，已保存至: {output_file}")
-
-        total_cards = sum(len(cards) for cards in updated_pool.values())
-        print(f"当前卡池规模: {total_cards} 张")
-        for faction, cards in updated_pool.items():
-            print(f"  - {faction}: {len(cards)} 张")
-
     except json.JSONDecodeError as e:
-        print(f"JSON 解析异常: {e}")
-        print("模型原始输出内容如下：\n", raw_output)
+        print(f"[*] 遇到 JSON 局部格式异常 ({e})，启动自适应单卡特征正则修复提取...")
+        # 正则兜底提取：即使外层缺少括号或逗号，只要单卡对象结构存在即可挽救
+        cand_matches = re.findall(r'\{[^{}]*"id"\s*:\s*\d+[^}]*\}', raw_output)
+        if cand_matches:
+            recovered_cards = []
+            for m in cand_matches:
+                try:
+                    c_obj = json.loads(m)
+                    if "id" in c_obj:
+                        recovered_cards.append(c_obj)
+                except Exception:
+                    pass
+            if recovered_cards:
+                print(f"[*] 正则修复成功提取到 {len(recovered_cards)} 张微调卡牌数据！")
+                new_card_pool = {"modifications": recovered_cards}
+
+    if not new_card_pool:
+        preview = raw_output[:200].replace('\n', ' ') + "..." if len(raw_output) > 200 else raw_output
+        print(f"[警告] 本轮未能解析出有效的数值微调指令 (片段: {preview})，保持现有卡池进入下阶段。")
+        return
+
+    # 稳健合并逻辑：以原卡池为基准进行靶向覆盖，确保卡牌 ID、阵营与名称永不遗失
+    updated_pool = {}
+    for f, card_list in current_cards.items():
+        updated_pool[f] = [dict(c) for c in card_list]
+
+    # 建立 id -> (faction, index) 索引
+    id_index = {}
+    for f, card_list in updated_pool.items():
+        for idx, c in enumerate(card_list):
+            id_index[c["id"]] = (f, idx)
+
+    # 进行靶向更新与合规校验
+    updated_count = 0
+    cand_cards = extract_card_list(new_card_pool)
+    print(f"[*] 成功提取 {len(cand_cards)} 张调整卡牌，正在校验合规性...")
+    for new_c in cand_cards:
+        cid = new_c.get("id")
+        if cid in id_index:
+            orig_f, orig_idx = id_index[cid]
+            orig_card = updated_pool[orig_f][orig_idx]
+            # 仅更新允许修改的数值与词条字段
+            for field in ["cost", "base_dp", "atk_spell_val", "def_spell_val", "tags"]:
+                if field in new_c:
+                    new_val = new_c[field]
+                    if field == "cost":
+                        try:
+                            new_val = min(10, max(1, int(new_val)))
+                        except Exception:
+                            continue
+                    elif field in ["base_dp", "atk_spell_val", "def_spell_val"]:
+                        try:
+                            new_val = max(0, int(new_val))
+                        except Exception:
+                            continue
+                    elif field == "tags":
+                        if isinstance(new_val, list):
+                            new_val = [t for t in new_val if isinstance(t, str) and is_legal_tag(t)]
+                        else:
+                            continue
+
+                    if new_val != orig_card.get(field):
+                        print(f"  [数值调整] ID {cid} {orig_card['name']}: {field} 从 {orig_card.get(field)} -> {new_val}")
+                        orig_card[field] = new_val
+                        updated_count += 1
+
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(updated_pool, f, indent=2, ensure_ascii=False)
+        
+    print(f"已完成卡池数值调优 (共更新 {updated_count} 处属性/词条)，已保存至: {output_file}")
 
 if __name__ == "__main__":
     main()
