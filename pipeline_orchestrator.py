@@ -279,7 +279,14 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
         print(f"[*] 【{f_name}】生成卡牌统计: 单位 {minion_c} 张 | 法术 {spell_c} 张 | 双色卡 {dual_c} 张 (共 {len(cards_list)} 张)")
 
         for c in cards_list:
-            c_type = "MINION" if c.get("card_type") == "MINION" else "SPELL"
+            raw_type = str(c.get("card_type", c.get("type", "MINION"))).upper()
+            raw_dp = int(c.get("base_dp", 0))
+            # 智能判断随从还是法术：若注明 MINION/UNIT 或提供了 base_dp > 0，则判定为随从
+            if "MINION" in raw_type or "UNIT" in raw_type or raw_dp > 0:
+                c_type = "MINION"
+            else:
+                c_type = "SPELL"
+
             is_dual = c.get("is_dual", False)
             fac_list = c.get("factions", [f_name])
             if not is_dual and f_name not in fac_list:
@@ -301,15 +308,35 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
 
             cid = alloc_id(pfx)
             valid_tags = [t for t in c.get("tags", []) if is_legal_tag(t)]
+            cost_val = max(1, min(8, int(c.get("cost", 2))))
+
+            if c_type == "MINION":
+                dp_val = max(1, min(8, raw_dp))
+                if dp_val == 0:
+                    dp_val = cost_val + 1 if not valid_tags else max(1, cost_val - 1)
+                atk_val = 0
+                def_val = 0
+            else:
+                dp_val = 0
+                atk_val = max(0, int(c.get("atk_spell_val", 0)))
+                def_val = max(0, int(c.get("def_spell_val", 0)))
+                # 兜底：若纯法术完全没有任何攻防点数和词条，按费用自动补足合理点数，绝不产生 0/0 空壳
+                if atk_val == 0 and def_val == 0 and not valid_tags:
+                    if f_name == "Red":
+                        atk_val = cost_val * 2
+                    elif f_name == "Blue":
+                        def_val = cost_val * 2
+                    else:
+                        def_val = cost_val + 2
 
             card_dict = {
                 "id": cid,
                 "name": c.get("name", f"{f_name}新卡_{cid}"),
                 "card_type": c_type,
-                "cost": max(1, min(8, int(c.get("cost", 2)))),
-                "base_dp": max(0, min(8, int(c.get("base_dp", 0)))) if c_type == "MINION" else 0,
-                "atk_spell_val": max(0, int(c.get("atk_spell_val", 0))) if c_type == "SPELL" else 0,
-                "def_spell_val": max(0, int(c.get("def_spell_val", 0))) if c_type == "SPELL" else 0,
+                "cost": cost_val,
+                "base_dp": dp_val,
+                "atk_spell_val": atk_val,
+                "def_spell_val": def_val,
                 "tags": valid_tags,
                 "factions": fac_list
             }
