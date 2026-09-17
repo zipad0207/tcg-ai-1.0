@@ -31,3 +31,4 @@ pyrightconfig.json
 
 # Logs
 *.log
+*.zip

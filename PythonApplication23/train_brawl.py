@@ -37,6 +37,8 @@ parser.add_argument("--decks", type=str, default="decks_config.json",
                     help="成熟卡组配置文件路径 (默认 decks_config.json)")
 parser.add_argument("--save-model", type=str, default="card_ppo_model_brawl.pth",
                     help="模型保存路径")
+parser.add_argument("--load-model", type=str, default=None,
+                    help="预训练权重载入路径 (默认优先载入 card_ppo_model_brawl.pth，若无则载入 card_ppo_model_tuned.pth)")
 parser.add_argument("--lr", type=float, default=3e-4, help="学习率")
 args = parser.parse_args()
 
@@ -92,14 +94,26 @@ class RolloutBuffer:
 class PPOTrainer:
     def __init__(self, action_dim=29):
         self.policy = CardNet(action_dim=action_dim).to(DEVICE)
-        # 若已有训练好的调优权重，优先热启载入继续增强
-        if os.path.exists(TUNED_MODEL_PATH):
-            try:
-                state_dict = torch.load(TUNED_MODEL_PATH, map_location=DEVICE, weights_only=True)
-                self.policy.load_state_dict(state_dict)
-                print(f"[OK] 成功载入预训练权重: {TUNED_MODEL_PATH}，开启强化混战深造！")
-            except Exception as e:
-                print(f"[WARN] 载入预训练权重失败: {e}，将随机初始化开始训练")
+        # 智能热启：优先载入现有混战权重继续深造，其次载入 tuned 权重
+        load_candidates = []
+        if args.load_model:
+            load_candidates.append(resolve_path(args.load_model))
+        load_candidates.append(MODEL_SAVE_PATH)
+        load_candidates.append(TUNED_MODEL_PATH)
+
+        loaded = False
+        for p in load_candidates:
+            if p and os.path.exists(p):
+                try:
+                    state_dict = torch.load(p, map_location=DEVICE, weights_only=True)
+                    self.policy.load_state_dict(state_dict)
+                    print(f"[OK] 成功载入预训练权重: {p}，开启强化混战深造！")
+                    loaded = True
+                    break
+                except Exception as e:
+                    print(f"[WARN] 载入预训练权重 {p} 失败: {e}")
+        if not loaded:
+            print("[INFO] 未找到可载入的预训练权重，将随机初始化开始训练")
         self.optimizer = optim.Adam(self.policy.parameters(), lr=LR)
         self.buffer = RolloutBuffer()
 
