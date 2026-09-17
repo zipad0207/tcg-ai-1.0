@@ -479,7 +479,7 @@
       "name": "赤焰先锋",
       "card_type": "MINION",
       "cost": 2,
-      "base_dp": 2,
+      "base_dp": 3,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [],
@@ -492,7 +492,7 @@
       "name": "破阵铁骑",
       "card_type": "MINION",
       "cost": 3,
-      "base_dp": 3,
+      "base_dp": 4,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [],
@@ -519,9 +519,9 @@
       "id": 135,
       "name": "烈焰反击",
       "card_type": "SPELL",
-      "cost": 2,
+      "cost": 1,
       "base_dp": 0,
-      "atk_spell_val": 3,
+      "atk_spell_val": 2,
       "def_spell_val": 0,
       "tags": [],
       "factions": [
@@ -1152,7 +1152,9 @@
       "base_dp": 0,
       "atk_spell_val": 0,
       "def_spell_val": 3,
-      "tags": [],
+      "tags": [
+        "RAMP_1"
+      ],
       "factions": [
         "Green"
       ]
@@ -1162,7 +1164,7 @@
       "name": "森林之狼",
       "card_type": "MINION",
       "cost": 4,
-      "base_dp": 4,
+      "base_dp": 5,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [],
@@ -1697,7 +1699,9 @@
       "base_dp": 1,
       "atk_spell_val": 0,
       "def_spell_val": 0,
-      "tags": [],
+      "tags": [
+        "FORTIFY_1"
+      ],
       "factions": [
         "Neutral"
       ]
