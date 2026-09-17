@@ -584,9 +584,13 @@ def generate_partitioned_markdown(data: dict):
         tags_str = format_tags_md(info.get("tags", []))
         md.append(f"| **{name}** | {info['cost']}费 | {info['type']} | {tags_str} | **{s_red}** | **{s_blue}** | **{s_green}** | **{best_f}** | {desc} |\n")
 
-    with open(MARKDOWN_OUTPUT, "w", encoding="utf-8") as f:
-        f.write("".join(md))
-    print(f"[OK] 分卡组分色 Markdown 评级总表已生成: {MARKDOWN_OUTPUT}")
+    for out_path in ["card_tier_table.md", os.path.join("PythonApplication23", "card_tier_table.md")]:
+        try:
+            with open(out_path, "w", encoding="utf-8") as f:
+                f.write("".join(md))
+        except Exception:
+            pass
+    print(f"[OK] 分卡组分色 Markdown 评级总表已同步生成至根目录与子目录")
 
 def generate_partitioned_html(data: dict):
     json_data = json.dumps(data, ensure_ascii=False, indent=2)
@@ -1591,9 +1595,13 @@ def generate_partitioned_html(data: dict):
 </html>
 """
 
-    with open(HTML_OUTPUT, "w", encoding="utf-8") as f:
-        f.write(html_content)
-    print(f"[OK] 分卡组分色 Web 交互大屏已生成: {HTML_OUTPUT}")
+    for out_path in ["hearthstone_assistant.html", os.path.join("PythonApplication23", "hearthstone_assistant.html")]:
+        try:
+            with open(out_path, "w", encoding="utf-8") as f:
+                f.write(html_content)
+        except Exception:
+            pass
+    print(f"[OK] 分卡组分色 Web 交互大屏已同步生成至根目录与子目录")
 
 if __name__ == "__main__":
     main()
