@@ -131,14 +131,20 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
             r_wr = f_stats.get("Red", {}).get("winrate", 50.0)
             b_wr = f_stats.get("Blue", {}).get("winrate", 50.0)
             g_wr = f_stats.get("Green", {}).get("winrate", 50.0)
+            sorted_factions = sorted([("赤红 (Red)", r_wr), ("蔚蓝 (Blue)", b_wr), ("翠绿 (Green)", g_wr)], key=lambda x: x[1])
+            weakest_name, weakest_wr = sorted_factions[0]
+            mid_name, mid_wr = sorted_factions[1]
+            strongest_name, strongest_wr = sorted_factions[-1]
+
             telemetry_summary = f"""
 - 历史总局数: {m_data.get('total_episodes', 3000)} 局
 - 各阵营综合胜率: 赤红(Red) {r_wr:.1f}% | 蔚蓝(Blue) {b_wr:.1f}% | 翠绿(Green) {g_wr:.1f}%
-- 关键诊断短板:
-  * 蔚蓝当前综合胜率({b_wr:.1f}%)相对最弱，在面对高费大随从与快攻穿透时缺乏优质的节奏压制和法力/解场润滑手段；
-  * 赤红({r_wr:.1f}%)与翠绿({g_wr:.1f}%)胜率处于 52.9% 黄金平衡带，翠绿跳费体系成熟，赤红快攻已收敛但缺乏多样性打法；
-  * 双色卡可以起到连接弱势阵营与强势阵营战术桥梁的作用。
-"""
+- 关键诊断与补强目标:
+  * 胜率相对偏低的阵营为 {weakest_name} ({weakest_wr:.1f}%)，需重点强化其针对快攻冲击与高身材随从的防御、解场与资源润滑手段；
+  * 居中阵营 {mid_name} ({mid_wr:.1f}%) 表现相对平稳，需丰富其中期战术选择与反击手段；
+  * 胜率相对偏高的阵营 {strongest_name} ({strongest_wr:.1f}%) 体系成熟，需提供非极端的多元打法与中后期变奏；
+  * 双色卡作为桥梁，促进三大阵营攻防克制闭环。
+ """
         except Exception as e:
             telemetry_summary = f"遥测读取解析异常 ({e})，将使用默认均衡诊断。"
 
@@ -160,9 +166,10 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
    - **其余 5 张为纯色本阵营卡**（赤红配 5 张红卡，蔚蓝配 5 张蓝卡，翠绿配 5 张绿卡）；
    - 三大阵营的双色卡形成红蓝(4xx)、蓝绿(5xx)、红绿(6xx)的互补闭环。
 3. **践行【缺啥补啥】原则**：
-   - 蔚蓝 (Blue) 目前胜率 44.0% 偏弱，急需加强中前期的护盾反击、有效控场随从与直伤破甲解场法术；
-   - 赤红 (Red) 目前依赖极致低费快攻，需要提供非极端快攻的多元战术、优质牺牲配合与中期突破点；
-   - 翠绿 (Green) 跳费大怪成型强，但需要前期平滑过渡的驻防随从或资源润滑法术。
+   - 针对当前胜率相对弱势的阵营，重点补充中前期护盾反击、有效控场随从与解场手段；
+   - 针对攻势单一或依赖极端打法的阵营，提供多元化战术、优质配合与中期突破点；
+   - 针对跳费或成长阵营，补充平滑过渡的驻防随从或法力/抽牌润滑组件；
+   - 双色卡（红蓝 4xx、蓝绿 5xx、红绿 6xx）互相融合两色机制，形成互补闭环。
 4. **合法词条自由组合**：
    可以从下列底层引擎已支持的 14 个词条中【自由组合、混合搭配】（每张卡 0~2 个词条）：
    `RUSH` (突袭), `FORTIFY_X` (坚守), `DEGRADE_X` (削弱), `SUPPORT_ATK_X` (光环), `BONUS_SCORE_X` (击穿得分),
