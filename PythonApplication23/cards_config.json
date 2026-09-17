@@ -52,7 +52,7 @@
       "card_type": "SPELL",
       "cost": 2,
       "base_dp": 0,
-      "atk_spell_val": 3,
+      "atk_spell_val": 4,
       "def_spell_val": 0,
       "tags": [],
       "factions": [
@@ -82,9 +82,7 @@
       "base_dp": 5,
       "atk_spell_val": 0,
       "def_spell_val": 0,
-      "tags": [
-        "BONUS_SCORE_1"
-      ],
+      "tags": [],
       "factions": [
         "Red"
       ]
@@ -171,12 +169,10 @@
       "name": "赤红掠袭者",
       "card_type": "MINION",
       "cost": 8,
-      "base_dp": 6,
+      "base_dp": 5,
       "atk_spell_val": 0,
       "def_spell_val": 0,
-      "tags": [
-        "RUSH"
-      ],
+      "tags": [],
       "factions": [
         "Red"
       ]
@@ -218,9 +214,7 @@
       "base_dp": 5,
       "atk_spell_val": 0,
       "def_spell_val": 0,
-      "tags": [
-        "RUSH"
-      ],
+      "tags": [],
       "factions": [
         "Red"
       ]
@@ -498,7 +492,7 @@
       "name": "破阵铁骑",
       "card_type": "MINION",
       "cost": 3,
-      "base_dp": 2,
+      "base_dp": 3,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [],
@@ -646,8 +640,7 @@
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "SUPPORT_ATK_1",
-        "FORTIFY_1"
+        "SUPPORT_ATK_1"
       ],
       "factions": [
         "Blue"
@@ -737,7 +730,7 @@
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "FORTIFY_2"
+        "FORTIFY_1"
       ],
       "factions": [
         "Blue"
@@ -1198,7 +1191,7 @@
       "card_type": "SPELL",
       "cost": 2,
       "base_dp": 0,
-      "atk_spell_val": 7,
+      "atk_spell_val": 8,
       "def_spell_val": 0,
       "tags": [
         "DEGRADE_1"
@@ -1263,7 +1256,6 @@
       "def_spell_val": 0,
       "tags": [
         "RUSH",
-        "BONUS_SCORE_1",
         "FORTIFY_2"
       ],
       "factions": [
@@ -1537,8 +1529,7 @@
       "def_spell_val": 0,
       "tags": [
         "RUSH",
-        "DEGRADE_1",
-        "FORTIFY_2"
+        "DEGRADE_2"
       ],
       "factions": [
         "Green"
