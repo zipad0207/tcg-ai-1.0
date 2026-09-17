@@ -560,7 +560,10 @@ def step6_export_reports_and_charts(cards_file: str, metrics_file: str, history_
         sync_files = [
             "figure_brawl.png", "figure_brawl_comparison.png", "training_metrics_brawl.json",
             "cards_config.json", "decks_config.json", "card_tier_table.md", "ppo_introspection_report.md",
-            "pipeline_orchestrator.py", "deck_builder_ppo.py", "auto_balancer_deepseek.py", "sandbox.py"
+            "pipeline_orchestrator.py", "deck_builder_ppo.py", "auto_balancer_deepseek.py", "sandbox.py",
+            "agent.py", "eval_play.py", "train.py", "visualizer.py", "card_printer_deepseek.py",
+            "deck_builder_deepseek.py", "plot_experiments.py", "test_deck_matchup.py",
+            "cards_config_baseline.json", "cards_config_tuned.json"
         ]
         for fname in sync_files:
             src = resolve_path(fname)
