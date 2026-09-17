@@ -419,12 +419,14 @@ def step4_run_brawl_audit(cards_file: str, decks_file: str, metrics_file: str, e
 # ==============================================================================
 # Phase 5: 胜率偏离度判定与数值微调
 # ==============================================================================
-def check_balance_status(metrics: dict, target_tolerance: float = 2.8) -> Tuple[bool, float]:
+def check_balance_status(metrics: dict, target_tolerance: float = 2.8) -> Tuple[bool, float, float]:
     f_stats = metrics.get("faction_stats", {})
     deviations = {f: abs(f_stats.get(f, {}).get("winrate", 50.0) - 50.0) for f in ["Red", "Blue", "Green"]}
-    max_dev = max(deviations.values())
+    winrates = [f_stats.get(f, {}).get("winrate", 50.0) for f in ["Red", "Blue", "Green"]]
+    max_dev = max(deviations.values()) if deviations else 0.0
+    spread = (max(winrates) - min(winrates)) if winrates else 0.0
 
-    print(f"\n[胜率偏离检测] 最大偏离: {max_dev:.2f}% | 目标阈值: <= {target_tolerance:.2f}%")
+    print(f"\n[胜率偏离检测] 最大偏离: {max_dev:.2f}% | 阵营极差: {spread:.2f}% | 目标容差: <= {target_tolerance:.2f}%")
     for f in ["Red", "Blue", "Green"]:
         wr = f_stats.get(f, {}).get("winrate", 50.0)
         dev = deviations[f]
@@ -433,9 +435,9 @@ def check_balance_status(metrics: dict, target_tolerance: float = 2.8) -> Tuple[
 
     if max_dev <= target_tolerance:
         print(f"[判定通过] 三大阵营综合胜率均落入目标平衡区间 (最大偏离 <= {target_tolerance:.2f}%)")
-        return True, max_dev
+        return True, max_dev, spread
 
-    return False, max_dev
+    return False, max_dev, spread
 
 def step5_deepseek_rebalance_cards(cards_file: str, metrics_file: str):
     print("\n" + "═" * 80)
@@ -578,7 +580,9 @@ def main():
     parser.add_argument("--theme", type=str, default="环境数据驱动缺啥补啥与双色协同", help="设计主题")
     parser.add_argument("--episodes", type=int, default=3000, help="每轮自博弈混战对局规模 (默认 3000 局，保证学术统计置信度)")
     parser.add_argument("--target-balance", type=float, default=2.8, help="目标平衡偏离容差 (默认 2.8 百分点)")
-    parser.add_argument("--max-deck-attempts", type=int, default=3, help="同一卡池下 PPO 自主微调构筑的尝试次数 (默认 3 次，充分发挥智能体构筑优化能力)")
+    parser.add_argument("--max-deck-attempts", type=int, default=2, help="同一卡池下 PPO 自主微调构筑的尝试次数 (默认 2 次，兼顾智能体构筑优化与流水线效率)")
+    parser.add_argument("--severe-imbalance-threshold", type=float, default=6.0, help="阵营胜率严重失衡偏离度阈值 (当最大偏离度 >= 该值时，判定为单卡数值硬伤，卡组微调无法弥补，跳过剩余卡组微调直接进入 DeepSeek 数值调整，默认 6.0%%)")
+    parser.add_argument("--severe-spread-threshold", type=float, default=10.0, help="阵营胜率极差严重失衡阈值 (当最高与最低胜率阵营之差 >= 该值时，直接触发 DeepSeek 数值微调，默认 10.0%%)")
     parser.add_argument("--max-outer-iterations", type=int, default=10, help="最大 DeepSeek 外环数值微调迭代轮次 (默认 10 轮)")
     parser.add_argument("--max-iterations", type=int, default=None, help="(兼容旧参数) 等价于 --max-outer-iterations")
     parser.add_argument("--skip-print", action="store_true", help="跳过印卡阶段，直接基于现有卡池开始闭环调优")
@@ -602,6 +606,7 @@ def main():
     print(f" 模式: {'[快速演练]' if args.dry_run else '[全量执行]'}")
     print(f" 混战规模: {brawl_episodes} 局/轮 (PPO 强化学习: {'纯评估' if args.eval_only else '真自博弈训练'}) | 目标平衡偏离度: <= {args.target_balance:.1f}%")
     print(f" 迭代配置: 卡组微调尝试 {deck_attempts} 次 | 数值微调上限 {max_outer} 轮")
+    print(f" 熔断机制: 最大偏离度 >= {args.severe_imbalance_threshold:.1f}% 或 胜率极差 >= {args.severe_spread_threshold:.1f}% 自动快转至 DeepSeek 数值微调")
     print("=" * 85)
 
     # 1. 阶段一：卡牌扩展设计
@@ -670,13 +675,13 @@ def main():
             history_records.append(curr_stats)
 
             # 3C: 平衡带审计判定
-            is_balanced, max_dev = check_balance_status(metrics, target_tolerance=args.target_balance)
+            is_balanced, max_dev, spread = check_balance_status(metrics, target_tolerance=args.target_balance)
             latest_max_dev = max_dev
 
             if is_balanced:
                 print("\n" + "★" * 70)
                 print(f"[判定] 胜率达成平衡收敛条件 (第 {outer_round} 轮数值调整，第 {attempt} 次卡组微调)")
-                print(f"   三大阵营最大偏离度: {max_dev:.2f}% <= 目标阈值: {args.target_balance:.2f}%")
+                print(f"   三大阵营最大偏离度: {max_dev:.2f}% <= 目标阈值: {args.target_balance:.2f}% (胜率极差: {spread:.2f}%)")
                 if not args.dry_run and current_brawl_episodes < 3000:
                     print("   [验证] 执行 3,000 局全量对战验收遥测...")
                     metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=3000, eval_only=args.eval_only)
@@ -685,10 +690,19 @@ def main():
                 print("★" * 70)
                 break
             else:
-                if attempt < deck_attempts:
-                    print(f"\n[检测] 当前偏离度 {max_dev:.2f}% > 目标 {args.target_balance:.2f}%，继续进行卡组微调 ({attempt + 1} / {deck_attempts})...")
+                is_severe = (max_dev >= args.severe_imbalance_threshold) or (spread >= args.severe_spread_threshold)
+                if is_severe:
+                    print("\n" + "!" * 70)
+                    print(f"[严重失衡熔断] 检测到阵营胜率严重失衡:")
+                    print(f"   最大偏离度: {max_dev:.2f}% (熔断阈值: >= {args.severe_imbalance_threshold:.1f}%) | 阵营极差: {spread:.2f}% (熔断阈值: >= {args.severe_spread_threshold:.1f}%)")
+                    print(f"   原因诊断: 存在显著的单卡数值/费用硬伤（非卡组构筑微调所能弥补）。")
+                    print(f"   执行动作: 提前终止当前内环构筑探索 (当前第 {attempt}/{deck_attempts} 次)，直接快转至外环 DeepSeek 调卡牌数值！")
+                    print("!" * 70)
+                    break
+                elif attempt < deck_attempts:
+                    print(f"\n[检测] 当前偏离度 {max_dev:.2f}% > 目标 {args.target_balance:.2f}% (极差 {spread:.2f}%)，处于温和偏离区间，继续由 PPO 进行卡组微调 ({attempt + 1} / {deck_attempts})...")
                 else:
-                    print(f"\n[检测] PPO 已完成全部 {deck_attempts} 次卡组构筑探索，偏离度仍为 {max_dev:.2f}%，证明存在数值硬伤，触发外环卡牌数值微调。")
+                    print(f"\n[检测] PPO 已完成全部 {deck_attempts} 次卡组构筑探索，偏离度仍为 {max_dev:.2f}% (极差 {spread:.2f}%)，触发外环卡牌数值微调。")
 
         if is_balanced:
             break
