@@ -156,14 +156,18 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
 {telemetry_summary}
 
 ### 2. 扩展包设计规格硬性约束：
-本次扩展包针对【赤红 (Red)】、【蔚蓝 (Blue)】、【翠绿 (Green)】三个颜色分别印制，**每个颜色各印制 6 张卡，全套扩展包总计 18 张新卡**！
+本次扩展包针对三大阵营与中立牌池全量印制，**包含 18 张职业阵营卡 + 3 张中立通用卡，全套扩展包总计 21 张新卡**！
 
-每个颜色内部的 6 张新卡必须严格遵守以下规范：
-1. **类型配比严格锁定**：每个颜色内部必须恰好为 **4 张随从单位 (MINION) + 2 张法术 (SPELL)**。
-2. **双色卡分配**：
-   - **每个颜色内部必须恰好包含 1 张【双色卡】**（如赤红配 1 张红蓝或红绿双色卡，蔚蓝配 1 张蓝绿双色卡，翠绿配 1 张红绿双色卡）；
-   - **其余 5 张为纯色本阵营卡**（赤红配 5 张红卡，蔚蓝配 5 张蓝卡，翠绿配 5 张绿卡）；
-   - 三大阵营的双色卡形成红蓝(4xx)、蓝绿(5xx)、红绿(6xx)的互补闭环。
+详细规格配比：
+1. **三大阵营卡牌 (各 6 张，共 18 张)**：
+   - 【赤红 (Red)】：6 张 (4 随从 + 2 法术，包含 1 张双色卡)
+   - 【蔚蓝 (Blue)】：6 张 (4 随从 + 2 法术，包含 1 张双色卡)
+   - 【翠绿 (Green)】：6 张 (4 随从 + 2 法术，包含 1 张双色卡)
+   - 双色卡（红蓝 4xx、蓝绿 5xx、红绿 6xx）互相融合两色机制，形成互补闭环。
+2. **中立通用卡牌 (共 3 张)**：
+   - 【中立 (Neutral)】：**恰好 3 张新卡**（建议为 2 张随从 + 1 张法术，或 3 张随从）；
+   - 定位：全阵营通用功能组件，重点承担过牌（DRAW）、通用阻挡（FORTIFY）、临时润滑或针对性环境对策；
+   - `factions` 字段必须为 `["Neutral"]`，`is_dual` 为 `false`。
 3. **践行【缺啥补啥】原则**：
    - 针对当前胜率相对弱势的阵营，重点补充中前期护盾反击、有效控场随从与解场手段；
    - 针对攻势单一或依赖极端打法的阵营，提供多元化战术、优质配合与中期突破点；
@@ -182,37 +186,19 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
 ### 3. 输出格式要求：
 必须严格输出纯 JSON 对象，格式如下：
 {{
-  "diagnostic_rationale": "整体环境诊断说明（三大阵营各缺啥，如何通过这 18 张新卡实现补强）",
+  "diagnostic_rationale": "整体环境诊断说明（三大阵营与中立各缺啥，如何通过这 21 张新卡实现补强）",
   "factions": {{
     "Red": [
-      {{
-        "name": "卡牌名",
-        "card_type": "MINION",
-        "cost": 3,
-        "base_dp": 3,
-        "atk_spell_val": 0,
-        "def_spell_val": 0,
-        "tags": ["RUSH"],
-        "is_dual": false,
-        "factions": ["Red"]
-      }},
-      {{
-        "name": "赤蓝交织者",
-        "card_type": "MINION",
-        "cost": 4,
-        "base_dp": 4,
-        "atk_spell_val": 0,
-        "def_spell_val": 0,
-        "tags": ["SUPPORT_ATK_1"],
-        "is_dual": true,
-        "factions": ["Red", "Blue"]
-      }}
+      ... (共 6 张: 4 单位 + 2 法术，含 1 张双色卡)
     ],
     "Blue": [
       ... (共 6 张: 4 单位 + 2 法术，含 1 张双色卡)
     ],
     "Green": [
       ... (共 6 张: 4 单位 + 2 法术，含 1 张双色卡)
+    ],
+    "Neutral": [
+      ... (共 3 张中立通用卡: factions 为 [\"Neutral\"])
     ]
   }}
 }}
@@ -269,7 +255,7 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
     if "Dual" not in current_pool:
         current_pool["Dual"] = []
 
-    for f_name in ["Red", "Blue", "Green"]:
+    for f_name in ["Red", "Blue", "Green", "Neutral"]:
         cards_list = factions_dict.get(f_name, [])
         if not cards_list:
             continue

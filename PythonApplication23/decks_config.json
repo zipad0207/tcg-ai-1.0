@@ -2,23 +2,83 @@
   "Red": {
     "deck_name": "赤红·突破攻势流",
     "archetype": "Aggro/Sacrifice",
-    "tactical_concept": "基于 PPO 神经网络效用评估与实战博弈测试构筑，平均费用 3.57 费。",
+    "tactical_concept": "基于 PPO 神经网络效用评估与实战博弈测试构筑，平均费用 3.6 费。",
     "key_combos": [
-      "佣兵斥候 (评分 98.0): 核心关键卡，状态价值增益最高。",
-      "赤焰哨卫 (评分 98.0): 辅助节奏卡，协同支撑场面与战术推进。"
+      "赤红破阵兵 (评分 98.0): 核心关键卡，状态价值增益最高。",
+      "赤红突破手 (评分 98.0): 辅助节奏卡，协同支撑场面与战术推进。"
     ],
     "decision_evolution_logs": [
-      "第 1 代微调: 增选 [赤红破阵兵] (+1张)，减选 [赤红献祭] (-1张)",
-      "第 2 代微调: 增选 [赤红献祭] (+1张)，减选 [赤焰哨卫] (-1张)",
-      "第 3 代微调: 增选 [赤红破阵兵] (+1张)，减选 [赤红掠袭者] (-1张)",
-      "第 4 代微调: 增选 [赤红献祭] (+1张)，减选 [裂甲掷斧手] (-1张)",
-      "第 5 代微调: 增选 [赤焰哨卫] (+1张)，减选 [赤红献祭] (-1张)"
+      "第 1 代微调: 增选 [赤红掠袭者] (+1张)，减选 [裂甲掷斧手] (-1张)",
+      "第 2 代微调: 增选 [赤红掠袭者] (+1张)，减选 [破阵铁骑] (-1张)",
+      "第 3 代微调: 增选 [红色小队长] (+1张)，减选 [自爆] (-1张)",
+      "第 4 代微调: 增选 [赤红破阵兵] (+1张)，减选 [自爆] (-1张)",
+      "第 5 代微调: 增选 [赤红献祭] (+1张)，减选 [切割者] (-1张)"
     ],
     "introspections": [
       {
         "generation": 1,
-        "winrate": 54.0,
+        "winrate": 52.0,
         "prev_winrate": 50.0,
+        "promoted": {
+          "id": 111,
+          "name": "赤红掠袭者",
+          "win_pct": 54.54545454545454,
+          "play_count": 22,
+          "thought": "[赤红掠袭者] 实测出场 22 次 (胜率 54.5%)，增补 1 张至 2 张。"
+        },
+        "demoted": {
+          "id": 108,
+          "name": "裂甲掷斧手",
+          "win_pct": 30.0,
+          "play_count": 60,
+          "thought": "[裂甲掷斧手] 实测出场 60 次 (胜率 30.0%)，调减 1 张至 2 张。"
+        },
+        "monologue": "[裂甲掷斧手] 实测出场 60 次 (胜率 30.0%)，调减 1 张至 2 张。\n      [赤红掠袭者] 实测出场 22 次 (胜率 54.5%)，增补 1 张至 2 张。"
+      },
+      {
+        "generation": 2,
+        "winrate": 62.0,
+        "prev_winrate": 52.0,
+        "promoted": {
+          "id": 111,
+          "name": "赤红掠袭者",
+          "win_pct": 65.51724137931035,
+          "play_count": 29,
+          "thought": "[赤红掠袭者] 实测出场 29 次 (胜率 65.5%)，增补 1 张至 3 张。"
+        },
+        "demoted": {
+          "id": 133,
+          "name": "破阵铁骑",
+          "win_pct": 33.9622641509434,
+          "play_count": 53,
+          "thought": "[破阵铁骑] 实测出场 53 次 (胜率 34.0%)，调减 1 张至 2 张。"
+        },
+        "monologue": "[破阵铁骑] 实测出场 53 次 (胜率 34.0%)，调减 1 张至 2 张。\n      [赤红掠袭者] 实测出场 29 次 (胜率 65.5%)，增补 1 张至 3 张。"
+      },
+      {
+        "generation": 3,
+        "winrate": 52.0,
+        "prev_winrate": 62.0,
+        "promoted": {
+          "id": 101,
+          "name": "红色小队长",
+          "win_pct": 51.21951219512195,
+          "play_count": 41,
+          "thought": "[红色小队长] 实测出场 41 次 (胜率 51.2%)，增补 1 张至 3 张。"
+        },
+        "demoted": {
+          "id": 102,
+          "name": "自爆",
+          "win_pct": 30.0,
+          "play_count": 30,
+          "thought": "[自爆] 实测出场 30 次 (胜率 30.0%)，调减 1 张至 1 张。"
+        },
+        "monologue": "[自爆] 实测出场 30 次 (胜率 30.0%)，调减 1 张至 1 张。\n      [红色小队长] 实测出场 41 次 (胜率 51.2%)，增补 1 张至 3 张。"
+      },
+      {
+        "generation": 4,
+        "winrate": 44.0,
+        "prev_winrate": 52.0,
         "promoted": {
           "id": 117,
           "name": "赤红破阵兵",
@@ -27,122 +87,65 @@
           "thought": "[赤红破阵兵] 候补卡牌网络估值 98.0，调入 1 张至 1 张进行测试。"
         },
         "demoted": {
-          "id": 115,
-          "name": "赤红献祭",
-          "win_pct": 26.31578947368421,
-          "play_count": 19,
-          "thought": "[赤红献祭] 实测出场 19 次 (胜率 26.3%)，调减 1 张至 1 张。"
+          "id": 102,
+          "name": "自爆",
+          "win_pct": 21.428571428571427,
+          "play_count": 14,
+          "thought": "[自爆] 实测出场 14 次 (胜率 21.4%)，调减 1 张至 0 张。"
         },
-        "monologue": "[赤红献祭] 实测出场 19 次 (胜率 26.3%)，调减 1 张至 1 张。\n      [赤红破阵兵] 候补卡牌网络估值 98.0，调入 1 张至 1 张进行测试。"
-      },
-      {
-        "generation": 2,
-        "winrate": 70.0,
-        "prev_winrate": 54.0,
-        "promoted": {
-          "id": 115,
-          "name": "赤红献祭",
-          "win_pct": 88.88888888888889,
-          "play_count": 9,
-          "thought": "[赤红献祭] 实测出场 9 次 (胜率 88.9%)，增补 1 张至 2 张。"
-        },
-        "demoted": {
-          "id": 127,
-          "name": "赤焰哨卫",
-          "win_pct": 43.75,
-          "play_count": 48,
-          "thought": "[赤焰哨卫] 实测出场 48 次 (胜率 43.8%)，调减 1 张至 2 张。"
-        },
-        "monologue": "[赤焰哨卫] 实测出场 48 次 (胜率 43.8%)，调减 1 张至 2 张。\n      [赤红献祭] 实测出场 9 次 (胜率 88.9%)，增补 1 张至 2 张。"
-      },
-      {
-        "generation": 3,
-        "winrate": 68.0,
-        "prev_winrate": 70.0,
-        "promoted": {
-          "id": 117,
-          "name": "赤红破阵兵",
-          "win_pct": 76.92307692307693,
-          "play_count": 13,
-          "thought": "[赤红破阵兵] 实测出场 13 次 (胜率 76.9%)，增补 1 张至 2 张。"
-        },
-        "demoted": {
-          "id": 111,
-          "name": "赤红掠袭者",
-          "win_pct": 33.33333333333333,
-          "play_count": 3,
-          "thought": "[赤红掠袭者] 实测出场 3 次 (胜率 33.3%)，调减 1 张至 0 张。"
-        },
-        "monologue": "[赤红掠袭者] 实测出场 3 次 (胜率 33.3%)，调减 1 张至 0 张。\n      [赤红破阵兵] 实测出场 13 次 (胜率 76.9%)，增补 1 张至 2 张。"
-      },
-      {
-        "generation": 4,
-        "winrate": 54.0,
-        "prev_winrate": 68.0,
-        "promoted": {
-          "id": 115,
-          "name": "赤红献祭",
-          "win_pct": 52.17391304347826,
-          "play_count": 23,
-          "thought": "[赤红献祭] 实测出场 23 次 (胜率 52.2%)，增补 1 张至 3 张。"
-        },
-        "demoted": {
-          "id": 108,
-          "name": "裂甲掷斧手",
-          "win_pct": 32.35294117647059,
-          "play_count": 34,
-          "thought": "[裂甲掷斧手] 实测出场 34 次 (胜率 32.4%)，调减 1 张至 2 张。"
-        },
-        "monologue": "[裂甲掷斧手] 实测出场 34 次 (胜率 32.4%)，调减 1 张至 2 张。\n      [赤红献祭] 实测出场 23 次 (胜率 52.2%)，增补 1 张至 3 张。"
+        "monologue": "[自爆] 实测出场 14 次 (胜率 21.4%)，调减 1 张至 0 张。\n      [赤红破阵兵] 候补卡牌网络估值 98.0，调入 1 张至 1 张进行测试。"
       },
       {
         "generation": 5,
-        "winrate": 62.0,
-        "prev_winrate": 54.0,
+        "winrate": 70.0,
+        "prev_winrate": 44.0,
         "promoted": {
-          "id": 127,
-          "name": "赤焰哨卫",
-          "win_pct": 55.55555555555556,
-          "play_count": 27,
-          "thought": "[赤焰哨卫] 实测出场 27 次 (胜率 55.6%)，增补 1 张至 3 张。"
-        },
-        "demoted": {
           "id": 115,
           "name": "赤红献祭",
-          "win_pct": 39.285714285714285,
-          "play_count": 28,
-          "thought": "[赤红献祭] 实测出场 28 次 (胜率 39.3%)，调减 1 张至 2 张。"
+          "win_pct": 73.91304347826086,
+          "play_count": 23,
+          "thought": "[赤红献祭] 实测出场 23 次 (胜率 73.9%)，增补 1 张至 3 张。"
         },
-        "monologue": "[赤红献祭] 实测出场 28 次 (胜率 39.3%)，调减 1 张至 2 张。\n      [赤焰哨卫] 实测出场 27 次 (胜率 55.6%)，增补 1 张至 3 张。"
+        "demoted": {
+          "id": 104,
+          "name": "切割者",
+          "win_pct": 47.45762711864407,
+          "play_count": 59,
+          "thought": "[切割者] 实测出场 59 次 (胜率 47.5%)，调减 1 张至 2 张。"
+        },
+        "monologue": "[切割者] 实测出场 59 次 (胜率 47.5%)，调减 1 张至 2 张。\n      [赤红献祭] 实测出场 23 次 (胜率 73.9%)，增补 1 张至 3 张。"
       }
     ],
     "total_cards": 30,
-    "minion_count": 28,
-    "spell_count": 2,
-    "avg_cost": 3.43,
+    "minion_count": 25,
+    "spell_count": 5,
+    "avg_cost": 3.6,
     "mana_curve": {
       "0": 0,
-      "1": 3,
-      "2": 11,
-      "3": 3,
-      "4": 5,
-      "5": 2,
-      "6": 3,
+      "1": 2,
+      "2": 9,
+      "3": 10,
+      "4": 2,
+      "5": 1,
+      "6": 0,
       "7": 3,
-      "8": 0
+      "8": 3,
+      "9": 0
     },
     "card_allocation": {
+      "100": 2,
       "101": 3,
+      "104": 2,
       "107": 3,
       "108": 2,
-      "112": 3,
+      "111": 3,
+      "112": 2,
       "114": 3,
-      "115": 2,
-      "117": 2,
-      "127": 3,
-      "128": 3,
-      "900": 3,
-      "905": 3
+      "115": 3,
+      "117": 1,
+      "132": 2,
+      "133": 2,
+      "136": 2
     },
     "card_details": [
       {
@@ -154,27 +157,42 @@
         "atk_spell_val": 0,
         "def_spell_val": 0,
         "tags": [],
-        "count": 3,
-        "ppo_play_prob": 44.5,
-        "ppo_value_gain": -0.004,
-        "ppo_score": 74.93
+        "count": 2,
+        "ppo_play_prob": 49.1,
+        "ppo_value_gain": -0.028,
+        "ppo_score": 68.17
       },
       {
-        "id": 107,
-        "name": "集结号手",
+        "id": 100,
+        "name": "赤红突击手",
         "cost": 2,
         "card_type": "MINION",
-        "base_dp": 1,
+        "base_dp": 2,
         "atk_spell_val": 0,
         "def_spell_val": 0,
         "tags": [
-          "SPAWN_1_1",
-          "ATTACK_ONLY"
+          "DEATH_DRAW_1"
         ],
-        "count": 3,
-        "ppo_play_prob": 28.0,
-        "ppo_value_gain": -0.016,
-        "ppo_score": 60.51
+        "count": 2,
+        "ppo_play_prob": 35.2,
+        "ppo_value_gain": -0.029,
+        "ppo_score": 59.36
+      },
+      {
+        "id": 104,
+        "name": "切割者",
+        "cost": 2,
+        "card_type": "MINION",
+        "base_dp": 2,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "DEGRADE_1"
+        ],
+        "count": 2,
+        "ppo_play_prob": 45.6,
+        "ppo_value_gain": 0.018,
+        "ppo_score": 84.52
       },
       {
         "id": 115,
@@ -187,42 +205,24 @@
         "tags": [
           "SACRIFICE_1_KILL_1"
         ],
-        "count": 2,
+        "count": 3,
         "ppo_play_prob": 0.0,
         "ppo_value_gain": 0.0,
         "ppo_score": 50.0
       },
       {
-        "id": 900,
-        "name": "商人",
+        "id": 132,
+        "name": "赤焰先锋",
         "cost": 2,
         "card_type": "MINION",
         "base_dp": 2,
         "atk_spell_val": 0,
         "def_spell_val": 0,
-        "tags": [
-          "DRAW_1"
-        ],
-        "count": 3,
-        "ppo_play_prob": 50.8,
-        "ppo_value_gain": -0.031,
-        "ppo_score": 68.04
-      },
-      {
-        "id": 905,
-        "name": "佣兵斥候",
-        "cost": 2,
-        "card_type": "MINION",
-        "base_dp": 1,
-        "atk_spell_val": 0,
-        "def_spell_val": 0,
-        "tags": [
-          "RUSH"
-        ],
-        "count": 3,
-        "ppo_play_prob": 55.6,
-        "ppo_value_gain": 0.429,
-        "ppo_score": 98.0
+        "tags": [],
+        "count": 2,
+        "ppo_play_prob": 35.2,
+        "ppo_value_gain": -0.029,
+        "ppo_score": 59.69
       },
       {
         "id": 101,
@@ -236,26 +236,72 @@
           "SPAWN_1_1"
         ],
         "count": 3,
-        "ppo_play_prob": 37.4,
-        "ppo_value_gain": -0.044,
-        "ppo_score": 54.68
+        "ppo_play_prob": 36.4,
+        "ppo_value_gain": -0.033,
+        "ppo_score": 58.44
       },
       {
-        "id": 127,
-        "name": "赤焰哨卫",
+        "id": 107,
+        "name": "集结号手",
+        "cost": 3,
+        "card_type": "MINION",
+        "base_dp": 1,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "SPAWN_1_1",
+          "ATTACK_ONLY"
+        ],
+        "count": 3,
+        "ppo_play_prob": 33.4,
+        "ppo_value_gain": -0.037,
+        "ppo_score": 55.31
+      },
+      {
+        "id": 133,
+        "name": "破阵铁骑",
+        "cost": 3,
+        "card_type": "MINION",
+        "base_dp": 2,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [],
+        "count": 2,
+        "ppo_play_prob": 33.1,
+        "ppo_value_gain": -0.019,
+        "ppo_score": 62.21
+      },
+      {
+        "id": 136,
+        "name": "战意沸腾",
+        "cost": 3,
+        "card_type": "SPELL",
+        "base_dp": 0,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "DRAW_2"
+        ],
+        "count": 2,
+        "ppo_play_prob": 35.8,
+        "ppo_value_gain": -0.018,
+        "ppo_score": 64.16
+      },
+      {
+        "id": 108,
+        "name": "裂甲掷斧手",
         "cost": 4,
         "card_type": "MINION",
         "base_dp": 3,
         "atk_spell_val": 0,
         "def_spell_val": 0,
         "tags": [
-          "RUSH",
-          "FORTIFY_1"
+          "DEGRADE_1"
         ],
-        "count": 3,
-        "ppo_play_prob": 52.1,
-        "ppo_value_gain": 0.387,
-        "ppo_score": 98.0
+        "count": 2,
+        "ppo_play_prob": 32.8,
+        "ppo_value_gain": -0.008,
+        "ppo_score": 66.56
       },
       {
         "id": 117,
@@ -268,43 +314,9 @@
         "tags": [
           "RUSH"
         ],
-        "count": 2,
-        "ppo_play_prob": 55.3,
-        "ppo_value_gain": 0.37,
-        "ppo_score": 98.0
-      },
-      {
-        "id": 128,
-        "name": "熔岩破阵者",
-        "cost": 6,
-        "card_type": "MINION",
-        "base_dp": 4,
-        "atk_spell_val": 0,
-        "def_spell_val": 0,
-        "tags": [
-          "RUSH",
-          "BONUS_SCORE_1"
-        ],
-        "count": 3,
-        "ppo_play_prob": 54.9,
-        "ppo_value_gain": 0.356,
-        "ppo_score": 98.0
-      },
-      {
-        "id": 108,
-        "name": "裂甲掷斧手",
-        "cost": 4,
-        "card_type": "MINION",
-        "base_dp": 3,
-        "atk_spell_val": 0,
-        "def_spell_val": 0,
-        "tags": [
-          "RUSH",
-          "DEGRADE_1"
-        ],
-        "count": 2,
-        "ppo_play_prob": 43.3,
-        "ppo_value_gain": 0.374,
+        "count": 1,
+        "ppo_play_prob": 59.5,
+        "ppo_value_gain": 0.341,
         "ppo_score": 98.0
       },
       {
@@ -316,241 +328,230 @@
         "atk_spell_val": 0,
         "def_spell_val": 0,
         "tags": [
-          "RUSH",
-          "BONUS_SCORE_1"
+          "RUSH"
         ],
         "count": 3,
-        "ppo_play_prob": 45.0,
-        "ppo_value_gain": 0.378,
+        "ppo_play_prob": 57.8,
+        "ppo_value_gain": 0.324,
+        "ppo_score": 98.0
+      },
+      {
+        "id": 111,
+        "name": "赤红掠袭者",
+        "cost": 8,
+        "card_type": "MINION",
+        "base_dp": 6,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "RUSH"
+        ],
+        "count": 3,
+        "ppo_play_prob": 54.5,
+        "ppo_value_gain": 0.309,
         "ppo_score": 98.0
       }
     ],
     "decklist": [
       112,
       112,
-      112,
-      107,
-      107,
-      107,
+      100,
+      100,
+      104,
+      104,
       115,
       115,
-      900,
-      900,
-      900,
-      905,
-      905,
-      905,
+      115,
+      132,
+      132,
       101,
       101,
       101,
-      127,
-      127,
-      127,
-      117,
-      117,
-      128,
-      128,
-      128,
+      107,
+      107,
+      107,
+      133,
+      133,
+      136,
+      136,
       108,
       108,
+      117,
       114,
       114,
-      114
+      114,
+      111,
+      111,
+      111
     ]
   },
   "Blue": {
     "deck_name": "蔚蓝·防御控制流",
     "archetype": "Control/Fortify",
-    "tactical_concept": "基于 PPO 神经网络效用评估与实战博弈测试构筑，平均费用 2.7 费。",
+    "tactical_concept": "基于 PPO 神经网络效用评估与实战博弈测试构筑，平均费用 3.8 费。",
     "key_combos": [
-      "破甲潮汐兵 (评分 98.0): 核心关键卡，状态价值增益最高。",
-      "佣兵斥候 (评分 98.0): 辅助节奏卡，协同支撑场面与战术推进。"
+      "佣兵斥候 (评分 98.0): 核心关键卡，状态价值增益最高。",
+      "破甲潮汐兵 (评分 98.0): 辅助节奏卡，协同支撑场面与战术推进。"
     ],
     "decision_evolution_logs": [
-      "第 1 代微调: 增选 [佣兵斥候] (+1张)，减选 [防御！] (-1张)",
-      "第 2 代微调: 增选 [防御！] (+1张)，减选 [冰潮突袭者] (-1张)",
-      "第 3 代微调: 增选 [蔚蓝智慧] (+1张)，减选 [防御！] (-1张)",
-      "第 4 代微调: 增选 [训练假人] (+1张)，减选 [蔚蓝盾卫] (-1张)",
-      "第 5 代微调: 增选 [训练假人] (+1张)，减选 [佣兵斥候] (-1张)"
+      "第 1 代微调: 增选 [蔚蓝卫士] (+1张)，减选 [蔚蓝守卫] (-1张)",
+      "第 2 代微调: 增选 [赤蓝交织者] (+1张)，减选 [石像鬼] (-1张)",
+      "第 3 代微调: 增选 [寒晶护壁] (+1张)，减选 [蔚蓝卫士] (-1张)",
+      "第 4 代微调: 增选 [火铳手] (+1张)，减选 [寒晶护壁] (-1张)",
+      "第 5 代微调: 增选 [石像鬼] (+1张)，减选 [蔚蓝泰坦盾卫] (-1张)"
     ],
     "introspections": [
       {
         "generation": 1,
-        "winrate": 40.0,
+        "winrate": 62.0,
         "prev_winrate": 50.0,
         "promoted": {
-          "id": 905,
-          "name": "佣兵斥候",
-          "win_pct": 47.22222222222222,
-          "play_count": 36,
-          "thought": "[佣兵斥候] 实测出场 36 次 (胜率 47.2%)，增补 1 张至 3 张。"
+          "id": 200,
+          "name": "蔚蓝卫士",
+          "win_pct": 83.33333333333334,
+          "play_count": 24,
+          "thought": "[蔚蓝卫士] 实测出场 24 次 (胜率 83.3%)，增补 1 张至 2 张。"
         },
         "demoted": {
-          "id": 203,
-          "name": "防御！",
-          "win_pct": 24.390243902439025,
-          "play_count": 41,
-          "thought": "[防御！] 实测出场 41 次 (胜率 24.4%)，调减 1 张至 1 张。"
+          "id": 212,
+          "name": "蔚蓝守卫",
+          "win_pct": 45.23809523809524,
+          "play_count": 42,
+          "thought": "[蔚蓝守卫] 实测出场 42 次 (胜率 45.2%)，调减 1 张至 1 张。"
         },
-        "monologue": "[防御！] 实测出场 41 次 (胜率 24.4%)，调减 1 张至 1 张。\n      [佣兵斥候] 实测出场 36 次 (胜率 47.2%)，增补 1 张至 3 张。"
+        "monologue": "[蔚蓝守卫] 实测出场 42 次 (胜率 45.2%)，调减 1 张至 1 张。\n      [蔚蓝卫士] 实测出场 24 次 (胜率 83.3%)，增补 1 张至 2 张。"
       },
       {
         "generation": 2,
-        "winrate": 54.0,
-        "prev_winrate": 40.0,
+        "winrate": 60.0,
+        "prev_winrate": 62.0,
         "promoted": {
-          "id": 203,
-          "name": "防御！",
-          "win_pct": 65.0,
-          "play_count": 20,
-          "thought": "[防御！] 实测出场 20 次 (胜率 65.0%)，增补 1 张至 2 张。"
+          "id": 404,
+          "name": "赤蓝交织者",
+          "win_pct": 68.75,
+          "play_count": 16,
+          "thought": "[赤蓝交织者] 实测出场 16 次 (胜率 68.8%)，增补 1 张至 2 张。"
         },
         "demoted": {
-          "id": 223,
-          "name": "冰潮突袭者",
-          "win_pct": 32.35294117647059,
-          "play_count": 68,
-          "thought": "[冰潮突袭者] 实测出场 68 次 (胜率 32.4%)，调减 1 张至 2 张。"
+          "id": 204,
+          "name": "石像鬼",
+          "win_pct": 39.39393939393939,
+          "play_count": 33,
+          "thought": "[石像鬼] 实测出场 33 次 (胜率 39.4%)，调减 1 张至 2 张。"
         },
-        "monologue": "[冰潮突袭者] 实测出场 68 次 (胜率 32.4%)，调减 1 张至 2 张。\n      [防御！] 实测出场 20 次 (胜率 65.0%)，增补 1 张至 2 张。"
+        "monologue": "[石像鬼] 实测出场 33 次 (胜率 39.4%)，调减 1 张至 2 张。\n      [赤蓝交织者] 实测出场 16 次 (胜率 68.8%)，增补 1 张至 2 张。"
       },
       {
         "generation": 3,
-        "winrate": 38.0,
-        "prev_winrate": 54.0,
+        "winrate": 62.0,
+        "prev_winrate": 60.0,
         "promoted": {
-          "id": 216,
-          "name": "蔚蓝智慧",
-          "win_pct": 53.333333333333336,
-          "play_count": 15,
-          "thought": "[蔚蓝智慧] 实测出场 15 次 (胜率 53.3%)，增补 1 张至 2 张。"
+          "id": 209,
+          "name": "寒晶护壁",
+          "win_pct": 71.42857142857143,
+          "play_count": 21,
+          "thought": "[寒晶护壁] 实测出场 21 次 (胜率 71.4%)，增补 1 张至 2 张。"
         },
         "demoted": {
-          "id": 203,
-          "name": "防御！",
-          "win_pct": 17.142857142857142,
-          "play_count": 35,
-          "thought": "[防御！] 实测出场 35 次 (胜率 17.1%)，调减 1 张至 1 张。"
+          "id": 200,
+          "name": "蔚蓝卫士",
+          "win_pct": 47.368421052631575,
+          "play_count": 38,
+          "thought": "[蔚蓝卫士] 实测出场 38 次 (胜率 47.4%)，调减 1 张至 1 张。"
         },
-        "monologue": "[防御！] 实测出场 35 次 (胜率 17.1%)，调减 1 张至 1 张。\n      [蔚蓝智慧] 实测出场 15 次 (胜率 53.3%)，增补 1 张至 2 张。"
+        "monologue": "[蔚蓝卫士] 实测出场 38 次 (胜率 47.4%)，调减 1 张至 1 张。\n      [寒晶护壁] 实测出场 21 次 (胜率 71.4%)，增补 1 张至 2 张。"
       },
       {
         "generation": 4,
-        "winrate": 26.0,
-        "prev_winrate": 38.0,
+        "winrate": 66.0,
+        "prev_winrate": 62.0,
         "promoted": {
-          "id": 902,
-          "name": "训练假人",
-          "win_pct": 0.0,
-          "play_count": 0,
-          "thought": "[训练假人] 候补卡牌网络估值 68.5，调入 1 张至 1 张进行测试。"
+          "id": 206,
+          "name": "火铳手",
+          "win_pct": 82.35294117647058,
+          "play_count": 17,
+          "thought": "[火铳手] 实测出场 17 次 (胜率 82.4%)，增补 1 张至 2 张。"
         },
         "demoted": {
-          "id": 214,
-          "name": "蔚蓝盾卫",
-          "win_pct": 17.543859649122805,
-          "play_count": 57,
-          "thought": "[蔚蓝盾卫] 实测出场 57 次 (胜率 17.5%)，调减 1 张至 2 张。"
+          "id": 209,
+          "name": "寒晶护壁",
+          "win_pct": 50.0,
+          "play_count": 34,
+          "thought": "[寒晶护壁] 实测出场 34 次 (胜率 50.0%)，调减 1 张至 1 张。"
         },
-        "monologue": "[蔚蓝盾卫] 实测出场 57 次 (胜率 17.5%)，调减 1 张至 2 张。\n      [训练假人] 候补卡牌网络估值 68.5，调入 1 张至 1 张进行测试。"
+        "monologue": "[寒晶护壁] 实测出场 34 次 (胜率 50.0%)，调减 1 张至 1 张。\n      [火铳手] 实测出场 17 次 (胜率 82.4%)，增补 1 张至 2 张。"
       },
       {
         "generation": 5,
-        "winrate": 56.00000000000001,
-        "prev_winrate": 26.0,
+        "winrate": 68.0,
+        "prev_winrate": 66.0,
         "promoted": {
-          "id": 902,
-          "name": "训练假人",
-          "win_pct": 55.55555555555556,
-          "play_count": 18,
-          "thought": "[训练假人] 实测出场 18 次 (胜率 55.6%)，增补 1 张至 2 张。"
+          "id": 204,
+          "name": "石像鬼",
+          "win_pct": 85.0,
+          "play_count": 20,
+          "thought": "[石像鬼] 实测出场 20 次 (胜率 85.0%)，增补 1 张至 3 张。"
         },
         "demoted": {
-          "id": 905,
-          "name": "佣兵斥候",
-          "win_pct": 38.46153846153847,
-          "play_count": 65,
-          "thought": "[佣兵斥候] 实测出场 65 次 (胜率 38.5%)，调减 1 张至 2 张。"
+          "id": 214,
+          "name": "蔚蓝泰坦盾卫",
+          "win_pct": 50.0,
+          "play_count": 40,
+          "thought": "[蔚蓝泰坦盾卫] 实测出场 40 次 (胜率 50.0%)，调减 1 张至 2 张。"
         },
-        "monologue": "[佣兵斥候] 实测出场 65 次 (胜率 38.5%)，调减 1 张至 2 张。\n      [训练假人] 实测出场 18 次 (胜率 55.6%)，增补 1 张至 2 张。"
+        "monologue": "[蔚蓝泰坦盾卫] 实测出场 40 次 (胜率 50.0%)，调减 1 张至 2 张。\n      [石像鬼] 实测出场 20 次 (胜率 85.0%)，增补 1 张至 3 张。"
       }
     ],
     "total_cards": 30,
-    "minion_count": 20,
-    "spell_count": 10,
-    "avg_cost": 2.9,
+    "minion_count": 27,
+    "spell_count": 3,
+    "avg_cost": 3.8,
     "mana_curve": {
       "0": 0,
-      "1": 5,
-      "2": 11,
-      "3": 8,
-      "4": 0,
-      "5": 0,
-      "6": 6,
+      "1": 0,
+      "2": 5,
+      "3": 12,
+      "4": 4,
+      "5": 2,
+      "6": 7,
       "7": 0,
-      "8": 0
+      "8": 0,
+      "9": 0
     },
     "card_allocation": {
-      "201": 2,
-      "203": 1,
-      "204": 2,
-      "209": 2,
-      "210": 3,
+      "200": 1,
+      "202": 2,
+      "204": 3,
+      "205": 2,
+      "206": 2,
+      "208": 2,
+      "209": 1,
       "211": 2,
-      "212": 2,
+      "212": 1,
       "214": 2,
-      "216": 2,
       "218": 2,
       "221": 2,
       "223": 2,
-      "900": 2,
-      "902": 2,
-      "905": 2
+      "225": 2,
+      "905": 2,
+      "404": 2
     },
     "card_details": [
       {
-        "id": 201,
-        "name": "盾兵",
-        "cost": 1,
+        "id": 200,
+        "name": "蔚蓝卫士",
+        "cost": 2,
         "card_type": "MINION",
-        "base_dp": 1,
+        "base_dp": 2,
         "atk_spell_val": 0,
         "def_spell_val": 0,
         "tags": [
           "FORTIFY_1"
         ],
-        "count": 2,
-        "ppo_play_prob": 41.3,
-        "ppo_value_gain": -0.006,
-        "ppo_score": 72.42
-      },
-      {
-        "id": 203,
-        "name": "防御！",
-        "cost": 1,
-        "card_type": "SPELL",
-        "base_dp": 0,
-        "atk_spell_val": 0,
-        "def_spell_val": 2,
-        "tags": [],
         "count": 1,
-        "ppo_play_prob": 46.3,
-        "ppo_value_gain": -0.023,
-        "ppo_score": 68.48
-      },
-      {
-        "id": 902,
-        "name": "训练假人",
-        "cost": 1,
-        "card_type": "MINION",
-        "base_dp": 1,
-        "atk_spell_val": 0,
-        "def_spell_val": 0,
-        "tags": [],
-        "count": 2,
-        "ppo_play_prob": 33.9,
-        "ppo_value_gain": -0.004,
-        "ppo_score": 68.52
+        "ppo_play_prob": 29.6,
+        "ppo_value_gain": -0.016,
+        "ppo_score": 61.34
       },
       {
         "id": 209,
@@ -563,24 +564,10 @@
         "tags": [
           "DRAW_1"
         ],
-        "count": 2,
-        "ppo_play_prob": 30.0,
-        "ppo_value_gain": -0.046,
-        "ppo_score": 49.47
-      },
-      {
-        "id": 210,
-        "name": "冰封禁制",
-        "cost": 2,
-        "card_type": "SPELL",
-        "base_dp": 0,
-        "atk_spell_val": 6,
-        "def_spell_val": 2,
-        "tags": [],
-        "count": 3,
-        "ppo_play_prob": 0.0,
-        "ppo_value_gain": 0.0,
-        "ppo_score": 50.0
+        "count": 1,
+        "ppo_play_prob": 39.4,
+        "ppo_value_gain": -0.011,
+        "ppo_score": 69.02
       },
       {
         "id": 212,
@@ -593,10 +580,75 @@
         "tags": [
           "FORTIFY_2"
         ],
+        "count": 1,
+        "ppo_play_prob": 37.9,
+        "ppo_value_gain": -0.016,
+        "ppo_score": 66.41
+      },
+      {
+        "id": 905,
+        "name": "佣兵斥候",
+        "cost": 2,
+        "card_type": "MINION",
+        "base_dp": 1,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "RUSH"
+        ],
         "count": 2,
-        "ppo_play_prob": 26.8,
+        "ppo_play_prob": 58.5,
+        "ppo_value_gain": 0.415,
+        "ppo_score": 98.0
+      },
+      {
+        "id": 202,
+        "name": "弓箭手",
+        "cost": 3,
+        "card_type": "MINION",
+        "base_dp": 3,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "SUPPORT_ATK_1"
+        ],
+        "count": 2,
+        "ppo_play_prob": 31.3,
         "ppo_value_gain": -0.025,
-        "ppo_score": 56.02
+        "ppo_score": 58.59
+      },
+      {
+        "id": 206,
+        "name": "火铳手",
+        "cost": 3,
+        "card_type": "MINION",
+        "base_dp": 4,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "SUPPORT_ATK_1",
+          "FORTIFY_1"
+        ],
+        "count": 2,
+        "ppo_play_prob": 31.7,
+        "ppo_value_gain": -0.035,
+        "ppo_score": 54.86
+      },
+      {
+        "id": 208,
+        "name": "壁垒工匠",
+        "cost": 3,
+        "card_type": "MINION",
+        "base_dp": 3,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "FORTIFY_2"
+        ],
+        "count": 2,
+        "ppo_play_prob": 28.2,
+        "ppo_value_gain": -0.018,
+        "ppo_score": 59.58
       },
       {
         "id": 218,
@@ -611,58 +663,9 @@
           "DEGRADE_1"
         ],
         "count": 2,
-        "ppo_play_prob": 49.9,
-        "ppo_value_gain": 0.433,
+        "ppo_play_prob": 44.9,
+        "ppo_value_gain": 0.44,
         "ppo_score": 98.0
-      },
-      {
-        "id": 900,
-        "name": "商人",
-        "cost": 2,
-        "card_type": "MINION",
-        "base_dp": 2,
-        "atk_spell_val": 0,
-        "def_spell_val": 0,
-        "tags": [
-          "DRAW_1"
-        ],
-        "count": 2,
-        "ppo_play_prob": 38.3,
-        "ppo_value_gain": -0.021,
-        "ppo_score": 64.79
-      },
-      {
-        "id": 905,
-        "name": "佣兵斥候",
-        "cost": 2,
-        "card_type": "MINION",
-        "base_dp": 1,
-        "atk_spell_val": 0,
-        "def_spell_val": 0,
-        "tags": [
-          "RUSH"
-        ],
-        "count": 2,
-        "ppo_play_prob": 48.0,
-        "ppo_value_gain": 0.451,
-        "ppo_score": 98.0
-      },
-      {
-        "id": 216,
-        "name": "蔚蓝智慧",
-        "cost": 3,
-        "card_type": "SPELL",
-        "base_dp": 0,
-        "atk_spell_val": 0,
-        "def_spell_val": 0,
-        "tags": [
-          "DRAW_2",
-          "TEMP_MANA_1"
-        ],
-        "count": 2,
-        "ppo_play_prob": 33.4,
-        "ppo_value_gain": -0.003,
-        "ppo_score": 68.78
       },
       {
         "id": 221,
@@ -676,9 +679,9 @@
           "FORTIFY_1"
         ],
         "count": 2,
-        "ppo_play_prob": 29.1,
-        "ppo_value_gain": -0.046,
-        "ppo_score": 49.25
+        "ppo_play_prob": 27.9,
+        "ppo_value_gain": -0.034,
+        "ppo_score": 53.06
       },
       {
         "id": 223,
@@ -692,9 +695,72 @@
           "RUSH"
         ],
         "count": 2,
-        "ppo_play_prob": 45.6,
-        "ppo_value_gain": 0.425,
+        "ppo_play_prob": 57.5,
+        "ppo_value_gain": 0.369,
         "ppo_score": 98.0
+      },
+      {
+        "id": 205,
+        "name": "藤甲兵",
+        "cost": 4,
+        "card_type": "MINION",
+        "base_dp": 4,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "FORTIFY_2"
+        ],
+        "count": 2,
+        "ppo_play_prob": 29.6,
+        "ppo_value_gain": -0.033,
+        "ppo_score": 54.68
+      },
+      {
+        "id": 404,
+        "name": "赤蓝交织者",
+        "cost": 4,
+        "card_type": "MINION",
+        "base_dp": 4,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "RUSH",
+          "DEATH_DRAW_1"
+        ],
+        "count": 2,
+        "ppo_play_prob": 55.9,
+        "ppo_value_gain": 0.411,
+        "ppo_score": 98.0
+      },
+      {
+        "id": 225,
+        "name": "深海守望者",
+        "cost": 5,
+        "card_type": "MINION",
+        "base_dp": 5,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "FORTIFY_3"
+        ],
+        "count": 2,
+        "ppo_play_prob": 25.4,
+        "ppo_value_gain": -0.045,
+        "ppo_score": 47.25
+      },
+      {
+        "id": 204,
+        "name": "石像鬼",
+        "cost": 6,
+        "card_type": "MINION",
+        "base_dp": 8,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [],
+        "count": 3,
+        "ppo_play_prob": 26.2,
+        "ppo_value_gain": -0.051,
+        "ppo_score": 45.26
       },
       {
         "id": 211,
@@ -709,16 +775,16 @@
           "SUPPORT_ATK_1"
         ],
         "count": 2,
-        "ppo_play_prob": 27.8,
-        "ppo_value_gain": -0.058,
-        "ppo_score": 43.6
+        "ppo_play_prob": 25.4,
+        "ppo_value_gain": -0.047,
+        "ppo_score": 46.26
       },
       {
         "id": 214,
         "name": "蔚蓝泰坦盾卫",
         "cost": 6,
         "card_type": "MINION",
-        "base_dp": 6,
+        "base_dp": 5,
         "atk_spell_val": 0,
         "def_spell_val": 0,
         "tags": [
@@ -726,224 +792,195 @@
           "SUPPORT_ATK_1"
         ],
         "count": 2,
-        "ppo_play_prob": 27.9,
-        "ppo_value_gain": -0.05,
-        "ppo_score": 46.61
-      },
-      {
-        "id": 204,
-        "name": "石像鬼",
-        "cost": 6,
-        "card_type": "MINION",
-        "base_dp": 8,
-        "atk_spell_val": 0,
-        "def_spell_val": 0,
-        "tags": [],
-        "count": 2,
-        "ppo_play_prob": 28.0,
-        "ppo_value_gain": -0.076,
-        "ppo_score": 36.39
+        "ppo_play_prob": 33.3,
+        "ppo_value_gain": -0.034,
+        "ppo_score": 56.19
       }
     ],
     "decklist": [
-      201,
-      201,
-      203,
-      902,
-      902,
+      200,
       209,
-      209,
-      210,
-      210,
-      210,
       212,
-      212,
-      218,
-      218,
-      900,
-      900,
       905,
       905,
-      216,
-      216,
+      202,
+      202,
+      206,
+      206,
+      208,
+      208,
+      218,
+      218,
       221,
       221,
       223,
       223,
-      211,
-      211,
-      214,
-      214,
+      205,
+      205,
+      404,
+      404,
+      225,
+      225,
       204,
-      204
+      204,
+      204,
+      211,
+      211,
+      214,
+      214
     ]
   },
   "Green": {
     "deck_name": "翠绿·古树成长流",
     "archetype": "Ramp/Behemoth",
-    "tactical_concept": "基于 PPO 神经网络效用评估与实战博弈测试构筑，平均费用 3.8 费。",
+    "tactical_concept": "基于 PPO 神经网络效用评估与实战博弈测试构筑，平均费用 4.53 费。",
     "key_combos": [
       "佣兵斥候 (评分 98.0): 核心关键卡，状态价值增益最高。",
       "荆棘反制者 (评分 98.0): 辅助节奏卡，协同支撑场面与战术推进。"
     ],
     "decision_evolution_logs": [
       "第 1 代微调: 增选 [训练假人] (+1张)，减选 [翠绿跳费者] (-1张)",
-      "第 2 代微调: 增选 [翡翠幼龙] (+1张)，减选 [翠绿滋养] (-1张)",
-      "第 3 代微调: 增选 [翡翠藤盾卫] (+1张)，减选 [翡翠幼龙] (-1张)",
-      "第 4 代微调: 增选 [翠绿跳费者] (+1张)，减选 [藤蔓突袭者] (-1张)",
-      "第 5 代微调: 增选 [藤蔓突袭者] (+1张)，减选 [翠绿跳费者] (-1张)"
+      "第 2 代微调: 增选 [荆棘反制者] (+1张)，减选 [自然生长] (-1张)",
+      "第 3 代微调: 增选 [佣兵斥候] (+1张)，减选 [世界树恩泽] (-1张)",
+      "第 4 代微调: 增选 [远古巨树] (+1张)，减选 [世界树恩泽] (-1张)",
+      "第 5 代微调: 增选 [翠绿跳费者] (+1张)，减选 [佣兵斥候] (-1张)"
     ],
     "introspections": [
       {
         "generation": 1,
-        "winrate": 46.0,
+        "winrate": 30.0,
         "prev_winrate": 50.0,
         "promoted": {
           "id": 902,
           "name": "训练假人",
-          "win_pct": 58.06451612903226,
-          "play_count": 31,
-          "thought": "[训练假人] 实测出场 31 次 (胜率 58.1%)，增补 1 张至 3 张。"
+          "win_pct": 0.0,
+          "play_count": 0,
+          "thought": "[训练假人] 候补卡牌网络估值 74.8，调入 1 张至 1 张进行测试。"
         },
         "demoted": {
           "id": 314,
           "name": "翠绿跳费者",
-          "win_pct": 26.923076923076923,
-          "play_count": 26,
-          "thought": "[翠绿跳费者] 实测出场 26 次 (胜率 26.9%)，调减 1 张至 1 张。"
+          "win_pct": 13.636363636363635,
+          "play_count": 22,
+          "thought": "[翠绿跳费者] 实测出场 22 次 (胜率 13.6%)，调减 1 张至 1 张。"
         },
-        "monologue": "[翠绿跳费者] 实测出场 26 次 (胜率 26.9%)，调减 1 张至 1 张。\n      [训练假人] 实测出场 31 次 (胜率 58.1%)，增补 1 张至 3 张。"
+        "monologue": "[翠绿跳费者] 实测出场 22 次 (胜率 13.6%)，调减 1 张至 1 张。\n      [训练假人] 候补卡牌网络估值 74.8，调入 1 张至 1 张进行测试。"
       },
       {
         "generation": 2,
-        "winrate": 42.0,
-        "prev_winrate": 46.0,
+        "winrate": 60.0,
+        "prev_winrate": 30.0,
         "promoted": {
-          "id": 309,
-          "name": "翡翠幼龙",
-          "win_pct": 53.57142857142857,
-          "play_count": 28,
-          "thought": "[翡翠幼龙] 实测出场 28 次 (胜率 53.6%)，增补 1 张至 3 张。"
+          "id": 328,
+          "name": "荆棘反制者",
+          "win_pct": 63.888888888888886,
+          "play_count": 36,
+          "thought": "[荆棘反制者] 实测出场 36 次 (胜率 63.9%)，增补 1 张至 3 张。"
         },
         "demoted": {
-          "id": 315,
-          "name": "翠绿滋养",
-          "win_pct": 22.22222222222222,
-          "play_count": 18,
-          "thought": "[翠绿滋养] 实测出场 18 次 (胜率 22.2%)，调减 1 张至 0 张。"
+          "id": 326,
+          "name": "自然生长",
+          "win_pct": 39.53488372093023,
+          "play_count": 43,
+          "thought": "[自然生长] 实测出场 43 次 (胜率 39.5%)，调减 1 张至 1 张。"
         },
-        "monologue": "[翠绿滋养] 实测出场 18 次 (胜率 22.2%)，调减 1 张至 0 张。\n      [翡翠幼龙] 实测出场 28 次 (胜率 53.6%)，增补 1 张至 3 张。"
+        "monologue": "[自然生长] 实测出场 43 次 (胜率 39.5%)，调减 1 张至 1 张。\n      [荆棘反制者] 实测出场 36 次 (胜率 63.9%)，增补 1 张至 3 张。"
       },
       {
         "generation": 3,
-        "winrate": 44.0,
-        "prev_winrate": 42.0,
+        "winrate": 57.99999999999999,
+        "prev_winrate": 60.0,
         "promoted": {
-          "id": 327,
-          "name": "翡翠藤盾卫",
-          "win_pct": 57.14285714285714,
-          "play_count": 14,
-          "thought": "[翡翠藤盾卫] 实测出场 14 次 (胜率 57.1%)，增补 1 张至 2 张。"
+          "id": 905,
+          "name": "佣兵斥候",
+          "win_pct": 67.64705882352942,
+          "play_count": 34,
+          "thought": "[佣兵斥候] 实测出场 34 次 (胜率 67.6%)，增补 1 张至 3 张。"
         },
         "demoted": {
-          "id": 309,
-          "name": "翡翠幼龙",
-          "win_pct": 29.72972972972973,
-          "play_count": 37,
-          "thought": "[翡翠幼龙] 实测出场 37 次 (胜率 29.7%)，调减 1 张至 2 张。"
+          "id": 311,
+          "name": "世界树恩泽",
+          "win_pct": 33.33333333333333,
+          "play_count": 24,
+          "thought": "[世界树恩泽] 实测出场 24 次 (胜率 33.3%)，调减 1 张至 1 张。"
         },
-        "monologue": "[翡翠幼龙] 实测出场 37 次 (胜率 29.7%)，调减 1 张至 2 张。\n      [翡翠藤盾卫] 实测出场 14 次 (胜率 57.1%)，增补 1 张至 2 张。"
+        "monologue": "[世界树恩泽] 实测出场 24 次 (胜率 33.3%)，调减 1 张至 1 张。\n      [佣兵斥候] 实测出场 34 次 (胜率 67.6%)，增补 1 张至 3 张。"
       },
       {
         "generation": 4,
-        "winrate": 54.0,
-        "prev_winrate": 44.0,
+        "winrate": 70.0,
+        "prev_winrate": 57.99999999999999,
         "promoted": {
-          "id": 314,
-          "name": "翠绿跳费者",
-          "win_pct": 58.333333333333336,
-          "play_count": 12,
-          "thought": "[翠绿跳费者] 实测出场 12 次 (胜率 58.3%)，增补 1 张至 2 张。"
+          "id": 305,
+          "name": "远古巨树",
+          "win_pct": 80.0,
+          "play_count": 5,
+          "thought": "[远古巨树] 实测出场 5 次 (胜率 80.0%)，增补 1 张至 2 张。"
         },
         "demoted": {
-          "id": 323,
-          "name": "藤蔓突袭者",
-          "win_pct": 35.294117647058826,
-          "play_count": 34,
-          "thought": "[藤蔓突袭者] 实测出场 34 次 (胜率 35.3%)，调减 1 张至 1 张。"
+          "id": 311,
+          "name": "世界树恩泽",
+          "win_pct": 45.45454545454545,
+          "play_count": 11,
+          "thought": "[世界树恩泽] 实测出场 11 次 (胜率 45.5%)，调减 1 张至 0 张。"
         },
-        "monologue": "[藤蔓突袭者] 实测出场 34 次 (胜率 35.3%)，调减 1 张至 1 张。\n      [翠绿跳费者] 实测出场 12 次 (胜率 58.3%)，增补 1 张至 2 张。"
+        "monologue": "[世界树恩泽] 实测出场 11 次 (胜率 45.5%)，调减 1 张至 0 张。\n      [远古巨树] 实测出场 5 次 (胜率 80.0%)，增补 1 张至 2 张。"
       },
       {
         "generation": 5,
-        "winrate": 48.0,
-        "prev_winrate": 54.0,
+        "winrate": 64.0,
+        "prev_winrate": 70.0,
         "promoted": {
-          "id": 323,
-          "name": "藤蔓突袭者",
-          "win_pct": 56.52173913043478,
-          "play_count": 23,
-          "thought": "[藤蔓突袭者] 实测出场 23 次 (胜率 56.5%)，增补 1 张至 2 张。"
-        },
-        "demoted": {
           "id": 314,
           "name": "翠绿跳费者",
-          "win_pct": 29.629629629629626,
-          "play_count": 27,
-          "thought": "[翠绿跳费者] 实测出场 27 次 (胜率 29.6%)，调减 1 张至 1 张。"
+          "win_pct": 80.0,
+          "play_count": 10,
+          "thought": "[翠绿跳费者] 实测出场 10 次 (胜率 80.0%)，增补 1 张至 2 张。"
         },
-        "monologue": "[翠绿跳费者] 实测出场 27 次 (胜率 29.6%)，调减 1 张至 1 张。\n      [藤蔓突袭者] 实测出场 23 次 (胜率 56.5%)，增补 1 张至 2 张。"
+        "demoted": {
+          "id": 905,
+          "name": "佣兵斥候",
+          "win_pct": 43.859649122807014,
+          "play_count": 57,
+          "thought": "[佣兵斥候] 实测出场 57 次 (胜率 43.9%)，调减 1 张至 2 张。"
+        },
+        "monologue": "[佣兵斥候] 实测出场 57 次 (胜率 43.9%)，调减 1 张至 2 张。\n      [翠绿跳费者] 实测出场 10 次 (胜率 80.0%)，增补 1 张至 2 张。"
       }
     ],
     "total_cards": 30,
-    "minion_count": 26,
-    "spell_count": 4,
-    "avg_cost": 3.9,
+    "minion_count": 25,
+    "spell_count": 5,
+    "avg_cost": 4.53,
     "mana_curve": {
       "0": 0,
-      "1": 5,
-      "2": 6,
-      "3": 2,
-      "4": 7,
-      "5": 5,
-      "6": 0,
-      "7": 2,
+      "1": 1,
+      "2": 2,
+      "3": 8,
+      "4": 6,
+      "5": 2,
+      "6": 4,
+      "7": 7,
       "8": 0,
-      "9": 3
+      "9": 0
     },
     "card_allocation": {
-      "302": 2,
+      "300": 2,
+      "305": 2,
+      "307": 2,
+      "308": 3,
       "309": 2,
       "310": 3,
-      "311": 3,
-      "312": 2,
-      "314": 1,
-      "318": 3,
-      "320": 1,
+      "314": 2,
+      "315": 2,
       "323": 2,
-      "327": 2,
-      "328": 2,
-      "902": 3,
+      "326": 1,
+      "328": 3,
+      "902": 1,
       "905": 2,
-      "602": 2
+      "602": 2,
+      "604": 1
     },
     "card_details": [
-      {
-        "id": 312,
-        "name": "翠绿幼苗",
-        "cost": 1,
-        "card_type": "MINION",
-        "base_dp": 1,
-        "atk_spell_val": 0,
-        "def_spell_val": 0,
-        "tags": [
-          "FORTIFY_1"
-        ],
-        "count": 2,
-        "ppo_play_prob": 38.6,
-        "ppo_value_gain": 0.005,
-        "ppo_score": 75.3
-      },
       {
         "id": 902,
         "name": "训练假人",
@@ -953,42 +990,10 @@
         "atk_spell_val": 0,
         "def_spell_val": 0,
         "tags": [],
-        "count": 3,
-        "ppo_play_prob": 36.9,
-        "ppo_value_gain": -0.006,
-        "ppo_score": 69.63
-      },
-      {
-        "id": 302,
-        "name": "剧毒花",
-        "cost": 2,
-        "card_type": "MINION",
-        "base_dp": 2,
-        "atk_spell_val": 0,
-        "def_spell_val": 0,
-        "tags": [
-          "DEGRADE_2"
-        ],
-        "count": 2,
-        "ppo_play_prob": 32.7,
-        "ppo_value_gain": -0.031,
-        "ppo_score": 57.21
-      },
-      {
-        "id": 327,
-        "name": "翡翠藤盾卫",
-        "cost": 2,
-        "card_type": "MINION",
-        "base_dp": 2,
-        "atk_spell_val": 0,
-        "def_spell_val": 0,
-        "tags": [
-          "FORTIFY_2"
-        ],
-        "count": 2,
-        "ppo_play_prob": 49.2,
-        "ppo_value_gain": -0.01,
-        "ppo_score": 75.43
+        "count": 1,
+        "ppo_play_prob": 49.1,
+        "ppo_value_gain": -0.012,
+        "ppo_score": 74.84
       },
       {
         "id": 905,
@@ -1002,13 +1007,80 @@
           "RUSH"
         ],
         "count": 2,
-        "ppo_play_prob": 55.3,
-        "ppo_value_gain": 0.449,
+        "ppo_play_prob": 60.5,
+        "ppo_value_gain": 0.397,
         "ppo_score": 98.0
       },
       {
-        "id": 318,
-        "name": "萌芽跳费使",
+        "id": 300,
+        "name": "翠绿萌芽",
+        "cost": 3,
+        "card_type": "SPELL",
+        "base_dp": 0,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "RAMP_1"
+        ],
+        "count": 2,
+        "ppo_play_prob": 27.7,
+        "ppo_value_gain": -0.023,
+        "ppo_score": 57.51
+      },
+      {
+        "id": 315,
+        "name": "翠绿滋养",
+        "cost": 3,
+        "card_type": "SPELL",
+        "base_dp": 0,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "RAMP_1",
+          "DRAW_1"
+        ],
+        "count": 2,
+        "ppo_play_prob": 35.3,
+        "ppo_value_gain": -0.023,
+        "ppo_score": 61.78
+      },
+      {
+        "id": 326,
+        "name": "自然生长",
+        "cost": 3,
+        "card_type": "SPELL",
+        "base_dp": 0,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "RAMP_1"
+        ],
+        "count": 1,
+        "ppo_play_prob": 33.7,
+        "ppo_value_gain": -0.013,
+        "ppo_score": 65.03
+      },
+      {
+        "id": 328,
+        "name": "荆棘反制者",
+        "cost": 3,
+        "card_type": "MINION",
+        "base_dp": 4,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "RUSH",
+          "DEGRADE_1",
+          "FORTIFY_2"
+        ],
+        "count": 3,
+        "ppo_play_prob": 42.6,
+        "ppo_value_gain": 0.448,
+        "ppo_score": 98.0
+      },
+      {
+        "id": 307,
+        "name": "芽苗祭司",
         "cost": 4,
         "card_type": "MINION",
         "base_dp": 3,
@@ -1017,27 +1089,10 @@
         "tags": [
           "RAMP_1"
         ],
-        "count": 3,
-        "ppo_play_prob": 30.8,
-        "ppo_value_gain": -0.034,
-        "ppo_score": 55.05
-      },
-      {
-        "id": 328,
-        "name": "荆棘反制者",
-        "cost": 3,
-        "card_type": "MINION",
-        "base_dp": 3,
-        "atk_spell_val": 0,
-        "def_spell_val": 0,
-        "tags": [
-          "RUSH",
-          "DEGRADE_1"
-        ],
         "count": 2,
-        "ppo_play_prob": 40.8,
-        "ppo_value_gain": 0.385,
-        "ppo_score": 98.0
+        "ppo_play_prob": 27.4,
+        "ppo_value_gain": -0.045,
+        "ppo_score": 48.53
       },
       {
         "id": 314,
@@ -1050,27 +1105,10 @@
         "tags": [
           "RAMP_1"
         ],
-        "count": 1,
-        "ppo_play_prob": 32.0,
-        "ppo_value_gain": -0.028,
-        "ppo_score": 58.01
-      },
-      {
-        "id": 320,
-        "name": "翠绿资源滋长",
-        "cost": 4,
-        "card_type": "SPELL",
-        "base_dp": 0,
-        "atk_spell_val": 0,
-        "def_spell_val": 0,
-        "tags": [
-          "RAMP_1",
-          "DRAW_1"
-        ],
-        "count": 1,
-        "ppo_play_prob": 35.3,
-        "ppo_value_gain": -0.028,
-        "ppo_score": 59.78
+        "count": 2,
+        "ppo_play_prob": 29.1,
+        "ppo_value_gain": -0.043,
+        "ppo_score": 50.2
       },
       {
         "id": 323,
@@ -1081,28 +1119,13 @@
         "atk_spell_val": 0,
         "def_spell_val": 0,
         "tags": [
-          "RUSH"
+          "RUSH",
+          "FORTIFY_1"
         ],
         "count": 2,
-        "ppo_play_prob": 46.5,
-        "ppo_value_gain": 0.408,
+        "ppo_play_prob": 55.4,
+        "ppo_value_gain": 0.395,
         "ppo_score": 98.0
-      },
-      {
-        "id": 311,
-        "name": "世界树恩泽",
-        "cost": 5,
-        "card_type": "SPELL",
-        "base_dp": 0,
-        "atk_spell_val": 0,
-        "def_spell_val": 3,
-        "tags": [
-          "RAMP_1"
-        ],
-        "count": 3,
-        "ppo_play_prob": 25.7,
-        "ppo_value_gain": -0.043,
-        "ppo_score": 48.26
       },
       {
         "id": 602,
@@ -1117,9 +1140,58 @@
           "DEATH_DRAW_1"
         ],
         "count": 2,
-        "ppo_play_prob": 49.0,
-        "ppo_value_gain": 0.323,
+        "ppo_play_prob": 53.3,
+        "ppo_value_gain": 0.34,
         "ppo_score": 98.0
+      },
+      {
+        "id": 308,
+        "name": "翡翠巨熊",
+        "cost": 6,
+        "card_type": "MINION",
+        "base_dp": 6,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "FORTIFY_2"
+        ],
+        "count": 3,
+        "ppo_play_prob": 25.2,
+        "ppo_value_gain": -0.054,
+        "ppo_score": 43.64
+      },
+      {
+        "id": 604,
+        "name": "红绿共生体",
+        "cost": 6,
+        "card_type": "MINION",
+        "base_dp": 5,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "RUSH",
+          "DEATH_DRAW_1"
+        ],
+        "count": 1,
+        "ppo_play_prob": 51.7,
+        "ppo_value_gain": 0.376,
+        "ppo_score": 98.0
+      },
+      {
+        "id": 305,
+        "name": "远古巨树",
+        "cost": 7,
+        "card_type": "MINION",
+        "base_dp": 8,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [
+          "FORTIFY_2"
+        ],
+        "count": 2,
+        "ppo_play_prob": 26.0,
+        "ppo_value_gain": -0.079,
+        "ppo_score": 34.04
       },
       {
         "id": 309,
@@ -1134,54 +1206,55 @@
           "DEATH_MANA_1"
         ],
         "count": 2,
-        "ppo_play_prob": 46.0,
-        "ppo_value_gain": 0.376,
+        "ppo_play_prob": 51.5,
+        "ppo_value_gain": 0.346,
         "ppo_score": 98.0
       },
       {
         "id": 310,
         "name": "灭世翡翠巨龙",
-        "cost": 9,
+        "cost": 7,
         "card_type": "MINION",
-        "base_dp": 5,
+        "base_dp": 6,
         "atk_spell_val": 0,
         "def_spell_val": 0,
         "tags": [
           "RUSH",
-          "BONUS_SCORE_1"
+          "BONUS_SCORE_1",
+          "FORTIFY_2"
         ],
         "count": 3,
-        "ppo_play_prob": 47.8,
-        "ppo_value_gain": 0.322,
+        "ppo_play_prob": 52.6,
+        "ppo_value_gain": 0.37,
         "ppo_score": 98.0
       }
     ],
     "decklist": [
-      312,
-      312,
       902,
-      902,
-      902,
-      302,
-      302,
-      327,
-      327,
       905,
       905,
-      318,
-      318,
-      318,
+      300,
+      300,
+      315,
+      315,
+      326,
       328,
       328,
+      328,
+      307,
+      307,
       314,
-      320,
+      314,
       323,
       323,
-      311,
-      311,
-      311,
       602,
       602,
+      308,
+      308,
+      308,
+      604,
+      305,
+      305,
       309,
       309,
       310,

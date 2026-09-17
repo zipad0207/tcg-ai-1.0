@@ -595,6 +595,16 @@ def generate_partitioned_markdown(data: dict):
 def generate_partitioned_html(data: dict):
     json_data = json.dumps(data, ensure_ascii=False, indent=2)
 
+    def get_pool_summary(cards):
+        excl = sum(1 for c in cards if not c.get("is_neutral") and "双色" not in c.get("origin_type", ""))
+        dual = sum(1 for c in cards if "双色" in c.get("origin_type", ""))
+        neut = sum(1 for c in cards if c.get("is_neutral"))
+        return f"{len(cards)}张候选池 ({excl}专属 + {dual}双色 + {neut}中立)"
+
+    red_sub = get_pool_summary(data.get("Red", []))
+    blue_sub = get_pool_summary(data.get("Blue", []))
+    green_sub = get_pool_summary(data.get("Green", []))
+
     html_content = f"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -1216,15 +1226,15 @@ def generate_partitioned_html(data: dict):
   <div class="deck-tabs">
     <button class="tab-btn tab-red active" onclick="switchDeck('Red', this)">
       <span>🔴 赤红 (Red) 卡组</span>
-      <span style="font-size: 0.75rem; opacity: 0.85;">快攻突破流 · 46张候选池 (32专属 + 8双色 + 6中立)</span>
+      <span style="font-size: 0.75rem; opacity: 0.85;">快攻突破流 · {red_sub}</span>
     </button>
     <button class="tab-btn tab-blue" onclick="switchDeck('Blue', this)">
       <span>🔵 蔚蓝 (Blue) 卡组</span>
-      <span style="font-size: 0.75rem; opacity: 0.85;">防守反击流 · 46张候选池 (32专属 + 8双色 + 6中立)</span>
+      <span style="font-size: 0.75rem; opacity: 0.85;">防守反击流 · {blue_sub}</span>
     </button>
     <button class="tab-btn tab-green" onclick="switchDeck('Green', this)">
       <span>🟢 翠绿 (Green) 卡组</span>
-      <span style="font-size: 0.75rem; opacity: 0.85;">跳费膨胀流 · 46张候选池 (32专属 + 8双色 + 6中立)</span>
+      <span style="font-size: 0.75rem; opacity: 0.85;">跳费膨胀流 · {green_sub}</span>
     </button>
   </div>
 
