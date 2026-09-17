@@ -148,119 +148,6 @@ def simulate_card_in_faction(card_info: dict, faction_name: str, model: CardNet,
         "v_gain": avg_v_gain
     }
 
-def get_fallback_comment(item: dict, faction: str) -> str:
-    cost = item.get("cost", 0)
-    c_type = item.get("card_type", "MINION")
-    tags = item.get("tags", [])
-    copies = item.get("copies", 0)
-
-    # 提炼核心战术词条描述
-    key_traits = []
-    if "RUSH" in tags:
-        key_traits.append("即时突袭冲锋")
-    if any("FORTIFY" in t for t in tags):
-        key_traits.append("坚守护盾吸收")
-    if any("RAMP" in t or "MANA" in t for t in tags):
-        key_traits.append("法力跳费扩张")
-    if any("DRAW" in t for t in tags):
-        key_traits.append("过牌润滑")
-    if "SACRIFICE_1_KILL_1" in tags:
-        key_traits.append("献祭强杀")
-    if any("DEGRADE" in t for t in tags):
-        key_traits.append("压制削弱敌阵")
-    if any("BONUS_SCORE" in t for t in tags):
-        key_traits.append("击穿额外夺分")
-    if any("SUPPORT_ATK" in t for t in tags):
-        key_traits.append("合击光环支援")
-    if "SPAWN_1_1" in tags:
-        key_traits.append("双重频率铺场")
-
-    trait_desc = "兼具" + "与".join(key_traits[:2]) if key_traits else ("扎实的身材面板" if c_type == "MINION" else "攻防直接增益")
-
-    tier = item.get("tier", "B")
-    if tier in ("S+", "S"):
-        if copies >= 2:
-            return f"{cost}费核心支柱，{trait_desc}，满编保障起手与全期节奏压制。"
-        elif copies == 1:
-            return f"{cost}费超模主轴，{trait_desc}，高实战胜率贡献，建议增补配置。"
-        else:
-            return f"{cost}费高潜核心，{trait_desc}，实测效用极高，强烈建议调入卡组。"
-    elif tier == "A":
-        if copies >= 1:
-            return f"{cost}费主力组件，{trait_desc}，攻防节奏兼备，支撑体系运转。"
-        else:
-            return f"{cost}费优质战力，{trait_desc}，单模扎实，适合作为高潜候补调入。"
-    elif tier == "B":
-        return f"{cost}费良好拼图，{trait_desc}，按战术曲线与环境需求灵活选配。"
-    elif tier == "C":
-        return f"{cost}费环境对策牌，{trait_desc}，在特定对弈局势下发挥功能价值。"
-    else:  # D 级
-        if copies > 0:
-            return f"{cost}费白板或低效配置，缺乏关键词条联动，建议优化剔除。"
-        else:
-            return f"{cost}费模型收益偏弱，受限于卡位竞争，暂不推荐投入构筑。"
-
-def get_real_ai_comments(faction: str, evaluated_list: list) -> dict:
-    key = os.environ.get("DEEPSEEK_API_KEY", "")
-    if not key:
-        try:
-            import winreg
-            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment") as env_key:
-                key, _ = winreg.QueryValueEx(env_key, "DEEPSEEK_API_KEY")
-        except Exception:
-            pass
-    if not key:
-        print("    [INFO] 未配置 DEEPSEEK_API_KEY，启用专业属性驱动的自适应单卡评述。")
-        return {item["id"]: get_fallback_comment(item, faction) for item in evaluated_list}
-        
-    try:
-        from openai import OpenAI
-        import re
-        client = OpenAI(api_key=key, base_url="https://api.deepseek.com")
-        
-        faction_desc = {
-            "Red": "赤红 (快攻压制/牺牲协同，利用低费铺场、直伤与突袭快速抢血斩杀)",
-            "Blue": "蔚蓝 (防守反击/护盾壁垒，利用高固守随从吸收伤害，中后期拍下高质量大哥夺取胜利)",
-            "Green": "翠绿 (法力跳费/大哥核弹，前期快速扩张法力上限，中后期高DP突袭随从终结比赛)"
-        }.get(faction, faction)
-
-        prompt = f"""你是一名资深集换式卡牌（TCG）构筑专栏作家与竞技赛事分析师。
-请针对【{faction_desc}】阵营的 {len(evaluated_list)} 张候选卡牌，根据其实际属性、战术词条以及在卡组中的推荐携带张数（满编3张/主力2张/挂件1张/暂不推荐0张），撰写精炼、客观、切中实战痛点的单卡简评。
-
-【重要规范】：
-1. 严禁出现“总的来说”、“不可否认”、“在实战中扮演重要角色”等AI套话。
-2. 严禁粗俗烂梗与口头禅。
-3. 语言风格如同专业赛事大师构筑复盘（如万智牌/炉石大师赛），紧扣节奏展开、解场返场、场面交换、过牌润滑、斩杀终端等。
-4. 每张卡评语字数严格控制在 20~35 字之间。
-
-候选卡牌数据如下：
-"""
-        for item in evaluated_list:
-            dp_info = f"DP:{item['base_dp']}" if item['card_type'] == "MINION" else f"攻{item['atk_val']}/防{item['def_val']}"
-            tags_info = f"词条:{item.get('tags', [])}" if item.get('tags') else "无特殊词条"
-            prompt += f"- 卡牌: {item['name']}, 费用: {item['cost']}费, 类型: {item['card_type']}, 属性: {dp_info}, {tags_info}, 推荐: {item.get('rec_count', '')}\n"
-        
-        prompt += '\n请严格只返回如下合法 JSON 格式，不要包含任何 markdown 标记或多余解释：\n{"卡牌名": "客观实战简评", ...}'
-
-        print(f"    [AI] 正在通过 DeepSeek 模型生成 {len(evaluated_list)} 张 {faction} 候选卡牌实战构筑解析...")
-        res = client.chat.completions.create(
-            model="deepseek-flash",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3
-        )
-        content = res.choices[0].message.content
-        match = re.search(r"(\{.*\})", content, re.DOTALL)
-        if match:
-            parsed = json.loads(match.group(1))
-            ret = {}
-            for item in evaluated_list:
-                ret[item["id"]] = parsed.get(item["name"], get_fallback_comment(item, faction))
-            return ret
-    except Exception as e:
-        print(f"    [ERR] DeepSeek调用异常: {e}，启用自适应属性评述。")
-        
-    return {item["id"]: get_fallback_comment(item, faction) for item in evaluated_list}
-
 def get_candidates_for_faction(cards_data: dict, faction: str) -> list:
     """动态提取指定阵营的合法候选卡牌池 (专属卡 + 双色协同卡 + 中立通用卡)"""
     candidates = []
@@ -416,11 +303,6 @@ def evaluate_faction_pool(target_faction: str, candidates: list, model: CardNet,
         item["rec_count"] = rec_count
         item["tier_class"] = tier_class
 
-    # 批量生成客观专业简评
-    ai_comments = get_real_ai_comments(target_faction, evaluated_list)
-    for item in evaluated_list:
-        item["comment"] = ai_comments.get(item["id"], get_fallback_comment(item, target_faction))
-
     evaluated_list.sort(key=lambda x: x["score"], reverse=True)
     return evaluated_list, deck_meta
 
@@ -532,18 +414,13 @@ def generate_partitioned_markdown(data: dict):
         dual = sum(1 for c in cards if "双色" in c["origin_type"])
         neut = sum(1 for c in cards if c["is_neutral"])
 
-        pool_desc = f"> **候选牌池**：{excl} 张{f_key}专属卡 + {dual} 张双色协同卡 + {neut} 张中立通用卡（共 {len(cards)} 张候选，择优遴选 30 张入套）\n\n"
-
-        md.append(f"## {f_title}\n")
-        md.append(f"> **战术核心**：{f_core}  \n")
-        md.append(pool_desc)
-        md.append("| 排名 | 卡牌名称 | 归属 | 费用 | 类型 | 属性/数值 | 战术词条 | **综合评分** | 梯队 | **携带率** | **胜率贡献 (ΔWR)** | 推荐配置 | 实战构筑解析 |\n")
-        md.append("| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |\n")
+        md.append("| 排名 | 卡牌名称 | 归属 | 费用 | 类型 | 属性/数值 | 战术词条 | **综合评分** | 梯队 | **携带率** | **胜率贡献 (ΔWR)** | 推荐配置 |\n")
+        md.append("| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |\n")
 
         for idx, c in enumerate(cards, 1):
             stats = f"DP:{c['base_dp']}" if c["card_type"] == "MINION" else f"攻{c['atk_val']}/防{c['def_val']}"
             tags_str = format_tags_md(c.get("tags", []))
-            md.append(f"| {idx} | **{c['name']}** | {c['origin_type']} | {c['cost']}费 | {c['card_type']} | {stats} | {tags_str} | **{c['score']}** | **{c['tier']}** | {format_pick_rate_md(c['pick_rate'])} | {format_win_impact_md(c['win_impact'])} | {c['rec_count']} | {c['comment']} |\n")
+            md.append(f"| {idx} | **{c['name']}** | {c['origin_type']} | {c['cost']}费 | {c['card_type']} | {stats} | {tags_str} | **{c['score']}** | **{c['tier']}** | {format_pick_rate_md(c['pick_rate'])} | {format_win_impact_md(c['win_impact'])} | {c['rec_count']} |\n")
 
         md.append("\n---\n\n")
 
@@ -1491,10 +1368,6 @@ def generate_partitioned_html(data: dict):
                 <span style="color: var(--text-dim);">ID: #${{c.id}}</span>
               </div>
             </div>
-
-            <div class="comment-box">
-              💬 ${{c.comment}}
-            </div>
           `;
           grid.appendChild(cardEl);
         }});
@@ -1519,7 +1392,6 @@ def generate_partitioned_html(data: dict):
                 <th>胜率贡献 (ΔWR)</th>
                 <th>PPO出牌意愿/增益</th>
                 <th>推荐配置</th>
-                <th>实战构筑解析</th>
               </tr>
             </thead>
             <tbody>
@@ -1546,7 +1418,6 @@ def generate_partitioned_html(data: dict):
               <td><strong style="color: ${{winColor}};">${{winSign}}</strong></td>
               <td style="font-size: 0.75rem; color: #a4b0be;">${{(c.actor_prob * 100).toFixed(0)}}% / ${{c.v_gain.toFixed(3)}}</td>
               <td style="color: #ffeaa7; font-weight: 500;">${{c.rec_count}}</td>
-              <td style="font-size: 0.8rem; color: #dfe6e9; max-width: 300px;">${{c.comment}}</td>
             </tr>
           `;
         }});
