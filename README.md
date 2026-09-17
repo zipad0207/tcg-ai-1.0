@@ -24,54 +24,62 @@
    - **蔚蓝（Blue）**：防守反击与光环支援，拥有高防御战力（坚守）随从与护盾法术。
    - **翠绿（Green）**：法力跳费与高费强力随从，偏向中后期质量压制。
    - **中立（Neutral）**：提供通用的过牌、滤牌与基础驻防随从。
+7. **先后手对称平衡机制 (Turn-Order Fairness)**：
+   - 先手玩家（P0）起手 3 张手牌；后手玩家（P1）起手 4 张手牌并额外获得一张【幸运币】（1 费法术，提供 1 点临时法力）；
+   - 严格保证双方各回合基础法力水晶上限同步推进（第 1 回合 1 费、第 2 回合 2 费……上限 10 费）；
+   - 经 900 局高并发实机消融实验验证，先手胜率 **50.03%** vs 后手胜率 **49.97%**，杜绝了行动顺位引发的结构性偏倚，为卡牌数值与策略评估提供了公正严谨的底层环境。
 
 ---
 
 ## 系统工作流程：双环协同演化体系
 
-系统采用“大模型数值微调外环 + 强化学习智能体构筑演化内环”的自动化调优流程：
+系统采用“大模型数值微调外环 + 强化学习智能体构筑演化内环”的六阶段自动化调优流水线：
 
-1. **新卡设计与合法性校验**：根据阵营特色生成新卡牌，使用环境既有合法词条（如 `RUSH`、`FORTIFY`、`RAMP` 等），通过机制与字段校验避免运行时异常。
-2. **初始套牌构筑与理论初调**：为各阵营构建 30 张初始套牌，在理论模型层面初调身材与费用收益。
-3. **PPO 自博弈对抗与卡组自适应（内环）**：套牌载入 DuelEnv 沙盒，PPO 智能体开展对局。根据出场胜率与状态价值估计（Value Head）动态调整单卡配置，默认最多探索 2 次（`--max-deck-attempts 2`）。
-4. **大规模实机混战遥测**：进行多阵营混战对决（默认 3,000 局），统计各阵营胜率、跨阵营对弈矩阵与单卡出牌频次。
-5. **闭环收敛判定与分级自适应调优**：
-   - **达成平衡**：当所有阵营胜率偏离度均满足阈值（$\le 2.8\%$，胜率落在 $47.2\% \sim 52.8\%$ 平衡区间）时，完成调优并导出分析图表与对局回放；
-   - **温和失衡（偏离度 $2.8\% \sim 6.0\%$）**：继续由 PPO 进行第 2 次卡组战术微调；若 2 次尝试后仍未平衡，再切换至外环；
-   - **严重失衡熔断（偏离度 $\ge 6.0\%$ 或胜率极差 $\ge 10.0\%$）**：判定为单卡数值硬伤（非卡组构筑微调所能弥补），触发熔断快转，直接跳过剩余卡组微调进入外环 DeepSeek 调卡牌属性/费用。
+1. **新卡扩展设计 (Phase 1)**：DeepSeek 根据历史混战遥测战报践行“缺啥补啥”原则，定向为三大阵营印制包含单色与双色协同的新卡（严格限定 4 随从 + 2 法术 + 1 双色卡），使用底层引擎支持的 14 种合法词条并通过格式校验。
+2. **初始套牌预构筑 (Phase 2)**：为各阵营自动构建融入新卡的 30 张推荐套牌，初调基础费用与身材曲线。
+3. **PPO 智能体构筑自适应演化（内环 Phase 3）**：套牌载入 DuelEnv 沙盒，PPO 智能体自博弈对决，基于出场胜率与状态价值估计（Value Head）动态优化 30 张卡组，默认尝试 2 次（`--max-deck-attempts 2`）。
+4. **大规模实机混战遥测审计 (Phase 4)**：多阵营高并发混战（默认 3,000 局），同步执行 PPO 策略与价值网络的 GAE 优势计算、反向传播与模型权重更新，产出胜率与对弈克制矩阵。
+5. **分级闭环收敛与熔断决策 (Phase 5)**：
+   - **达成平衡**：当所有阵营胜率最大偏离度 $\le 2.8\%$（胜率落在 $[47.2\%, 52.8\%]$ 黄金平衡带）时，完成调优并自动停机；
+   - **严重失衡熔断快转**：若阵营最大偏离度 $\ge 6.0\%$ 或阵营胜率极差 $\ge 10.0\%$，判定为单卡身材/费用数值硬伤（非卡组战术微调所能弥补），触发熔断跳过剩余卡组微调，直接快转至外环 DeepSeek 调卡牌属性；
+   - **温和失衡微调**：偏离度在 $2.8\% \sim 6.0\%$ 时，继续由 PPO 执行第 2 次卡组微调；若 2 次微调后仍失衡，再交付外环调整卡牌数值。
+6. **成果报表与对比大屏导出 (Phase 6)**：自动导出天梯战力榜（`card_tier_table.md`）、Web 交互式对战复盘（`hearthstone_assistant.html`）与三联看板大图（`figure_brawl_comparison.png`）。
 
 ```mermaid
 flowchart TD
     subgraph S1 ["阶段一：卡牌扩展设计"]
-        A1["生成新卡需求 (单色/双色卡牌)"] --> A2["DeepSeek 结构化生成卡牌定义"]
-        A2 --> A3["卡牌合法性与字段格式校验"]
+        A1["环境战报驱动生成新卡需求 (单色/双色卡牌)"] --> A2["DeepSeek 结构化生成卡牌定义"]
+        A2 --> A3["卡牌合法性与底层 14 词条校验"]
     end
 
     subgraph S2 ["阶段二：套牌预构筑"]
-        A3 --> B1["构建阵营 30 张初始套牌"]
-        B1 --> B2["初调基础费用与身材曲线"]
+        A3 --> B1["构建阵营 30 张初始推荐套牌"]
+        B1 --> B2["初调基础费用与法力曲线"]
     end
 
-    subgraph S3 ["阶段三：PPO 自主对弈与构筑演化"]
+    subgraph S3 ["阶段三：PPO 内环构筑演化 (默认 2 次尝试)"]
         B2 --> C1["载入 DuelEnv 对战沙盒环境"]
-        C1 --> C2["PPO 智能体开展实战对抗"]
-        C2 --> C3["根据出场胜率与价值增益动态调整 30 张卡组"]
+        C1 --> C2["PPO 智能体开展实战对抗与自博弈"]
+        C2 --> C3["基于出场胜率与 Value Head 价值增益优化 30 张卡组"]
     end
 
-    subgraph S4 ["阶段四：大规模实机遥测"]
-        C3 --> D1["3,000 局高并发多阵营混战自博弈 (赤红/蔚蓝/翠绿)"]
-        D1 --> D2["采集遥测数据 (胜率统计 / 对弈矩阵 / 单卡频次)"]
+    subgraph S4 ["阶段四：实机多阵营混战遥测"]
+        C3 --> D1["3,000 局高并发混战遥测 (赤红/蔚蓝/翠绿)"]
+        D1 --> D2["采集统计遥测 (阵营胜率 / 克制矩阵 / 单卡频次)"]
     end
 
-    subgraph S5 ["阶段五：闭环收敛判定与自适应调优"]
-        D2 --> E1{"各阵营胜率偏离度是否 <= 2.8% (47.2% ~ 52.8%)?"}
+    subgraph S5 ["阶段五：分级闭环收敛与熔断决策"]
+        D2 --> E1{"各阵营胜率偏离度 <= 2.8%?"}
         
-        E1 -- "否 (存在失衡)" --> F1["外环介入: 定向微调异常卡牌费用与属性"]
-        F1 --> F2["内环响应: PPO 智能体适应新数值并更新构筑"]
-        F2 --> D1
+        E1 -- "是 (达成收敛)" --> G1["达成纳什均衡与平衡判据"]
+        G1 --> G2["阶段六：导出分析图表、Web复盘大屏与天梯榜"]
 
-        E1 -- "是 (达成平衡)" --> G1["环境收敛判定完成"]
-        G1 --> G2["导出可视化分析图表与 Web 动态复盘"]
+        E1 -- "否 (偏离 > 2.8%)" --> E2{"严重失衡 (偏离 >= 6.0% 或 极差 >= 10.0%)?"}
+        E2 -- "是 (单卡数值硬伤)" --> F1["【熔断快转】跳过剩余卡组微调，直接触发外环 DeepSeek 调数值"]
+        E2 -- "否 (温和战术失衡)" --> E3{"内环卡组微调是否已满 2 次?"}
+        E3 -- "未满 2 次" --> C3
+        E3 -- "已满 2 次" --> F1
+        F1 --> C1
     end
 
     style S1 fill:#fdfefe,stroke:#7f8c8d,stroke-width:1.5px
@@ -212,116 +220,103 @@ flowchart TD
 
 ## 快速开始
 
-### 1. 环境依赖
+### 1. 环境依赖与密钥配置
 
 ```bash
 pip install torch numpy matplotlib openai
 ```
+如需调用 LLM 进行全自动扩展包生成与数值平衡，请在系统环境变量或当前终端配置 `DEEPSEEK_API_KEY`：
+```powershell
+$env:DEEPSEEK_API_KEY="your-deepseek-api-key"
+```
 
-### 2. 运行对局与复盘
+### 2. 一键启动全自动闭环流水线（推荐旗舰入口）
 
-- **终端实时对决**：
+执行全自动六阶段扩展包印制、推荐构筑、PPO 自博弈演化与 DeepSeek 数值平衡协同流水线：
+
+```bash
+# 全量端到端执行 (学术级 3,000 局混战采样)
+python pipeline_orchestrator.py --pack-name "破晓对决补充包" --theme "环境数据驱动缺啥补啥与双色协同"
+
+# 快速演练模式 (小规模局数快速验证双环状态机调度)
+python pipeline_orchestrator.py --dry-run --skip-print
+```
+
+**核心命令行参数说明**：
+
+| 参数 | 类型 | 默认值 | 描述与学术意义 |
+| :--- | :---: | :---: | :--- |
+| `--episodes` | int | `3000` | 每轮混战对局规模。满足大数定律，保证阵营胜率统计误差半径控制在 $\pm 1.8\%$ 以内 |
+| `--target-balance` | float | `2.8` | 目标收敛偏离容差（百分点）。要求三大阵营综合胜率均落入 $[47.2\%, 52.8\%]$ 黄金平衡带 |
+| `--max-deck-attempts` | int | `2` | 同一卡池下 PPO 内环自主微调构筑的尝试次数（兼顾智能体战术深度与执行时效） |
+| `--severe-imbalance-threshold` | float | `6.0` | 阵营胜率严重失衡熔断阈值。最大偏离度 $\ge 6.0\%$ 时判定为单卡数值硬伤，跳过剩余卡组微调直接触发外环数值修补 |
+| `--severe-spread-threshold` | float | `10.0` | 阵营胜率极差熔断阈值。最高与最低阵营胜率之差 $\ge 10.0\%$ 时直接触发熔断快转 |
+| `--max-outer-iterations` | int | `10` | 最大 DeepSeek 外环数值修补迭代轮次上限 |
+| `--skip-print` | flag | `False` | 跳过阶段一印卡，直接基于当前现有卡池开启闭环微调 |
+| `--eval-only` | flag | `False` | 纯评估模式（跳过 PPO 网络梯度更新，默认关闭以执行真强化学习演化） |
+| `--dry-run` | flag | `False` | 快速演练模式（小规模样本快速调试） |
+
+### 3. 单独运行各功能模块（模块化实验）
+
+- **终端实时对决与步进观测**：
   ```bash
-  cd PythonApplication23
   python eval_play.py --stage tuned
-  ```
-
-- **交互式 Web 回放**：
-  直接在浏览器中打开 `PythonApplication23/battle_replay.html`，可进行分步回放、拖动进度条、调整播放速度等操作。
-
-- **指定阵营对抗**：
-  ```bash
   # 绿方 vs 红方 对战演示
   python eval_play.py --p0 Green --p1 Red --decks decks_config.json
   ```
 
-### 3. 模型训练与实验验证
+- **交互式 Web 回放与对局复盘**：
+  直接在浏览器中打开 `battle_replay.html`，可进行分步回放、拖动进度条、调整播放速度等操作。
 
-- **运行基准组 / 调优组 PPO 训练 (1,000 局)**：
+- **Web 竞技场战力辅助大屏与天梯榜查看**：
+  直接在浏览器中打开 `hearthstone_assistant.html`，或查看 `card_tier_table.md`（包含 S/A/B/C/D 五级分级、卡牌战力得分贡献及构筑推荐）。
+
+- **独立 PPO 强化学习训练 (1,000 局)**：
   ```bash
   python train.py --stage baseline --episodes 1000
   python train.py --stage tuned --episodes 1000
   ```
 
-- **三大阵营混战测试**：
+- **独立多阵营混战自博弈**：
   ```bash
-  python train_brawl.py --episodes 6000
+  python train_brawl.py --episodes 3000
   ```
 
-- **重新生成实验对比图表**：
+- **PPO 智能体构筑探索**：
   ```bash
-  python plot_experiments.py
-  ```
-
-### 4. 智能构筑与自动化工具
-
-- **PPO 价值评估智能选卡构筑**：
-  ```bash
-  python deck_builder_ppo.py --factions Red,Blue --generations 4 --games-per-gen 50
-  ```
-
-- **LLM 辅助卡组构筑**：
-  ```bash
-  python deck_builder_deepseek.py --factions Red,Blue,Green
-  ```
-
-- **卡牌数值自动平衡**：
-  ```bash
-  python auto_balancer_deepseek.py
-  ```
-
-- **AI 卡组实机对抗批处理评测 (支持红/蓝/绿任意对抗)**：
-  ```bash
-  python test_deck_matchup.py --episodes 500 --p0 Red --p1 Blue
-  ```
-
-- **全自动多阵营元平衡流水线 (自博弈迭代收敛至纳什均衡)**：
-  ```bash
-  python auto_meta_balancer.py
-  ```
-
-- **生成炉石风格卡牌战力评级表与 Web 交互大屏**：
-  ```bash
-  python generate_hearthstone_tier_table.py
-  ```
-
-- **新卡生成与验证**：
-  ```bash
-  python card_printer_deepseek.py --faction Green --count 2 --theme "跳费与高费随从"
+  python deck_builder_ppo.py --factions Red,Blue,Green --generations 5 --games-per-gen 50 --samples 15
   ```
 
 ---
 
 ## 项目结构
 
+本项目支持在工作区根目录与 `PythonApplication23/` 目录下同构运行（流水线第 6 阶段会自动执行核心资产的双向双副本同步）：
+
 ```text
 ├── .gitignore                           # Git 忽略配置
-├── README.md                            # 项目说明文档
-└── PythonApplication23/
-    ├── sandbox.py                       # 核心对战引擎 (DuelEnv 环境)
-    ├── agent.py                         # PPO 策略价值网络 (CardNet)
-    ├── train.py                         # PPO 训练入口 (baseline / tuned)
-    ├── train_brawl.py                   # 多阵营混战自博弈训练
-    ├── test_deck_matchup.py             # 多阵营 AI 卡组实机对抗批处理评测工具
-    ├── eval_play.py                     # 对战演示与 Replay 数据导出
-    ├── visualizer.py                    # 终端 ASCII 棋盘与 HTML 回放生成器
-    ├── battle_replay.html               # Web 端交互式对战复盘播放器
-    ├── deck_builder_ppo.py              # 基于 PPO 价值评估的卡组构筑器
-    ├── deck_builder_deepseek.py         # 基于 LLM 的卡组构筑器
-    ├── auto_balancer_deepseek.py        # 基于遥测数据的 LLM 数值平衡工具
-    ├── auto_meta_balancer.py            # 多阵营全自动闭环元平衡流水线
-    ├── card_printer_deepseek.py         # 新卡生成与验证工具
-    ├── generate_hearthstone_tier_table.py # 单卡胜率贡献与梯队榜生成
-    ├── card_tier_table.md               # 分色卡牌战力评级与构筑指南 (Markdown专榜)
-    ├── hearthstone_assistant.html       # Web 交互式竞技场单卡辅助大屏
-    ├── plot_experiments.py              # 实验数据可视化绘图
-    ├── cards_config_baseline.json       # 基准卡池 (未平衡状态)
-    ├── cards_config_tuned.json          # 调优后卡池 (红蓝平衡状态)
-    ├── cards_config.json                # 当前全量生态卡池 (含专属、中立与双色卡共 60 张)
-    ├── decks_config.json                # 各阵营 PPO 自主迭代 30 张实战卡组
-    ├── figure_comparison.png            # 红蓝对决调优对比图表
-    ├── figure_brawl_comparison.png      # 三大阵营全自动调优前后与收敛大屏 (R0->R3)
-    └── figure_brawl.png                 # 三大阵营 3000 局最终纳什均衡看板与核心卡牌频次
+├── README.md                            # 项目说明文档与实验报告
+├── pipeline_orchestrator.py             # 【核心入口】全自动扩展包印制与双环自平衡协同流水线
+├── sandbox.py                           # 核心对战引擎 (DuelEnv 环境，含先后手 50.03% 对称平衡机制)
+├── agent.py                             # PPO 策略价值网络 (CardNet Actor-Critic)
+├── train_brawl.py                       # 多阵营高并发混战自博弈强化学习训练器
+├── train.py                             # 两阵营基准组/调优组 PPO 训练入口
+├── deck_builder_ppo.py                  # 基于 Critic Value Head 与蒙特卡洛采样的智能卡组构筑器
+├── auto_balancer_deepseek.py            # 基于对战遥测数据的 LLM 数值针对性微调工具
+├── card_printer_deepseek.py             # 基于环境战报定向生成新卡工具
+├── generate_hearthstone_tier_table.py   # 单卡胜率与得分贡献统计及天梯榜生成器
+├── card_tier_table.md                   # 炉石风格卡牌战力天梯榜 (S/A/B/C/D 分级与构筑指南)
+├── hearthstone_assistant.html           # Web 交互式竞技场单卡抓位与套牌构建辅助大屏
+├── battle_replay.html                   # Web 端交互式对战动态复盘播放器
+├── eval_play.py                         # 对战演示与 Replay 轨迹数据导出
+├── visualizer.py                        # 终端 ASCII 棋盘与 HTML 回放生成器
+├── test_deck_matchup.py                 # 多阵营 AI 卡组实机对抗批处理评测工具
+├── cards_config.json                    # 全量生态卡池配置 (含单色阵营专属、中立与双色卡)
+├── decks_config.json                    # 各阵营 PPO 自主演化迭代的 30 张实战卡组
+├── training_metrics_brawl.json          # 3,000 局混战最新遥测数据与对弈矩阵
+├── figure_comparison.png                # 红蓝对决调优对比图表
+├── figure_brawl_comparison.png          # 三大阵营全自动调优前后与收敛对比大屏
+└── figure_brawl.png                     # 三大阵营 3000 局最终纳什均衡看板与核心卡牌频次分布
 ```
 
 ---
