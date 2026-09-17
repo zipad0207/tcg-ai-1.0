@@ -576,9 +576,9 @@ def main():
     parser = argparse.ArgumentParser(description="TCG-AI 全自动扩展包印制与双环自平衡协同流水线 (Pipeline Orchestrator)")
     parser.add_argument("--pack-name", type=str, default="破晓对决补充包", help="扩展包名称")
     parser.add_argument("--theme", type=str, default="环境数据驱动缺啥补啥与双色协同", help="设计主题")
-    parser.add_argument("--episodes", type=int, default=1200, help="每轮自博弈混战对局规模 (默认 1200)")
+    parser.add_argument("--episodes", type=int, default=1200, help="每轮自博弈混战对局规模 (默认 1200 局，保证统计置信度)")
     parser.add_argument("--target-balance", type=float, default=2.8, help="目标平衡偏离容差 (默认 2.8 百分点)")
-    parser.add_argument("--max-deck-attempts", type=int, default=1, help="同一卡池下 PPO 自主微调构筑的尝试次数 (默认 1 次，快速触发数值调整)")
+    parser.add_argument("--max-deck-attempts", type=int, default=3, help="同一卡池下 PPO 自主微调构筑的尝试次数 (默认 3 次，充分发挥智能体构筑优化能力)")
     parser.add_argument("--max-outer-iterations", type=int, default=10, help="最大 DeepSeek 外环数值微调迭代轮次 (默认 10 轮)")
     parser.add_argument("--max-iterations", type=int, default=None, help="(兼容旧参数) 等价于 --max-outer-iterations")
     parser.add_argument("--skip-print", action="store_true", help="跳过印卡阶段，直接基于现有卡池开始闭环调优")
@@ -591,9 +591,9 @@ def main():
     metrics_file = resolve_path("training_metrics_brawl.json")
 
     brawl_episodes = 60 if args.dry_run else args.episodes
-    ppo_gens = 2 if args.dry_run else 3
-    ppo_games = 15 if args.dry_run else 25
-    ppo_samples = 4 if args.dry_run else 8
+    ppo_gens = 2 if args.dry_run else 5
+    ppo_games = 15 if args.dry_run else 50
+    ppo_samples = 4 if args.dry_run else 12
     deck_attempts = 1 if args.dry_run else args.max_deck_attempts
 
     print("=" * 85)
@@ -653,20 +653,8 @@ def main():
             # 3A: PPO 智能体调构筑 (增量演化)
             step3_ppo_deck_evolution(cards_file, decks_file, generations=ppo_gens, games_per_gen=ppo_games, samples=ppo_samples)
 
-            # 自适应混战局数设定：根据当前偏离度调整对战规模
-            if args.dry_run:
-                current_brawl_episodes = 60
-            elif latest_max_dev >= 8.0:
-                current_brawl_episodes = 300
-                print(f"  [采样策略] 当前偏离度 {latest_max_dev:.1f}% 较高，执行 300 局快速采样...")
-            elif latest_max_dev >= 4.5:
-                current_brawl_episodes = 600
-                print(f"  [采样策略] 当前偏离度 {latest_max_dev:.1f}%，执行 600 局平稳采样...")
-            else:
-                current_brawl_episodes = min(args.episodes, 1200)
-                print(f"  [采样策略] 当前偏离度 {latest_max_dev:.1f}%，执行 {current_brawl_episodes} 局验证采样...")
-
-            # 3B: 实机混战对抗遥测 (极速评估模式)
+            # 3B: 实机混战对抗遥测 (按设定规模全量采样，保证统计置信度)
+            current_brawl_episodes = 60 if args.dry_run else args.episodes
             metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=current_brawl_episodes, eval_only=True)
             latest_metrics = metrics
 
@@ -693,14 +681,10 @@ def main():
                 print("★" * 70)
                 break
             else:
-                if max_dev >= 16.0 and attempt == 1 and deck_attempts > 1:
-                    print(f"\n[检测] 偏离度 {max_dev:.2f}% 显著偏高，跳过后续卡组微调，直接进入卡牌数值调整。")
-                    break
-
                 if attempt < deck_attempts:
                     print(f"\n[检测] 当前偏离度 {max_dev:.2f}% > 目标 {args.target_balance:.2f}%，继续进行卡组微调 ({attempt + 1} / {deck_attempts})...")
                 else:
-                    print(f"\n[检测] 本轮卡组微调完毕，偏离度仍为 {max_dev:.2f}%，触发卡牌数值调整。")
+                    print(f"\n[检测] PPO 已完成 {deck_attempts} 次卡组构筑探索，偏离度仍为 {max_dev:.2f}%，触发卡牌数值微调。")
 
         if is_balanced:
             break
