@@ -117,56 +117,56 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
     over_instructions = []
     for f, wr, diff in overperforming:
         over_instructions.append(f"""
-   * 🚨【重拳削弱超标阵营 —— {f} (当前胜率 {wr:.1f}%，超标 +{diff:.1f}%)】：
-     - 检查【{f}】阵营的核心大怪/终结随从：大幅提升其费用 (+1~+2 费)，或直接下调其基础身材战力 (base_dp 削减 2~4 点)！
-     - 检查【{f}】阵营的跳费/暴费/法力增长引擎 (如带 RAMP/DEATH_MANA 词条或法术)：调高启动门槛 (+1~+2 费) 或削弱其跳费效率！
-     - 检查【{f}】阵营的过牌/润滑引擎 (如带 DRAW/DEATH_DRAW 词条)：增加费用 (+1~+2 费) 或减少抽牌张数，彻底遏制滚雪球过牌！
-     - 检查【{f}】阵营的冲锋突破/突袭打手 (如带 RUSH/BONUS_SCORE 词条)：剥离过于强势的突袭词条，或提高费用以延迟爆发！""")
+   * 【削弱过强阵营 —— {f} (当前胜率 {wr:.1f}%，高出基准 +{diff:.1f}%)】：
+     - 核心高费随从/终结手段：适当提升费用 (+1~+2 费)，或下调基础战力 (base_dp 削减 1~3 点)；
+     - 资源获取/跳费引擎 (含 RAMP/DEATH_MANA 词条或法术)：适度提高费用门槛或削减加速效率；
+     - 过牌润滑组件 (含 DRAW/DEATH_DRAW 词条)：增加费用 (+1 费) 或减少抽牌量；
+     - 突袭/突破打手 (含 RUSH/BONUS_SCORE 词条)：调整突袭词条或提高费用延迟启动。""")
 
     under_instructions = []
     for f, wr, diff in underperforming:
         under_instructions.append(f"""
-   * 🛡️【质变补强弱势阵营 —— {f} (当前胜率 {wr:.1f}%，落后 -{diff:.1f}%)】：
-     - 若该阵营先前被过度削弱：适度回调关键卡（费用 -1 费，或提升随从身材 +1~+2 DP），恢复其运转轴！
-     - 强化前期低费直伤与解场：将 1~3 费法术直伤 atk_spell_val 提高 2~4 点伤害，或下调高费单解法术消耗 (-1~-2 费)！
-     - 打造前期防守门神与阻挡墙：为 1~3 费防守怪大幅增加 FORTIFY_3/FORTIFY_4 坚守词条，或提升 base_dp (+2~+3 点)，甚至赋予 DEGRADE_2 削弱词条！
-     - 降低中后期核心大哥与制胜法术费用 (-1~-2 费)，确保能顺利拖入中后期反败为胜！""")
+   * 【补强落后阵营 —— {f} (当前胜率 {wr:.1f}%，落后基准 -{diff:.1f}%)】：
+     - 若关键牌先前被过度调整：适度回调费用 (-1 费) 或增强身材 (+1~+2 DP)；
+     - 前期直伤与解场手段：提高低费直伤 atk_spell_val (+1~+2 点) 或降低单解消耗 (-1 费)；
+     - 防守与阻挡能力：提升低费防守怪 base_dp 或赋予 FORTIFY_2/FORTIFY_3 坚守词条；
+     - 中后期制胜核心：适度降低费用 (-1 费) 提升出场率。""")
 
     over_text = "\n".join(over_instructions) if over_instructions else "   * 暂无超标阵营（各阵营均在安全线以下）。"
     under_text = "\n".join(under_instructions) if under_instructions else "   * 暂无垫底阵营（各阵营均在安全线以上）。"
 
     if max_dev >= 8.0:
-        mode_banner = f"【🚨 动态全环境重拳调优模式 (Heavy Overhaul Mode) | 最大偏离度: {max_dev:.1f}%】"
+        mode_banner = f"【大幅数值调整模式 (Major Overhaul Mode) | 最大偏离度: {max_dev:.1f}%】"
         balance_instructions = f"""
-### 🚨【动态全环境重拳手术级调优 (Heavy Overhaul Mode)】
-当前生态存在显著的胜率断层（最大偏离度高达 {max_dev:.1f}%，严重超出纳什平衡带）！
-常规的 ±1 点微弱调整无法打破结构性垄断，必须采取**多阵营联动的手术级重拳改动**：
+### 【大幅数值调整说明 (Major Overhaul)】
+当前阵营间胜率差距较为显著（最大偏离度 {max_dev:.1f}%）。
+需针对关键卡牌进行多维度属性调整：
 
-1. **调整规模（硬性约束，严禁输出 0 处修改）**：
-   - 必须**同时对 4 ~ 8 张核心卡牌进行实质性属性调整**！
-   - 针对超标强势阵营削弱 2~4 张，针对弱势阵营补强 2~4 张，形成生态平衡合力！
-   - 严禁只修改 0~1 张卡！严禁不输出任何改动！
+1. **调整规模**：
+   - 对 4 ~ 8 张核心卡牌进行针对性属性调整；
+   - 过强阵营削弱 2~4 张，弱势阵营补强 2~4 张；
+   - 必须输出明确的修改。
 
-2. **动态阵营靶向处置方案**：
+2. **阵营针对性调整**：
 {over_text}
 {under_text}
 
-3. **词条手术权限**：
-   - 明确授权：对超标阵营的核心强势卡直接剥离或降级不合理词条（如取消 RUSH、减少 DRAW 数值）；
-   - 明确授权：为弱势阵营的关键防守/节奏卡增加急需词条（如赋予 FORTIFY_3、DEGRADE_2、RUSH 等合法词条）。
+3. **词条微调**：
+   - 可对过强卡牌精简过于强势的词条（如取消 RUSH 或减少数值）；
+   - 可为弱势卡牌补充急需词条（如赋予 FORTIFY、DEGRADE 等合法词条）。
 """
     else:
-        mode_banner = f"【🎯 黄金带精准精细微调模式 (Precision Tuning Mode) | 最大偏离度: {max_dev:.1f}%】"
+        mode_banner = f"【精细微调模式 (Fine-Tuning Mode) | 最大偏离度: {max_dev:.1f}%】"
         balance_instructions = f"""
-### 🎯【黄金带精准精细微调模式 (Precision Tuning Mode)】
-当前生态正接近 48%~52% 黄金竞技平衡线（最大偏离度 {max_dev:.1f}% < 8%）。
-请基于实战战报进行局部精准修剪：
-1. **调整规模（硬性约束，严禁输出 0 处修改）**：挑选 2 ~ 4 张最关键卡牌进行微调。只要有阵营胜率偏离 50% 超过容差，必须输出明确的修改！
+### 【局部精细微调说明 (Fine-Tuning)】
+当前各阵营胜率已接近平衡区间（最大偏离度 {max_dev:.1f}% < 8%）。
+需基于对战统计进行小幅修剪：
+1. **调整规模**：挑选 2 ~ 4 张关键卡牌进行微调。
 2. **微调原则**：
 {over_text}
 {under_text}
-   - 费用调整 ±1，随从身材 ±1~2 点，法术解场/增益数值 ±1~2 点，词条参数适度微调。
-   - 保持现有卡牌体系稳定性，平滑引导各阵营全部收敛至 50% 完美平衡线。
+   - 费用调整 ±1，随从身材 ±1~2 点，法术数值 ±1~2 点；
+   - 保持卡牌体系稳定性，平滑引导各阵营胜率趋近 50%。
 """
 
     prompt = f"""
@@ -354,7 +354,7 @@ def main():
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(updated_pool, f, indent=2, ensure_ascii=False)
             
-        print(f"\n已完成卡池数值调优 (共重拳更新 {updated_count} 处属性/词条)，已保存至: {output_file}")
+        print(f"\n已完成卡池数值调优 (共更新 {updated_count} 处属性/词条)，已保存至: {output_file}")
 
         total_cards = sum(len(cards) for cards in updated_pool.values())
         print(f"当前卡池规模: {total_cards} 张")
