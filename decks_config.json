@@ -56,7 +56,7 @@
     "total_cards": 30,
     "minion_count": 28,
     "spell_count": 2,
-    "avg_cost": 4.43,
+    "avg_cost": 4.13,
     "mana_curve": {
       "0": 0,
       "1": 2,
@@ -65,9 +65,8 @@
       "4": 3,
       "5": 2,
       "6": 3,
-      "7": 0,
-      "8": 1,
-      "9": 6
+      "7": 3,
+      "8": 4
     },
     "card_allocation": {
       "101": 3,
@@ -249,9 +248,9 @@
       {
         "id": 111,
         "name": "赤红掠袭者",
-        "cost": 9,
+        "cost": 8,
         "card_type": "MINION",
-        "base_dp": 1,
+        "base_dp": 6,
         "atk_spell_val": 0,
         "def_spell_val": 0,
         "tags": [
@@ -266,9 +265,9 @@
       {
         "id": 114,
         "name": "赤红突破手",
-        "cost": 9,
+        "cost": 7,
         "card_type": "MINION",
-        "base_dp": 1,
+        "base_dp": 5,
         "atk_spell_val": 0,
         "def_spell_val": 0,
         "tags": [
@@ -381,8 +380,7 @@
       "5": 0,
       "6": 6,
       "7": 0,
-      "8": 0,
-      "9": 0
+      "8": 0
     },
     "card_allocation": {
       "201": 2,
@@ -480,7 +478,7 @@
       },
       {
         "id": 227,
-        "name": "潮汐学者",
+        "name": "潮汐学徒",
         "cost": 2,
         "card_type": "MINION",
         "base_dp": 2,
@@ -625,7 +623,7 @@
       },
       {
         "id": 214,
-        "name": "蔚蓝盾卫",
+        "name": "蔚蓝泰坦盾卫",
         "cost": 6,
         "card_type": "MINION",
         "base_dp": 6,

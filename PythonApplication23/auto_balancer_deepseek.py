@@ -117,11 +117,12 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
     over_instructions = []
     for f, wr, diff in overperforming:
         over_instructions.append(f"""
-   * 【削弱过强阵营 —— {f} (当前胜率 {wr:.1f}%，高出基准 +{diff:.1f}%)】：
-     - 核心高费随从/终结手段：适当提升费用 (+1~+2 费)，或下调基础战力 (base_dp 削减 1~3 点)；
-     - 资源获取/跳费引擎 (含 RAMP/DEATH_MANA 词条或法术)：适度提高费用门槛或削减加速效率；
-     - 过牌润滑组件 (含 DRAW/DEATH_DRAW 词条)：增加费用 (+1 费) 或减少抽牌量；
-     - 突袭/突破打手 (含 RUSH/BONUS_SCORE 词条)：调整突袭词条或提高费用延迟启动。""")
+    * 【削弱过强阵营 —— {f} (当前胜率 {wr:.1f}%，高出基准 +{diff:.1f}%)】：
+      - 核心铁律：【优先削弱/剥离过于强势的机制词条，严禁将高费大哥削弱为 1/1 畸形身材！】
+      - 突袭与破阵冲锋 (含 RUSH/BONUS_SCORE 词条)：若终结怪胜率超标，必须优先剥离 BONUS_SCORE_1 词条，或将 RUSH 削去改为普通蓄势，绝不可无脑砍身材；
+      - 资源跳费/过牌引擎 (含 RAMP/DRAW 词条)：增加费用 (+1 费) 或将双抽/双跳下调为单抽/单跳；
+      - 身材底线约束：高费随从必须符合战力基准（6费 >= 4 DP, 7~8费 >= 5 DP, 9费 >= 6 DP），坚决杜绝高费低攻畸形卡；
+      - 核心高费随从：若身材依然超标，适当提升费用 (+1 费) 或小幅下调身材 (-1~2 DP)。""")
 
     under_instructions = []
     for f, wr, diff in underperforming:
@@ -372,7 +373,24 @@ def main():
                             new_val = min(10, max(1, int(new_val)))
                         except Exception:
                             continue
-                    elif field in ["base_dp", "atk_spell_val", "def_spell_val"]:
+                    elif field == "base_dp":
+                        try:
+                            val = int(new_val)
+                            cost = orig_card.get("cost", 1)
+                            if orig_card.get("card_type") == "MINION":
+                                # 防御机制：高费随从身材保底，防止大模型将高费怪削弱为畸形 1/1
+                                if cost >= 8:
+                                    val = max(5, val)
+                                elif cost >= 6:
+                                    val = max(3, val)
+                                elif cost >= 4:
+                                    val = max(2, val)
+                                else:
+                                    val = max(1, val)
+                            new_val = min(15, val)
+                        except Exception:
+                            continue
+                    elif field in ["atk_spell_val", "def_spell_val"]:
                         try:
                             new_val = max(0, int(new_val))
                         except Exception:

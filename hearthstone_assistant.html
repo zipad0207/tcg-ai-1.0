@@ -10,14 +10,14 @@
   <style>
     :root {
       --bg-main: #0b0d13;
-      --bg-card: rgba(20, 24, 36, 0.9);
-      --border-main: rgba(255, 255, 255, 0.1);
+      --bg-card: rgba(20, 24, 36, 0.92);
+      --border-main: rgba(255, 255, 255, 0.08);
       --red-theme: #ff4757;
-      --red-bg: linear-gradient(135deg, #ff4757, #c0392b);
+      --red-glow: rgba(255, 71, 87, 0.35);
       --blue-theme: #1e90ff;
-      --blue-bg: linear-gradient(135deg, #3742fa, #2f3542);
+      --blue-glow: rgba(30, 144, 255, 0.35);
       --green-theme: #2ed573;
-      --green-bg: linear-gradient(135deg, #2ed573, #1e824c);
+      --green-glow: rgba(46, 213, 115, 0.35);
       --gold: #f39c12;
       --gold-glow: rgba(243, 156, 18, 0.4);
       --text-main: #f1f2f6;
@@ -42,7 +42,7 @@
 
     .sys-title {
       font-family: 'Cinzel', 'Noto Sans SC', serif;
-      font-size: 2.2rem;
+      font-size: 2.3rem;
       font-weight: 900;
       background: linear-gradient(135deg, #ffeaa7, #fdcb6e, #e17055);
       -webkit-background-clip: text;
@@ -54,14 +54,14 @@
     .sys-subtitle {
       color: var(--text-dim);
       font-size: 0.95rem;
-      max-width: 900px;
+      max-width: 960px;
       margin: 0 auto;
     }
 
-    /* 卡组专属 Tab 选择器 (按卡组颜色分色) */
+    /* 卡组专属 Tab 选择器 */
     .deck-tabs {
       max-width: 1320px;
-      margin: 0 auto 20px auto;
+      margin: 0 auto 16px auto;
       display: flex;
       gap: 12px;
       background: rgba(14, 18, 28, 0.85);
@@ -73,18 +73,19 @@
 
     .tab-btn {
       flex: 1;
-      padding: 12px 20px;
+      padding: 12px 18px;
       border-radius: 8px;
       border: 1px solid transparent;
       background: transparent;
       color: var(--text-dim);
-      font-size: 1rem;
+      font-size: 0.98rem;
       font-weight: 700;
       cursor: pointer;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 4px;
       transition: all 0.25s ease;
     }
 
@@ -97,21 +98,126 @@
       background: linear-gradient(135deg, rgba(255, 71, 87, 0.25), rgba(235, 47, 6, 0.15));
       border-color: #ff4757;
       color: #ff6b81;
-      box-shadow: 0 0 16px rgba(255, 71, 87, 0.3);
+      box-shadow: 0 0 16px var(--red-glow);
     }
 
     .tab-btn.tab-blue.active {
       background: linear-gradient(135deg, rgba(30, 144, 255, 0.25), rgba(47, 53, 66, 0.15));
       border-color: #1e90ff;
       color: #70a1ff;
-      box-shadow: 0 0 16px rgba(30, 144, 255, 0.3);
+      box-shadow: 0 0 16px var(--blue-glow);
     }
 
     .tab-btn.tab-green.active {
       background: linear-gradient(135deg, rgba(46, 213, 115, 0.25), rgba(30, 130, 76, 0.15));
       border-color: #2ed573;
       color: #7bed9f;
-      box-shadow: 0 0 16px rgba(46, 213, 115, 0.3);
+      box-shadow: 0 0 16px var(--green-glow);
+    }
+
+    /* 卡组架构与法力曲线全景看板 */
+    .deck-architecture-banner {
+      max-width: 1320px;
+      margin: 0 auto 20px auto;
+      background: rgba(18, 22, 34, 0.85);
+      border: 1px solid var(--border-main);
+      border-radius: 12px;
+      padding: 16px 22px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(8px);
+    }
+
+    .deck-title-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 260px;
+    }
+
+    .deck-main-name {
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .deck-desc-tag {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+    }
+
+    /* 法力曲线直方图展示 */
+    .mana-curve-container {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 6px 12px;
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .curve-bar-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .curve-count {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #ffeaa7;
+      font-family: 'Cinzel', sans-serif;
+    }
+
+    .curve-bar {
+      width: 16px;
+      border-radius: 3px 3px 0 0;
+      background: linear-gradient(180deg, #74b9ff, #0984e3);
+      transition: height 0.3s ease;
+      min-height: 4px;
+    }
+
+    .curve-mana-label {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+
+    .deck-stat-pills {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 6px 12px;
+      border-radius: 6px;
+    }
+
+    .stat-pill-label {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+    }
+
+    .stat-pill-val {
+      font-size: 0.98rem;
+      font-weight: 800;
+      color: #ffeaa7;
+      font-family: 'Cinzel', sans-serif;
     }
 
     /* 控制栏 */
@@ -119,19 +225,25 @@
       max-width: 1320px;
       margin: 0 auto 20px auto;
       display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-main);
+      padding: 14px 20px;
+      border-radius: 10px;
+    }
+
+    .controls-row {
+      display: flex;
       flex-wrap: wrap;
       gap: 12px;
       align-items: center;
       justify-content: space-between;
-      background: var(--bg-card);
-      border: 1px solid var(--border-main);
-      padding: 12px 18px;
-      border-radius: 10px;
     }
 
     .filter-group {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       align-items: center;
       flex-wrap: wrap;
     }
@@ -140,23 +252,29 @@
       font-size: 0.85rem;
       color: var(--gold);
       font-weight: 700;
+      margin-right: 4px;
     }
 
-    .btn-tier {
+    .btn-tier, .btn-tag {
       background: #141b2b;
       border: 1px solid #2f3640;
       color: var(--text-main);
-      padding: 5px 12px;
-      border-radius: 16px;
-      font-size: 0.82rem;
+      padding: 4px 10px;
+      border-radius: 14px;
+      font-size: 0.8rem;
       cursor: pointer;
       transition: all 0.2s;
     }
 
-    .btn-tier.active {
+    .btn-tier:hover, .btn-tag:hover {
+      border-color: #747d8c;
+    }
+
+    .btn-tier.active, .btn-tag.active {
       background: var(--gold);
       color: #000;
       font-weight: 700;
+      border-color: var(--gold);
     }
 
     .select-opt {
@@ -177,8 +295,13 @@
       padding: 6px 14px;
       border-radius: 16px;
       font-size: 0.82rem;
-      width: 180px;
+      width: 260px;
       outline: none;
+      transition: border 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--gold);
     }
 
     /* 卡牌网格与表格容器 */
@@ -187,7 +310,6 @@
       margin: 0 auto;
     }
 
-    /* 网格卡片 */
     .card-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(390px, 1fr));
@@ -216,18 +338,18 @@
     .card-card.tier-a { border-left: 4px solid #ffa502; }
     .card-card.tier-b { border-left: 4px solid #2ed573; }
     .card-card.tier-c { border-left: 4px solid #1e90ff; }
-    .card-card.tier-d { border-left: 4px solid #747d8c; opacity: 0.85; }
+    .card-card.tier-d { border-left: 4px solid #747d8c; opacity: 0.88; }
 
     .card-top {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
+      align-items: flex-start;
+      margin-bottom: 8px;
     }
 
     .mana-circle {
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
       background: radial-gradient(circle at 35% 35%, #00cec9, #0984e3, #1b1464);
       border: 2px solid #74b9ff;
@@ -236,9 +358,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.05rem;
+      font-size: 1.1rem;
       box-shadow: 0 0 8px rgba(9, 132, 227, 0.5);
-      margin-right: 10px;
+      margin-right: 12px;
+      flex-shrink: 0;
     }
 
     .card-info-box {
@@ -252,6 +375,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      flex-wrap: wrap;
     }
 
     .card-tag-origin {
@@ -262,13 +386,121 @@
       color: var(--text-dim);
     }
 
+    .card-tag-copies {
+      font-size: 0.68rem;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    /* 机制词条徽章 */
+    .card-tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin: 6px 0 10px 0;
+    }
+
+    .tag-badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 12px;
+      white-space: nowrap;
+      letter-spacing: 0.3px;
+    }
+
+    .tag-rush {
+      background: rgba(255, 71, 87, 0.16);
+      border: 1px solid #ff4757;
+      color: #ff6b81;
+      box-shadow: 0 0 6px rgba(255, 71, 87, 0.25);
+    }
+
+    .tag-fortify {
+      background: rgba(30, 144, 255, 0.16);
+      border: 1px solid #1e90ff;
+      color: #70a1ff;
+      box-shadow: 0 0 6px rgba(30, 144, 255, 0.25);
+    }
+
+    .tag-ramp {
+      background: rgba(46, 213, 115, 0.16);
+      border: 1px solid #2ed573;
+      color: #7bed9f;
+      box-shadow: 0 0 6px rgba(46, 213, 115, 0.25);
+    }
+
+    .tag-draw {
+      background: rgba(162, 155, 254, 0.16);
+      border: 1px solid #a29bfe;
+      color: #dcdde1;
+      box-shadow: 0 0 6px rgba(162, 155, 254, 0.25);
+    }
+
+    .tag-kill {
+      background: rgba(231, 76, 60, 0.2);
+      border: 1px solid #e74c3c;
+      color: #ff7675;
+      box-shadow: 0 0 6px rgba(231, 76, 60, 0.3);
+    }
+
+    .tag-degrade {
+      background: rgba(230, 126, 34, 0.16);
+      border: 1px solid #e67e22;
+      color: #f39c12;
+      box-shadow: 0 0 6px rgba(230, 126, 34, 0.25);
+    }
+
+    .tag-bonus {
+      background: rgba(241, 196, 15, 0.16);
+      border: 1px solid #f1c40f;
+      color: #f9ca24;
+      box-shadow: 0 0 6px rgba(241, 196, 15, 0.25);
+    }
+
+    .tag-support {
+      background: rgba(0, 206, 201, 0.16);
+      border: 1px solid #00cec9;
+      color: #81ecec;
+      box-shadow: 0 0 6px rgba(0, 206, 201, 0.25);
+    }
+
+    .tag-spawn {
+      background: rgba(26, 188, 156, 0.16);
+      border: 1px solid #1abc9c;
+      color: #55efc4;
+      box-shadow: 0 0 6px rgba(26, 188, 156, 0.25);
+    }
+
+    .tag-discard {
+      background: rgba(155, 89, 182, 0.16);
+      border: 1px solid #9b59b6;
+      color: #e056fd;
+      box-shadow: 0 0 6px rgba(155, 89, 182, 0.25);
+    }
+
+    .tag-plain {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-dim);
+    }
+
+    .tag-default {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #dfe6e9;
+    }
+
     .score-view {
       text-align: right;
     }
 
     .score-val {
       font-family: 'Cinzel', serif;
-      font-size: 1.8rem;
+      font-size: 1.75rem;
       font-weight: 900;
       line-height: 1;
     }
@@ -291,7 +523,7 @@
       border: 1px solid rgba(255,255,255,0.05);
       padding: 8px 12px;
       border-radius: 6px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .metric-row {
@@ -310,10 +542,21 @@
       font-family: 'Cinzel', sans-serif;
     }
 
+    .neural-meta-bar {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: #a4b0be;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
     .rec-bar {
       font-size: 0.78rem;
       color: #dfe6e9;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       display: flex;
       justify-content: space-between;
     }
@@ -323,9 +566,9 @@
       border-left: 3px solid var(--gold);
       padding: 8px 12px;
       border-radius: 0 6px 6px 0;
-      font-size: 0.78rem;
+      font-size: 0.8rem;
       color: #f1f2f6;
-      font-style: italic;
+      line-height: 1.4;
     }
 
     /* 表格视图 */
@@ -339,7 +582,7 @@
     table.data-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.88rem;
+      font-size: 0.86rem;
     }
 
     table.data-table th {
@@ -353,7 +596,7 @@
     }
 
     table.data-table td {
-      padding: 12px 14px;
+      padding: 10px 14px;
       border-bottom: 1px solid rgba(255,255,255,0.05);
       vertical-align: middle;
     }
@@ -376,44 +619,64 @@
   <div class="deck-tabs">
     <button class="tab-btn tab-red active" onclick="switchDeck('Red', this)">
       <span>🔴 赤红 (Red) 卡组</span>
-      <span style="font-size: 0.75rem; opacity: 0.8;">快攻突破流 · 25张候选</span>
+      <span style="font-size: 0.75rem; opacity: 0.85;">快攻突破流 · 46张候选池 (32专属 + 8双色 + 6中立)</span>
     </button>
     <button class="tab-btn tab-blue" onclick="switchDeck('Blue', this)">
       <span>🔵 蔚蓝 (Blue) 卡组</span>
-      <span style="font-size: 0.75rem; opacity: 0.8;">防守反击流 · 25张候选</span>
+      <span style="font-size: 0.75rem; opacity: 0.85;">防守反击流 · 46张候选池 (32专属 + 8双色 + 6中立)</span>
     </button>
     <button class="tab-btn tab-green" onclick="switchDeck('Green', this)">
       <span>🟢 翠绿 (Green) 卡组</span>
-      <span style="font-size: 0.75rem; opacity: 0.8;">跳费膨胀流 · 25张候选</span>
+      <span style="font-size: 0.75rem; opacity: 0.85;">跳费膨胀流 · 46张候选池 (32专属 + 8双色 + 6中立)</span>
     </button>
   </div>
 
+  <!-- 活跃卡组架构看板与法力曲线 -->
+  <div class="deck-architecture-banner" id="deckBanner"></div>
+
   <div class="controls-bar">
-    <div class="filter-group">
-      <span class="control-label">评级筛选:</span>
-      <button class="btn-tier active" onclick="filterTier('ALL', this)">全部</button>
-      <button class="btn-tier" onclick="filterTier('S', this)">S 核心</button>
-      <button class="btn-tier" onclick="filterTier('A', this)">A 主力</button>
-      <button class="btn-tier" onclick="filterTier('B', this)">B 优选</button>
-      <button class="btn-tier" onclick="filterTier('C', this)">C 备选</button>
-      <button class="btn-tier" onclick="filterTier('D', this)">D 暂缓</button>
+    <div class="controls-row">
+      <div class="filter-group">
+        <span class="control-label">评级筛选:</span>
+        <button class="btn-tier active" onclick="filterTier('ALL', this)">全部</button>
+        <button class="btn-tier" onclick="filterTier('S', this)">S 核心</button>
+        <button class="btn-tier" onclick="filterTier('A', this)">A 主力</button>
+        <button class="btn-tier" onclick="filterTier('B', this)">B 优选</button>
+        <button class="btn-tier" onclick="filterTier('C', this)">C 备选</button>
+        <button class="btn-tier" onclick="filterTier('D', this)">D 暂缓</button>
+      </div>
+
+      <div class="filter-group">
+        <span class="control-label">展现模式:</span>
+        <select class="select-opt" onchange="switchView(this.value)">
+          <option value="grid">🎴 卡牌卡片视图</option>
+          <option value="table">📋 详细数据大表</option>
+        </select>
+        <select class="select-opt" onchange="switchSort(this.value)">
+          <option value="score_desc">按综合评分降序</option>
+          <option value="win_desc">按对胜率影响 (ΔWR) 降序</option>
+          <option value="pick_desc">按携带比例降序</option>
+          <option value="cost_asc">按费用从低到高</option>
+        </select>
+      </div>
     </div>
 
-    <div class="filter-group">
-      <span class="control-label">展现模式:</span>
-      <select class="select-opt" onchange="switchView(this.value)">
-        <option value="grid">🎴 卡牌卡片视图</option>
-        <option value="table">📋 详细数据大表</option>
-      </select>
-      <select class="select-opt" onchange="switchSort(this.value)">
-        <option value="score_desc">按综合评分降序</option>
-        <option value="win_desc">按对胜率影响 (ΔWR) 降序</option>
-        <option value="pick_desc">按携带比例降序</option>
-        <option value="cost_asc">按费用从低到高</option>
-      </select>
-    </div>
+    <div class="controls-row">
+      <div class="filter-group">
+        <span class="control-label">核心机制:</span>
+        <button class="btn-tag active" onclick="filterTag('ALL', this)">全部机制</button>
+        <button class="btn-tag" onclick="filterTag('RUSH', this)">⚡ 突袭</button>
+        <button class="btn-tag" onclick="filterTag('FORTIFY', this)">🛡️ 坚守</button>
+        <button class="btn-tag" onclick="filterTag('RAMP', this)">💎 跳费/法力</button>
+        <button class="btn-tag" onclick="filterTag('DRAW', this)">📜 过牌/抽牌</button>
+        <button class="btn-tag" onclick="filterTag('SACRIFICE', this)">💀 献祭强解</button>
+        <button class="btn-tag" onclick="filterTag('DEGRADE', this)">⚔️ 削弱</button>
+        <button class="btn-tag" onclick="filterTag('BONUS_SCORE', this)">⭐ 破阵得分</button>
+        <button class="btn-tag" onclick="filterTag('SUPPORT', this)">🌟 光环支援</button>
+      </div>
 
-    <input type="text" class="search-input" placeholder="🔍 搜索卡牌名称或战术解析..." oninput="onSearch(this.value)">
+      <input type="text" class="search-input" placeholder="🔍 搜索卡牌名称、词条或战术解析..." oninput="onSearch(this.value)">
+    </div>
   </div>
 
   <div class="view-container">
@@ -425,31 +688,88 @@
     const FACTIONS_DATA = {
   "Red": [
     {
-      "id": 114,
-      "name": "赤红突破手",
+      "id": 127,
+      "name": "赤焰哨卫",
       "faction": "Red",
       "origin_type": "Red专属",
       "is_neutral": false,
-      "cost": 8,
+      "cost": 4,
       "card_type": "MINION",
-      "base_dp": 1,
+      "base_dp": 3,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "RUSH",
+        "FORTIFY_1"
+      ],
+      "actor_prob": 0.442,
+      "v_gain": 0.3979,
+      "util_score": 0.7600817337461299,
+      "copies": 3,
+      "pick_rate": 100.0,
+      "score": 97.6,
+      "win_impact": 5.1,
+      "tier": "S+",
+      "tier_name": "核心主轴",
+      "rec_count": "3 张 (核心满编)",
+      "tier_class": "tier-s",
+      "comment": "四费三攻突袭加固一。返场兼保频率，三张稳定中期交换。"
+    },
+    {
+      "id": 128,
+      "name": "熔岩破阵者",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 6,
+      "card_type": "MINION",
+      "base_dp": 4,
       "atk_val": 0,
       "def_val": 0,
       "tags": [
         "RUSH",
         "BONUS_SCORE_1"
       ],
-      "actor_prob": 0.39900329858064654,
-      "v_gain": 0.18495566695928572,
-      "raw_val": 0.2919794827699661,
+      "actor_prob": 0.404,
+      "v_gain": 0.3675,
+      "util_score": 0.7260582043343653,
+      "copies": 3,
       "pick_rate": 100.0,
-      "score": 97.0,
-      "win_impact": 4.0,
+      "score": 96.9,
+      "win_impact": 4.9,
       "tier": "S+",
       "tier_name": "核心主轴",
       "rec_count": "3 张 (核心满编)",
       "tier_class": "tier-s",
-      "comment": "八费突袭抢分，落场即交换或压血，满编提高终结手段上手率。"
+      "comment": "六费四攻突袭加分。即时输出与终结兼顾，三张拉满斩杀线。"
+    },
+    {
+      "id": 114,
+      "name": "赤红突破手",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 7,
+      "card_type": "MINION",
+      "base_dp": 5,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "RUSH",
+        "BONUS_SCORE_1"
+      ],
+      "actor_prob": 0.409,
+      "v_gain": 0.3615,
+      "util_score": 0.7243430340557274,
+      "copies": 3,
+      "pick_rate": 100.0,
+      "score": 96.7,
+      "win_impact": 4.9,
+      "tier": "S+",
+      "tier_name": "核心主轴",
+      "rec_count": "3 张 (核心满编)",
+      "tier_class": "tier-s",
+      "comment": "七费五攻突袭加分。中期斩杀核心，三张确保连续抢血压力。"
     },
     {
       "id": 111,
@@ -457,26 +777,54 @@
       "faction": "Red",
       "origin_type": "Red专属",
       "is_neutral": false,
-      "cost": 9,
+      "cost": 8,
       "card_type": "MINION",
-      "base_dp": 1,
+      "base_dp": 6,
       "atk_val": 0,
       "def_val": 0,
       "tags": [
         "RUSH",
         "BONUS_SCORE_1"
       ],
-      "actor_prob": 0.40215731263160703,
-      "v_gain": 0.15102221667766572,
-      "raw_val": 0.27658976465463636,
+      "actor_prob": 0.422,
+      "v_gain": 0.3442,
+      "util_score": 0.7188309597523219,
+      "copies": 3,
       "pick_rate": 100.0,
-      "score": 96.5,
-      "win_impact": 3.9,
+      "score": 96.4,
+      "win_impact": 4.8,
       "tier": "S+",
       "tier_name": "核心主轴",
       "rec_count": "3 张 (核心满编)",
       "tier_class": "tier-s",
-      "comment": "九费突袭带额外分，终结与补分兼备，满编保证高费回合稳定上手。"
+      "comment": "八费六攻突袭加分。终端抢血，三张保证后期斩杀上手率。"
+    },
+    {
+      "id": 900,
+      "name": "商人",
+      "faction": "Red",
+      "origin_type": "中立通用",
+      "is_neutral": true,
+      "cost": 2,
+      "card_type": "MINION",
+      "base_dp": 2,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "DRAW_1"
+      ],
+      "actor_prob": 0.698,
+      "v_gain": -0.0109,
+      "util_score": 0.6093547987616099,
+      "copies": 3,
+      "pick_rate": 100.0,
+      "score": 95.6,
+      "win_impact": 4.6,
+      "tier": "S+",
+      "tier_name": "核心主轴",
+      "rec_count": "3 张 (核心满编)",
+      "tier_class": "tier-s",
+      "comment": "二费二攻抽一。站场过牌一体，三张润滑快攻且不亏频率。"
     },
     {
       "id": 101,
@@ -492,43 +840,18 @@
       "tags": [
         "SPAWN_1_1"
       ],
-      "actor_prob": 0.36796274185180666,
-      "v_gain": -0.08131377846002578,
-      "raw_val": 0.14332448169589043,
+      "actor_prob": 0.605,
+      "v_gain": -0.0119,
+      "util_score": 0.5715356037151702,
+      "copies": 3,
       "pick_rate": 100.0,
-      "score": 90.0,
-      "win_impact": 2.9,
-      "tier": "S",
+      "score": 94.9,
+      "win_impact": 4.4,
+      "tier": "S+",
       "tier_name": "核心主轴",
       "rec_count": "3 张 (核心满编)",
       "tier_class": "tier-s",
-      "comment": "三费站场并召一杠一，横向展开极快，是牺牲与抢血核心，满编保证节奏。"
-    },
-    {
-      "id": 100,
-      "name": "赤红突击手",
-      "faction": "Red",
-      "origin_type": "Red专属",
-      "is_neutral": false,
-      "cost": 2,
-      "card_type": "MINION",
-      "base_dp": 1,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [
-        "DEATH_DRAW_1"
-      ],
-      "actor_prob": 0.41298970580101013,
-      "v_gain": -0.04916782416403294,
-      "raw_val": 0.1819109408184886,
-      "pick_rate": 66.7,
-      "score": 88.0,
-      "win_impact": 2.6,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "两费死亡过牌，交换后不亏手牌，适合铺场链衔接；两张保证前期密度。"
+      "comment": "三费三攻生一杠一。低费铺场核心，三张保证前期展开密度。"
     },
     {
       "id": 107,
@@ -542,11 +865,40 @@
       "atk_val": 0,
       "def_val": 0,
       "tags": [
-        "SPAWN_1_1"
+        "SPAWN_1_1",
+        "ATTACK_ONLY"
       ],
-      "actor_prob": 0.4091764248907566,
-      "v_gain": -0.050663885474205014,
-      "raw_val": 0.1792562697082758,
+      "actor_prob": 0.557,
+      "v_gain": -0.0073,
+      "util_score": 0.5551839009287926,
+      "copies": 3,
+      "pick_rate": 100.0,
+      "score": 94.4,
+      "win_impact": 4.3,
+      "tier": "S+",
+      "tier_name": "核心主轴",
+      "rec_count": "3 张 (核心满编)",
+      "tier_class": "tier-s",
+      "comment": "二费一攻生一杠一且只能攻击。铺场核心，三张拉满前期频率。"
+    },
+    {
+      "id": 905,
+      "name": "佣兵斥候",
+      "faction": "Red",
+      "origin_type": "中立通用",
+      "is_neutral": true,
+      "cost": 2,
+      "card_type": "MINION",
+      "base_dp": 1,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "RUSH"
+      ],
+      "actor_prob": 0.623,
+      "v_gain": 0.4249,
+      "util_score": 0.8492,
+      "copies": 2,
       "pick_rate": 66.7,
       "score": 87.5,
       "win_impact": 2.5,
@@ -554,7 +906,225 @@
       "tier_name": "主力组件",
       "rec_count": "2 张 (主力配置)",
       "tier_class": "tier-a",
-      "comment": "两费铺两个频率，配合牺牲与加攻很顺，两张补曲线且不抢核心位。"
+      "comment": "二费一攻突袭。补刀灵活，两张增强前期解场与伤害效率。"
+    },
+    {
+      "id": 117,
+      "name": "赤红破阵兵",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 5,
+      "card_type": "MINION",
+      "base_dp": 3,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "RUSH"
+      ],
+      "actor_prob": 0.418,
+      "v_gain": 0.3609,
+      "util_score": 0.7275715170278637,
+      "copies": 2,
+      "pick_rate": 66.7,
+      "score": 86.7,
+      "win_impact": 2.4,
+      "tier": "A",
+      "tier_name": "主力组件",
+      "rec_count": "2 张 (主力配置)",
+      "tier_class": "tier-a",
+      "comment": "五费三攻突袭。伤害效率偏低，两张作为补刀与返场手段。"
+    },
+    {
+      "id": 112,
+      "name": "赤红新兵",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 1,
+      "card_type": "MINION",
+      "base_dp": 2,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [],
+      "actor_prob": 0.686,
+      "v_gain": 0.0081,
+      "util_score": 0.6163195046439629,
+      "copies": 2,
+      "pick_rate": 66.7,
+      "score": 85.4,
+      "win_impact": 2.2,
+      "tier": "A",
+      "tier_name": "主力组件",
+      "rec_count": "2 张 (主力配置)",
+      "tier_class": "tier-a",
+      "comment": "一费二攻。前期站场扎实，两张补一费曲线且不卡手。"
+    },
+    {
+      "id": 115,
+      "name": "赤红献祭",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 2,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "SACRIFICE_1_KILL_1"
+      ],
+      "actor_prob": 0.397,
+      "v_gain": -0.5295,
+      "util_score": 0.16784024767801864,
+      "copies": 2,
+      "pick_rate": 66.7,
+      "score": 78.4,
+      "win_impact": 1.3,
+      "tier": "B",
+      "tier_name": "优质拼图",
+      "rec_count": "2 张 (按需携带)",
+      "tier_class": "tier-b",
+      "comment": "二费牺牲一杀一。灵活解场，两张应对关键生物且不挤核心。"
+    },
+    {
+      "id": 120,
+      "name": "赤红中期突破手",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 8,
+      "card_type": "MINION",
+      "base_dp": 5,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "RUSH",
+        "BONUS_SCORE_1"
+      ],
+      "actor_prob": 0.408,
+      "v_gain": 0.3201,
+      "util_score": 0.6983083591331269,
+      "copies": 1,
+      "pick_rate": 33.3,
+      "score": 75.6,
+      "win_impact": 0.8,
+      "tier": "B",
+      "tier_name": "优质拼图",
+      "rec_count": "1 张 (按需携带)",
+      "tier_class": "tier-b",
+      "comment": "八费五攻突袭加分。与七费突破手重叠，一张补高费上限。"
+    },
+    {
+      "id": 108,
+      "name": "裂甲掷斧手",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "MINION",
+      "base_dp": 3,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "RUSH",
+        "DEGRADE_1"
+      ],
+      "actor_prob": 0.469,
+      "v_gain": 0.3843,
+      "util_score": 0.762460681114551,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 60.6,
+      "win_impact": -1.3,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "四费三攻突袭降一。解场可换大怪，但四费曲线竞争激烈。"
+    },
+    {
+      "id": 602,
+      "name": "红绿共生",
+      "faction": "Red",
+      "origin_type": "Red/Green双色",
+      "is_neutral": false,
+      "cost": 5,
+      "card_type": "MINION",
+      "base_dp": 5,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "RUSH",
+        "DEATH_DRAW_1"
+      ],
+      "actor_prob": 0.407,
+      "v_gain": 0.3947,
+      "util_score": 0.7441003095975232,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 59.9,
+      "win_impact": -1.4,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "五费五攻突袭亡语抽一。补刀过牌兼备，可备编一张润滑。"
+    },
+    {
+      "id": 123,
+      "name": "破阵先锋",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 6,
+      "card_type": "MINION",
+      "base_dp": 4,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "RUSH",
+        "BONUS_SCORE_1"
+      ],
+      "actor_prob": 0.393,
+      "v_gain": 0.3608,
+      "util_score": 0.7175095975232197,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 58.2,
+      "win_impact": -1.8,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "六费四攻突袭加分。伤害偏低，仅备编补六费突袭浓度。"
+    },
+    {
+      "id": 100,
+      "name": "赤红突击手",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 2,
+      "card_type": "MINION",
+      "base_dp": 2,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "DEATH_DRAW_1"
+      ],
+      "actor_prob": 0.665,
+      "v_gain": -0.0062,
+      "util_score": 0.5990650154798762,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 56.7,
+      "win_impact": -2.1,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "二费二攻亡语抽一。节奏偏慢，快攻只可备编补资源。"
     },
     {
       "id": 902,
@@ -568,45 +1138,74 @@
       "atk_val": 0,
       "def_val": 0,
       "tags": [],
-      "actor_prob": 0.3764445438981056,
-      "v_gain": -0.0241511270403862,
-      "raw_val": 0.1761467084288597,
-      "pick_rate": 66.7,
-      "score": 87.0,
-      "win_impact": 2.4,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "一费低身材，前期吸收伤害或当牺牲材料，两张补足低费密度。"
+      "actor_prob": 0.588,
+      "v_gain": 0.0111,
+      "util_score": 0.5789770897832817,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 56.4,
+      "win_impact": -2.2,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "一费一攻白板。可用于牺牲素材，但频率过低仅备编。"
     },
     {
-      "id": 112,
-      "name": "赤红新兵",
+      "id": 104,
+      "name": "切割者",
       "faction": "Red",
       "origin_type": "Red专属",
       "is_neutral": false,
-      "cost": 1,
+      "cost": 2,
       "card_type": "MINION",
-      "base_dp": 1,
+      "base_dp": 2,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "DEGRADE_1"
+      ],
+      "actor_prob": 0.614,
+      "v_gain": -0.0415,
+      "util_score": 0.5568074303405572,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 55.7,
+      "win_impact": -2.3,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "二费二攻降一。身材普通，降攻仅备编针对大怪交换。"
+    },
+    {
+      "id": 901,
+      "name": "雇佣兵",
+      "faction": "Red",
+      "origin_type": "中立通用",
+      "is_neutral": true,
+      "cost": 3,
+      "card_type": "MINION",
+      "base_dp": 5,
       "atk_val": 0,
       "def_val": 0,
       "tags": [],
-      "actor_prob": 0.37344586551189424,
-      "v_gain": -0.03865131549537182,
-      "raw_val": 0.1673972750082612,
-      "pick_rate": 66.7,
-      "score": 86.5,
-      "win_impact": 2.3,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "一费生物填曲线，可被牺牲或支援，起手留一张，两张减少后期弱抽。"
+      "actor_prob": 0.497,
+      "v_gain": 0.0104,
+      "util_score": 0.542143653250774,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 55.0,
+      "win_impact": -2.4,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "三费五攻白板。身材扎实但无协同，仅备编应对慢速对局。"
     },
     {
-      "id": 113,
-      "name": "牺牲祭师",
+      "id": 122,
+      "name": "赤红铁卫",
       "faction": "Red",
       "origin_type": "Red专属",
       "is_neutral": false,
@@ -616,20 +1215,45 @@
       "atk_val": 0,
       "def_val": 0,
       "tags": [
-        "SACRIFICE_1_KILL_1",
-        "DEATH_DRAW_1"
+        "FORTIFY_2"
       ],
-      "actor_prob": 0.39983906000852587,
-      "v_gain": -0.06571416482329369,
-      "raw_val": 0.1670624475926161,
-      "pick_rate": 66.7,
-      "score": 86.0,
-      "win_impact": 2.2,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "三费牺牲解场并死亡过牌，功能复合，两张支撑中段节奏与资源。"
+      "actor_prob": 0.554,
+      "v_gain": -0.0296,
+      "util_score": 0.5401758513931889,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 54.6,
+      "win_impact": -2.5,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "三费三攻加固二。偏防守，赤红需要攻击频率而非被动护盾。"
+    },
+    {
+      "id": 126,
+      "name": "赤红战盾",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 2,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 0,
+      "def_val": 4,
+      "tags": [],
+      "actor_prob": 0.544,
+      "v_gain": -0.0311,
+      "util_score": 0.5352470588235294,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 54.2,
+      "win_impact": -2.6,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "二费防四。纯防御法术拖慢抢血，赤红无需放弃进攻换盾。"
     },
     {
       "id": 904,
@@ -646,276 +1270,45 @@
         "FORTIFY_1",
         "DEATH_DRAW_1"
       ],
-      "actor_prob": 0.3706908099353313,
-      "v_gain": -0.055709158629179,
-      "raw_val": 0.15749082565307615,
-      "pick_rate": 66.7,
-      "score": 83.5,
-      "win_impact": 1.8,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "三费防御并死亡过牌，可护住关键生物，两张增强交换与续航。"
-    },
-    {
-      "id": 900,
-      "name": "商人",
-      "faction": "Red",
-      "origin_type": "中立通用",
-      "is_neutral": true,
-      "cost": 2,
-      "card_type": "MINION",
-      "base_dp": 2,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [
-        "DRAW_1"
-      ],
-      "actor_prob": 0.3584065787494183,
-      "v_gain": -0.05063941702246666,
-      "raw_val": 0.1538835808634758,
-      "pick_rate": 66.7,
-      "score": 83.0,
-      "win_impact": 1.8,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "两费站场补一张，衔接曲线并续航，两张足够避免手牌溢出。"
-    },
-    {
-      "id": 901,
-      "name": "雇佣兵",
-      "faction": "Red",
-      "origin_type": "中立通用",
-      "is_neutral": true,
-      "cost": 3,
-      "card_type": "MINION",
-      "base_dp": 5,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [],
-      "actor_prob": 0.31730762347579,
-      "v_gain": -0.07172472700476647,
-      "raw_val": 0.12279144823551177,
-      "pick_rate": 66.7,
-      "score": 81.0,
-      "win_impact": 1.4,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "三费五血站场，交换效率高，两张提供扎实中段阻挡与牺牲素材。"
-    },
-    {
-      "id": 905,
-      "name": "佣兵斥候",
-      "faction": "Red",
-      "origin_type": "中立通用",
-      "is_neutral": true,
-      "cost": 2,
-      "card_type": "MINION",
-      "base_dp": 1,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [
-        "RUSH"
-      ],
-      "actor_prob": 0.43953765481710433,
-      "v_gain": 0.2595489636063576,
-      "raw_val": 0.34954330921173093,
-      "pick_rate": 33.3,
-      "score": 80.0,
-      "win_impact": 1.3,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "两费突袭即时解小怪，夺回先手并填补二费，两张保证上手。"
-    },
-    {
-      "id": 108,
-      "name": "裂甲掷斧手",
-      "faction": "Red",
-      "origin_type": "Red专属",
-      "is_neutral": false,
-      "cost": 5,
-      "card_type": "MINION",
-      "base_dp": 1,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [
-        "RUSH",
-        "DEGRADE_1"
-      ],
-      "actor_prob": 0.3498430363833904,
-      "v_gain": 0.3023738533258438,
-      "raw_val": 0.3261084448546171,
-      "pick_rate": 33.3,
-      "score": 79.5,
-      "win_impact": 1.2,
-      "tier": "B",
-      "tier_name": "优质拼图",
-      "rec_count": "1 张 (按需携带)",
-      "tier_class": "tier-b",
-      "comment": "五费突袭削甲，能处理难缠防御单位，针对环境挂一张，不宜多带。"
-    },
-    {
-      "id": 400,
-      "name": "赤蓝交织者",
-      "faction": "Red",
-      "origin_type": "Red/Blue双色",
-      "is_neutral": false,
-      "cost": 4,
-      "card_type": "MINION",
-      "base_dp": 4,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [
-        "SUPPORT_ATK_1"
-      ],
-      "actor_prob": 0.2974240966141224,
-      "v_gain": -0.08488014563918114,
-      "raw_val": 0.10627197548747062,
-      "pick_rate": 66.7,
-      "score": 79.5,
-      "win_impact": 1.2,
-      "tier": "B",
-      "tier_name": "优质拼图",
-      "rec_count": "2 张 (按需携带)",
-      "tier_class": "tier-b",
-      "comment": "四费为友军加攻，铺场后增伤明显，环境慢时带两张，否则让位。"
-    },
-    {
-      "id": 104,
-      "name": "切割者",
-      "faction": "Red",
-      "origin_type": "Red专属",
-      "is_neutral": false,
-      "cost": 2,
-      "card_type": "MINION",
-      "base_dp": 2,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [
-        "DEGRADE_1"
-      ],
-      "actor_prob": 0.3542062915861607,
-      "v_gain": -0.048680481314659116,
-      "raw_val": 0.15276290513575078,
-      "pick_rate": 33.3,
-      "score": 72.5,
-      "win_impact": 0.1,
-      "tier": "B",
-      "tier_name": "优质拼图",
-      "rec_count": "1 张 (按需携带)",
-      "tier_class": "tier-b",
-      "comment": "两费削弱随从可磨防守，针对高攻单位，环境合适时挂一张即可。"
-    },
-    {
-      "id": 115,
-      "name": "赤红献祭",
-      "faction": "Red",
-      "origin_type": "Red专属",
-      "is_neutral": false,
-      "cost": 2,
-      "card_type": "SPELL",
-      "base_dp": 0,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [
-        "SACRIFICE_1_KILL_1"
-      ],
-      "actor_prob": 0.32,
-      "v_gain": 0.0,
-      "raw_val": 0.16,
+      "actor_prob": 0.5,
+      "v_gain": -0.0237,
+      "util_score": 0.5222291021671825,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 55.5,
-      "win_impact": -2.6,
-      "tier": "D",
-      "tier_name": "低效备选",
-      "rec_count": "0 张 (暂不推荐)",
-      "tier_class": "tier-d",
-      "comment": "两费单解需牺牲生物，破坏铺场联动，快攻节奏反而受损。"
-    },
-    {
-      "id": 110,
-      "name": "血祭爆燃",
-      "faction": "Red",
-      "origin_type": "Red专属",
-      "is_neutral": false,
-      "cost": 3,
-      "card_type": "SPELL",
-      "base_dp": 0,
-      "atk_val": 3,
-      "def_val": 0,
-      "tags": [
-        "SACRIFICE_1_KILL_1",
-        "ATTACK_ONLY"
-      ],
-      "actor_prob": 0.32,
-      "v_gain": 0.0,
-      "raw_val": 0.16,
-      "pick_rate": 0.0,
-      "score": 55.0,
+      "score": 53.9,
       "win_impact": -2.7,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "三费牺牲打三，解场尚可但拖节奏，快攻更愿保留生物持续输出。"
+      "comment": "三费三攻加固一亡语抽一。防守过牌太慢，与赤红抢血冲突。"
     },
     {
-      "id": 103,
-      "name": "射线",
+      "id": 401,
+      "name": "赤蓝战术交换",
       "faction": "Red",
-      "origin_type": "Red专属",
+      "origin_type": "Red/Blue双色",
       "is_neutral": false,
       "cost": 2,
       "card_type": "SPELL",
       "base_dp": 0,
-      "atk_val": 2,
-      "def_val": 0,
-      "tags": [],
-      "actor_prob": 0.32,
-      "v_gain": 0.0,
-      "raw_val": 0.16,
-      "pick_rate": 0.0,
-      "score": 54.5,
-      "win_impact": -2.8,
-      "tier": "D",
-      "tier_name": "低效备选",
-      "rec_count": "0 张 (暂不推荐)",
-      "tier_class": "tier-d",
-      "comment": "两费打二效率平庸，缺乏解场或斩杀增益，直伤卡位更需功能性。"
-    },
-    {
-      "id": 102,
-      "name": "自爆",
-      "faction": "Red",
-      "origin_type": "Red专属",
-      "is_neutral": false,
-      "cost": 2,
-      "card_type": "SPELL",
-      "base_dp": 0,
-      "atk_val": 0,
+      "atk_val": 3,
       "def_val": 0,
       "tags": [
-        "SACRIFICE_1_KILL_1",
-        "ATTACK_ONLY"
+        "DRAW_1"
       ],
-      "actor_prob": 0.32,
-      "v_gain": 0.0,
-      "raw_val": 0.16,
+      "actor_prob": 0.475,
+      "v_gain": -0.0243,
+      "util_score": 0.5118575851393189,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 54.0,
-      "win_impact": -2.9,
+      "score": 53.5,
+      "win_impact": -2.7,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "两费牺牲换单解，节奏亏损明显，快攻不愿让出场面，故不进构筑。"
+      "comment": "二费打三抽一。直伤过牌看似全能，但二费抢节奏不宜让给法术。"
     },
     {
       "id": 106,
@@ -931,96 +1324,209 @@
       "tags": [
         "DISCARD_2"
       ],
-      "actor_prob": 0.30106776505708693,
-      "v_gain": -0.03584367409348488,
-      "raw_val": 0.13261204548180103,
+      "actor_prob": 0.404,
+      "v_gain": 0.0199,
+      "util_score": 0.5108260061919505,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 51.5,
-      "win_impact": -3.3,
+      "score": 53.2,
+      "win_impact": -2.8,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "六费大身材却需弃两张，快攻手牌珍贵，弃牌代价压过站场价值。"
+      "comment": "六费十攻弃二。手牌消耗过大，快攻无法承受断牌风险。"
     },
     {
-      "id": 105,
-      "name": "掠夺者",
+      "id": 403,
+      "name": "赤蓝灵质导能师",
       "faction": "Red",
-      "origin_type": "Red专属",
+      "origin_type": "Red/Blue双色",
       "is_neutral": false,
-      "cost": 6,
+      "cost": 4,
       "card_type": "MINION",
       "base_dp": 4,
       "atk_val": 0,
       "def_val": 0,
       "tags": [
-        "BONUS_SCORE_1"
+        "SUPPORT_ATK_1",
+        "DEATH_MANA_1"
       ],
-      "actor_prob": 0.3368509836494923,
-      "v_gain": -0.09895859733223915,
-      "raw_val": 0.11894619315862656,
+      "actor_prob": 0.458,
+      "v_gain": -0.0267,
+      "util_score": 0.5035715170278638,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 50.5,
-      "win_impact": -3.4,
+      "score": 52.8,
+      "win_impact": -2.9,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "六费仅四点身材，额外得分太慢，快攻六费应已终结或转伤。"
+      "comment": "四费四攻光环加一攻亡语法力。增益延迟，快攻不依赖死后资源。"
     },
     {
-      "id": 116,
-      "name": "赤红战意",
+      "id": 118,
+      "name": "牺牲角斗士",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "MINION",
+      "base_dp": 4,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "SACRIFICE_1_KILL_1"
+      ],
+      "actor_prob": 0.439,
+      "v_gain": -0.0201,
+      "util_score": 0.5000582043343653,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 52.5,
+      "win_impact": -3.0,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "四费四攻牺牲杀一。站场与解场互斥，节奏不如直接突袭。"
+    },
+    {
+      "id": 400,
+      "name": "赤蓝战术统领",
+      "faction": "Red",
+      "origin_type": "Red/Blue双色",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "MINION",
+      "base_dp": 4,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "SUPPORT_ATK_1"
+      ],
+      "actor_prob": 0.429,
+      "v_gain": -0.0167,
+      "util_score": 0.49816346749226004,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 52.1,
+      "win_impact": -3.0,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "四费四攻光环加一攻。四费须立即施压，光环收益不够稳定。"
+    },
+    {
+      "id": 113,
+      "name": "牺牲祭师",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "MINION",
+      "base_dp": 3,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "SACRIFICE_1_KILL_1",
+        "DEATH_DRAW_1"
+      ],
+      "actor_prob": 0.445,
+      "v_gain": -0.0289,
+      "util_score": 0.49700928792569654,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 51.8,
+      "win_impact": -3.1,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "四费三攻牺牲杀一亡语抽一。节奏太慢，快攻无需此中速价值。"
+    },
+    {
+      "id": 402,
+      "name": "赤蓝锋刃护卫",
+      "faction": "Red",
+      "origin_type": "Red/Blue双色",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "MINION",
+      "base_dp": 4,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "SUPPORT_ATK_1"
+      ],
+      "actor_prob": 0.421,
+      "v_gain": -0.0273,
+      "util_score": 0.4884,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 51.4,
+      "win_impact": -3.2,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "四费四攻光环加一攻。无突袭难即时影响场面，四费节奏偏弱。"
+    },
+    {
+      "id": 124,
+      "name": "战地督军",
       "faction": "Red",
       "origin_type": "Red专属",
       "is_neutral": false,
       "cost": 5,
-      "card_type": "SPELL",
-      "base_dp": 0,
+      "card_type": "MINION",
+      "base_dp": 4,
       "atk_val": 0,
       "def_val": 0,
       "tags": [
-        "TEMP_MANA_2"
+        "SUPPORT_ATK_1"
       ],
-      "actor_prob": 0.33083234131336214,
-      "v_gain": -0.1071289286017418,
-      "raw_val": 0.11185170635581018,
+      "actor_prob": 0.443,
+      "v_gain": -0.0469,
+      "util_score": 0.48506377708978327,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 50.0,
-      "win_impact": -3.5,
+      "score": 51.0,
+      "win_impact": -3.3,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "五费换临时两费，费用倒挂难滚雪球，快攻不需此类法术。"
+      "comment": "五费四攻光环加一攻。需要站场才生效，快攻五费更需即时伤害。"
     },
     {
-      "id": 600,
-      "name": "红绿共生体",
+      "id": 125,
+      "name": "献祭狂徒",
       "faction": "Red",
-      "origin_type": "Red/Green双色",
+      "origin_type": "Red专属",
       "is_neutral": false,
-      "cost": 6,
+      "cost": 4,
       "card_type": "MINION",
-      "base_dp": 6,
+      "base_dp": 4,
       "atk_val": 0,
       "def_val": 0,
       "tags": [
-        "SUPPORT_ATK_2",
-        "FORTIFY_2"
+        "SACRIFICE_1_KILL_1"
       ],
-      "actor_prob": 0.29807383120059966,
-      "v_gain": -0.08952339813113212,
-      "raw_val": 0.10427521653473376,
+      "actor_prob": 0.434,
+      "v_gain": -0.0447,
+      "util_score": 0.4828260061919505,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 49.0,
-      "win_impact": -3.7,
+      "score": 50.7,
+      "win_impact": -3.3,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "六费辅助与防御虽扎实，但快攻六费要伤害或终结，此卡太慢。"
+      "comment": "四费四攻牺牲杀一。功能重复且费用笨重，不如低费献祭灵活。"
     },
     {
       "id": 903,
@@ -1037,17 +1543,262 @@
         "DRAW_2",
         "DISCARD_1"
       ],
-      "actor_prob": 0.31174684017896653,
-      "v_gain": -0.10874514877796174,
-      "raw_val": 0.1015008457005024,
+      "actor_prob": 0.468,
+      "v_gain": -0.0699,
+      "util_score": 0.48082229102167184,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 48.5,
+      "score": 50.3,
+      "win_impact": -3.4,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "四费抽二弃一。过牌代价过重，四费回合让节奏难以接受。"
+    },
+    {
+      "id": 105,
+      "name": "掠夺者",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 5,
+      "card_type": "MINION",
+      "base_dp": 5,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "BONUS_SCORE_1"
+      ],
+      "actor_prob": 0.415,
+      "v_gain": -0.0389,
+      "util_score": 0.4788173374613003,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 50.0,
+      "win_impact": -3.5,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "五费五攻加分。速度太慢，五费曲线已被突袭核心占据。"
+    },
+    {
+      "id": 119,
+      "name": "余烬传令官",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 5,
+      "card_type": "MINION",
+      "base_dp": 5,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "DEATH_DRAW_1"
+      ],
+      "actor_prob": 0.393,
+      "v_gain": -0.0373,
+      "util_score": 0.47100804953560366,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 49.6,
+      "win_impact": -3.5,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "五费五攻亡语抽一。身材合格但慢，抽牌应由低费商人承担。"
+    },
+    {
+      "id": 601,
+      "name": "红绿古树桥梁",
+      "faction": "Red",
+      "origin_type": "Red/Green双色",
+      "is_neutral": false,
+      "cost": 6,
+      "card_type": "MINION",
+      "base_dp": 6,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "FORTIFY_2",
+        "DEATH_DRAW_1"
+      ],
+      "actor_prob": 0.408,
+      "v_gain": -0.0517,
+      "util_score": 0.46809164086687305,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 49.3,
+      "win_impact": -3.6,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "六费六攻加固二亡语抽一。防守型资源，快攻六费需终结而非拖延。"
+    },
+    {
+      "id": 116,
+      "name": "赤红战意",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 5,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "TEMP_MANA_2"
+      ],
+      "actor_prob": 0.42,
+      "v_gain": -0.0602,
+      "util_score": 0.4676284829721362,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 48.9,
+      "win_impact": -3.7,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "五费临时两费。费用倒挂严重，快攻无需此等延迟爆发。"
+    },
+    {
+      "id": 600,
+      "name": "红绿林冠共生体",
+      "faction": "Red",
+      "origin_type": "Red/Green双色",
+      "is_neutral": false,
+      "cost": 6,
+      "card_type": "MINION",
+      "base_dp": 6,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "SUPPORT_ATK_2",
+        "FORTIFY_2"
+      ],
+      "actor_prob": 0.407,
+      "v_gain": -0.054,
+      "util_score": 0.4662674922600619,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 48.6,
       "win_impact": -3.8,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "四费抽二弃一，节奏太慢且弃牌伤资源，快攻不需此过牌方式。"
+      "comment": "六费六攻光环加二攻并加固二。偏防守增益，快攻六费太慢。"
+    },
+    {
+      "id": 129,
+      "name": "余烬反击官",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 5,
+      "card_type": "MINION",
+      "base_dp": 5,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "SUPPORT_ATK_1"
+      ],
+      "actor_prob": 0.383,
+      "v_gain": -0.0432,
+      "util_score": 0.4633547987616099,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 48.2,
+      "win_impact": -3.8,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "五费五攻光环加一攻。面板尚可但慢，五费应优先直接抢血。"
+    },
+    {
+      "id": 603,
+      "name": "红绿破势巨兽",
+      "faction": "Red",
+      "origin_type": "Red/Green双色",
+      "is_neutral": false,
+      "cost": 6,
+      "card_type": "MINION",
+      "base_dp": 6,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "FORTIFY_2",
+        "BONUS_SCORE_1"
+      ],
+      "actor_prob": 0.4,
+      "v_gain": -0.0589,
+      "util_score": 0.46043343653250773,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 47.8,
+      "win_impact": -3.9,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "六费六攻加固二加分。加分虽好但无突袭，六费抢血太慢。"
+    },
+    {
+      "id": 130,
+      "name": "红莲驻防长",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 6,
+      "card_type": "MINION",
+      "base_dp": 6,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "FORTIFY_2"
+      ],
+      "actor_prob": 0.405,
+      "v_gain": -0.0639,
+      "util_score": 0.4593374613003096,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 47.5,
+      "win_impact": -4.0,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "六费六攻加固二。防御词条与快攻相悖，六费更需突袭终结。"
+    },
+    {
+      "id": 103,
+      "name": "射线",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 2,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 3,
+      "def_val": 0,
+      "tags": [],
+      "actor_prob": 0.373,
+      "v_gain": -0.0444,
+      "util_score": 0.45861176470588233,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 47.1,
+      "win_impact": -4.1,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "二费打三直伤。赤红更缺频率与协同，纯伤效率不及铺场。"
     },
     {
       "id": 109,
@@ -1055,25 +1806,137 @@
       "faction": "Red",
       "origin_type": "Red专属",
       "is_neutral": false,
-      "cost": 8,
+      "cost": 6,
       "card_type": "MINION",
-      "base_dp": 2,
+      "base_dp": 6,
       "atk_val": 0,
       "def_val": 0,
       "tags": [
         "DEGRADE_1"
       ],
-      "actor_prob": 0.27942941561341283,
-      "v_gain": -0.08526147603988647,
-      "raw_val": 0.09708396978676317,
+      "actor_prob": 0.42,
+      "v_gain": -0.0944,
+      "util_score": 0.446452012383901,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 48.0,
-      "win_impact": -3.8,
+      "score": 46.8,
+      "win_impact": -4.1,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "八费只提供削弱与低攻，费用过重，快攻无法容忍此等后期空档。"
+      "comment": "六费六攻降一。无突袭难返场，六费回合更需要即刻输出。"
+    },
+    {
+      "id": 131,
+      "name": "烈焰清算",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 4,
+      "def_val": 0,
+      "tags": [
+        "DEGRADE_1"
+      ],
+      "actor_prob": 0.308,
+      "v_gain": -0.1457,
+      "util_score": 0.369887306501548,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 46.4,
+      "win_impact": -4.2,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "四费打四降一。直伤费用过高，快攻斩杀更依赖突袭生物。"
+    },
+    {
+      "id": 102,
+      "name": "自爆",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 2,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "SACRIFICE_1_KILL_1",
+        "ATTACK_ONLY"
+      ],
+      "actor_prob": 0.4,
+      "v_gain": -0.5268,
+      "util_score": 0.1707120743034056,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 46.1,
+      "win_impact": -4.3,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "二费牺牲一杀一但仅能攻击。解场亏牌，快攻不宜携带。"
+    },
+    {
+      "id": 110,
+      "name": "血祭爆燃",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 3,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 3,
+      "def_val": 0,
+      "tags": [
+        "SACRIFICE_1_KILL_1",
+        "ATTACK_ONLY"
+      ],
+      "actor_prob": 0.37,
+      "v_gain": -0.5381,
+      "util_score": 0.15171517027863776,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 45.4,
+      "win_impact": -4.4,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "三费牺牲一杀一打三但仅能攻击。解场条件苛刻，亏节奏。"
+    },
+    {
+      "id": 121,
+      "name": "献祭之焰",
+      "faction": "Red",
+      "origin_type": "Red专属",
+      "is_neutral": false,
+      "cost": 3,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "SACRIFICE_1_KILL_1",
+        "DISCARD_1"
+      ],
+      "actor_prob": 0.291,
+      "v_gain": -0.5441,
+      "util_score": 0.1164,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 45.0,
+      "win_impact": -4.5,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "三费牺牲杀一再弃一。双重亏牌，快攻节奏与资源皆难承受。"
     }
   ],
   "Blue": [
@@ -1091,68 +1954,98 @@
       "tags": [
         "RUSH"
       ],
-      "actor_prob": 0.3262266397476196,
-      "v_gain": 0.31126052178442476,
-      "raw_val": 0.31874358076602216,
-      "pick_rate": 66.7,
-      "score": 90.0,
-      "win_impact": 2.9,
+      "actor_prob": 0.554,
+      "v_gain": 0.4407,
+      "util_score": 0.8019313735970068,
+      "copies": 3,
+      "pick_rate": 100.0,
+      "score": 98.0,
+      "win_impact": 5.2,
+      "tier": "S+",
+      "tier_name": "核心主轴",
+      "rec_count": "3 张 (核心满编)",
+      "tier_class": "tier-s",
+      "comment": "二费突袭，补刀抢节奏极强，核心满编三张稳住节奏。"
+    },
+    {
+      "id": 204,
+      "name": "石像鬼",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 6,
+      "card_type": "MINION",
+      "base_dp": 8,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [],
+      "actor_prob": 0.387,
+      "v_gain": -0.0296,
+      "util_score": 0.23240555852485303,
+      "copies": 3,
+      "pick_rate": 100.0,
+      "score": 90.9,
+      "win_impact": 3.4,
       "tier": "S",
       "tier_name": "核心主轴",
       "rec_count": "3 张 (核心满编)",
       "tier_class": "tier-s",
-      "comment": "两费突袭，解场夺先手；弥补防守被动，满编抢节奏。"
+      "comment": "六费八防终结壁垒，落地吸收大量伤害，核心满编三张。"
     },
     {
-      "id": 207,
-      "name": "霜盾见习官",
+      "id": 223,
+      "name": "冰潮突袭者",
       "faction": "Blue",
       "origin_type": "Blue专属",
       "is_neutral": false,
-      "cost": 2,
+      "cost": 3,
       "card_type": "MINION",
-      "base_dp": 1,
+      "base_dp": 3,
       "atk_val": 0,
       "def_val": 0,
       "tags": [
-        "FORTIFY_1",
-        "SUPPORT_ATK_1"
+        "RUSH"
       ],
-      "actor_prob": 0.37478557229042053,
-      "v_gain": -0.03259937688708305,
-      "raw_val": 0.17109309770166875,
+      "actor_prob": 0.461,
+      "v_gain": 0.4591,
+      "util_score": 0.7844,
+      "copies": 2,
       "pick_rate": 66.7,
-      "score": 89.5,
-      "win_impact": 2.8,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "两费双向功能，固守护场同时加攻；身材偏脆，两张即可。"
-    },
-    {
-      "id": 210,
-      "name": "冰封禁制",
-      "faction": "Blue",
-      "origin_type": "Blue专属",
-      "is_neutral": false,
-      "cost": 2,
-      "card_type": "SPELL",
-      "base_dp": 0,
-      "atk_val": 4,
-      "def_val": 2,
-      "tags": [],
-      "actor_prob": 0.32,
-      "v_gain": 0.0,
-      "raw_val": 0.16,
-      "pick_rate": 66.7,
-      "score": 87.5,
+      "score": 87.3,
       "win_impact": 2.5,
       "tier": "A",
       "tier_name": "主力组件",
       "rec_count": "2 张 (主力配置)",
       "tier_class": "tier-a",
-      "comment": "两费打四附防二，解场兼保脸；中期抢节奏，两张稳。"
+      "comment": "三费突袭，抢节奏解场灵活，主力两张应对快攻。"
+    },
+    {
+      "id": 218,
+      "name": "破甲潮汐兵",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 3,
+      "card_type": "MINION",
+      "base_dp": 3,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "RUSH",
+        "DEGRADE_1"
+      ],
+      "actor_prob": 0.481,
+      "v_gain": 0.4173,
+      "util_score": 0.7477180117584179,
+      "copies": 2,
+      "pick_rate": 66.7,
+      "score": 87.1,
+      "win_impact": 2.4,
+      "tier": "A",
+      "tier_name": "主力组件",
+      "rec_count": "2 张 (主力配置)",
+      "tier_class": "tier-a",
+      "comment": "三费突袭破甲一，返场解小怪兼削弱大哥，主力两张。"
     },
     {
       "id": 201,
@@ -1168,44 +2061,151 @@
       "tags": [
         "FORTIFY_1"
       ],
-      "actor_prob": 0.3019465535879135,
-      "v_gain": -0.03792235292494297,
-      "raw_val": 0.13201210033148528,
+      "actor_prob": 0.562,
+      "v_gain": 0.0081,
+      "util_score": 0.3427048637092464,
+      "copies": 2,
       "pick_rate": 66.7,
-      "score": 87.0,
+      "score": 86.7,
       "win_impact": 2.4,
       "tier": "A",
       "tier_name": "主力组件",
       "rec_count": "2 张 (主力配置)",
       "tier_class": "tier-a",
-      "comment": "一费固守吸收首轮伤害，护住后续展开；中期抽到偏弱，带两张。"
+      "comment": "一费固守一，起手抗快攻的优质肉盾，主力两张稳住前期。"
     },
     {
-      "id": 211,
-      "name": "蔚蓝要塞",
+      "id": 203,
+      "name": "防御！",
       "faction": "Blue",
       "origin_type": "Blue专属",
       "is_neutral": false,
-      "cost": 6,
+      "cost": 1,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 0,
+      "def_val": 2,
+      "tags": [],
+      "actor_prob": 0.636,
+      "v_gain": -0.0198,
+      "util_score": 0.34248123997862107,
+      "copies": 2,
+      "pick_rate": 66.7,
+      "score": 86.4,
+      "win_impact": 2.4,
+      "tier": "A",
+      "tier_name": "主力组件",
+      "rec_count": "2 张 (主力配置)",
+      "tier_class": "tier-a",
+      "comment": "一费防二高效护脸，保随从或拖节奏，主力两张不亏。"
+    },
+    {
+      "id": 212,
+      "name": "蔚蓝守卫",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 2,
       "card_type": "MINION",
-      "base_dp": 6,
+      "base_dp": 2,
       "atk_val": 0,
       "def_val": 0,
       "tags": [
-        "FORTIFY_3",
-        "SUPPORT_ATK_1"
+        "FORTIFY_2"
       ],
-      "actor_prob": 0.2553806446492672,
-      "v_gain": -0.08098432719707489,
-      "raw_val": 0.08719815872609615,
-      "pick_rate": 100.0,
-      "score": 86.5,
+      "actor_prob": 0.492,
+      "v_gain": -0.0033,
+      "util_score": 0.30251886691608765,
+      "copies": 2,
+      "pick_rate": 66.7,
+      "score": 86.0,
       "win_impact": 2.3,
       "tier": "A",
       "tier_name": "主力组件",
-      "rec_count": "3 张 (主力配置)",
+      "rec_count": "2 张 (主力配置)",
       "tier_class": "tier-a",
-      "comment": "六费终端，固守三加攻一，落地即压制；满编保后期质量。"
+      "comment": "二费固守二，前期交换极赚节奏，主力两张撑起防线。"
+    },
+    {
+      "id": 900,
+      "name": "商人",
+      "faction": "Blue",
+      "origin_type": "中立通用",
+      "is_neutral": true,
+      "cost": 2,
+      "card_type": "MINION",
+      "base_dp": 2,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "DRAW_1"
+      ],
+      "actor_prob": 0.466,
+      "v_gain": 0.0024,
+      "util_score": 0.298211865312667,
+      "copies": 2,
+      "pick_rate": 66.7,
+      "score": 85.8,
+      "win_impact": 2.3,
+      "tier": "A",
+      "tier_name": "主力组件",
+      "rec_count": "2 张 (主力配置)",
+      "tier_class": "tier-a",
+      "comment": "二费抽一站二防，润滑曲线兼站场，主力两张很稳。"
+    },
+    {
+      "id": 209,
+      "name": "寒晶护壁",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 2,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 0,
+      "def_val": 2,
+      "tags": [
+        "DRAW_1"
+      ],
+      "actor_prob": 0.499,
+      "v_gain": -0.0341,
+      "util_score": 0.2723952966328167,
+      "copies": 2,
+      "pick_rate": 66.7,
+      "score": 83.7,
+      "win_impact": 2.0,
+      "tier": "A",
+      "tier_name": "主力组件",
+      "rec_count": "2 张 (主力配置)",
+      "tier_class": "tier-a",
+      "comment": "二费防二并抽一，护脸同时过牌，主力两张润滑曲线。"
+    },
+    {
+      "id": 221,
+      "name": "蔚蓝护盾反击",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 3,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 0,
+      "def_val": 4,
+      "tags": [
+        "FORTIFY_1"
+      ],
+      "actor_prob": 0.475,
+      "v_gain": -0.0329,
+      "util_score": 0.26407803313735967,
+      "copies": 2,
+      "pick_rate": 66.7,
+      "score": 83.3,
+      "win_impact": 1.9,
+      "tier": "A",
+      "tier_name": "主力组件",
+      "rec_count": "2 张 (主力配置)",
+      "tier_class": "tier-a",
+      "comment": "三费防四固守一，防守反击优质响应，主力两张稳。"
     },
     {
       "id": 216,
@@ -1222,17 +2222,339 @@
         "DRAW_2",
         "TEMP_MANA_1"
       ],
-      "actor_prob": 0.280341200530529,
-      "v_gain": -0.059214122220873834,
-      "raw_val": 0.1105635391548276,
+      "actor_prob": 0.446,
+      "v_gain": -0.0448,
+      "util_score": 0.23975756280064137,
+      "copies": 2,
       "pick_rate": 66.7,
-      "score": 85.0,
-      "win_impact": 2.1,
+      "score": 81.0,
+      "win_impact": 1.6,
       "tier": "A",
       "tier_name": "主力组件",
       "rec_count": "2 张 (主力配置)",
       "tier_class": "tier-a",
-      "comment": "三费抽二返一费，滤牌提速；中期找要塞，两张稳定。"
+      "comment": "三费抽二并临时法力一，中期补牌展开核心，主力两张。"
+    },
+    {
+      "id": 211,
+      "name": "蔚蓝要塞",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 6,
+      "card_type": "MINION",
+      "base_dp": 6,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "FORTIFY_3",
+        "SUPPORT_ATK_1"
+      ],
+      "actor_prob": 0.388,
+      "v_gain": -0.0456,
+      "util_score": 0.21570240513094602,
+      "copies": 2,
+      "pick_rate": 66.7,
+      "score": 79.5,
+      "win_impact": 1.4,
+      "tier": "B",
+      "tier_name": "优质拼图",
+      "rec_count": "2 张 (按需携带)",
+      "tier_class": "tier-b",
+      "comment": "六费固守三支援一，高质量站场大哥，按需两张压中期。"
+    },
+    {
+      "id": 210,
+      "name": "冰封禁制",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 2,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 6,
+      "def_val": 2,
+      "tags": [],
+      "actor_prob": 0.253,
+      "v_gain": -0.0502,
+      "util_score": 0.15678524853019776,
+      "copies": 2,
+      "pick_rate": 66.7,
+      "score": 78.4,
+      "win_impact": 1.3,
+      "tier": "B",
+      "tier_name": "优质拼图",
+      "rec_count": "2 张 (按需携带)",
+      "tier_class": "tier-b",
+      "comment": "二费打六防二，解场兼护脸效率极高，按需两张针对中速。"
+    },
+    {
+      "id": 227,
+      "name": "潮汐学徒",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 2,
+      "card_type": "MINION",
+      "base_dp": 2,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "DEATH_DRAW_1"
+      ],
+      "actor_prob": 0.479,
+      "v_gain": -0.0033,
+      "util_score": 0.29731886691608767,
+      "copies": 1,
+      "pick_rate": 33.3,
+      "score": 75.4,
+      "win_impact": 0.8,
+      "tier": "B",
+      "tier_name": "优质拼图",
+      "rec_count": "1 张 (按需携带)",
+      "tier_class": "tier-b",
+      "comment": "二费亡语抽一，延迟补牌，适合慢速备编一张。"
+    },
+    {
+      "id": 214,
+      "name": "蔚蓝泰坦盾卫",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 6,
+      "card_type": "MINION",
+      "base_dp": 6,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "FORTIFY_3",
+        "SUPPORT_ATK_1"
+      ],
+      "actor_prob": 0.373,
+      "v_gain": -0.0347,
+      "util_score": 0.22135392838054516,
+      "copies": 1,
+      "pick_rate": 33.3,
+      "score": 69.9,
+      "win_impact": -0.0,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "六费固守三支援一，同费曲线偏挤，仅作备编替换要塞。"
+    },
+    {
+      "id": 902,
+      "name": "训练假人",
+      "faction": "Blue",
+      "origin_type": "中立通用",
+      "is_neutral": true,
+      "cost": 1,
+      "card_type": "MINION",
+      "base_dp": 1,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [],
+      "actor_prob": 0.571,
+      "v_gain": 0.0055,
+      "util_score": 0.3435256012827365,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 59.9,
+      "win_impact": -1.4,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "一费一防白板，仅挡刀无交换价值，备编一张。"
+    },
+    {
+      "id": 228,
+      "name": "蓝晶守御者",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 3,
+      "card_type": "MINION",
+      "base_dp": 3,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "FORTIFY_1",
+        "ATTACK_ONLY"
+      ],
+      "actor_prob": 0.472,
+      "v_gain": 0.0048,
+      "util_score": 0.3031773383217531,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 58.9,
+      "win_impact": -1.6,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "三费固守一且仅能攻击，防守尚可但主动性差，备编。"
+    },
+    {
+      "id": 200,
+      "name": "蔚蓝卫士",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 2,
+      "card_type": "MINION",
+      "base_dp": 2,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "FORTIFY_1"
+      ],
+      "actor_prob": 0.466,
+      "v_gain": 0.0018,
+      "util_score": 0.2975704970603955,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 57.8,
+      "win_impact": -1.9,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "二费固守一仅二防，低费换血尚可，但卡位紧通常备编一张。"
+    },
+    {
+      "id": 217,
+      "name": "蔚蓝轻装盾卫",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 2,
+      "card_type": "MINION",
+      "base_dp": 2,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "FORTIFY_1"
+      ],
+      "actor_prob": 0.468,
+      "v_gain": -0.0003,
+      "util_score": 0.2961257081774452,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 57.1,
+      "win_impact": -2.0,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "二费固守一，二防白板竞争激烈，仅备编补低费曲线。"
+    },
+    {
+      "id": 208,
+      "name": "壁垒工匠",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 3,
+      "card_type": "MINION",
+      "base_dp": 3,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "FORTIFY_2"
+      ],
+      "actor_prob": 0.485,
+      "v_gain": -0.0071,
+      "util_score": 0.29565686798503477,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 56.7,
+      "win_impact": -2.1,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "三费固守二，防御合格但进攻性弱，按需备编一张。"
+    },
+    {
+      "id": 222,
+      "name": "蔚蓝守壁",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 2,
+      "card_type": "MINION",
+      "base_dp": 2,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "FORTIFY_2"
+      ],
+      "actor_prob": 0.472,
+      "v_gain": -0.0049,
+      "util_score": 0.29280855157669694,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 56.4,
+      "win_impact": -2.2,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "二费固守二，与蔚蓝守卫完全同位，备编一张防卡位。"
+    },
+    {
+      "id": 206,
+      "name": "火铳手",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 3,
+      "card_type": "MINION",
+      "base_dp": 4,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "SUPPORT_ATK_2"
+      ],
+      "actor_prob": 0.45,
+      "v_gain": 0.0013,
+      "util_score": 0.29063602351683593,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 56.0,
+      "win_impact": -2.2,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "三费四防支援加攻二，站场输出尚可，但卡位紧仅备编。"
+    },
+    {
+      "id": 901,
+      "name": "雇佣兵",
+      "faction": "Blue",
+      "origin_type": "中立通用",
+      "is_neutral": true,
+      "cost": 3,
+      "card_type": "MINION",
+      "base_dp": 5,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [],
+      "actor_prob": 0.402,
+      "v_gain": 0.013,
+      "util_score": 0.28394270443613046,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 55.7,
+      "win_impact": -2.3,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "三费五防白板，前期抗压合格但无词条，备编一张。"
     },
     {
       "id": 202,
@@ -1248,43 +2570,46 @@
       "tags": [
         "SUPPORT_ATK_1"
       ],
-      "actor_prob": 0.2690068371593952,
-      "v_gain": -0.059425707906484604,
-      "raw_val": 0.10479056462645531,
-      "pick_rate": 66.7,
-      "score": 84.0,
-      "win_impact": 1.9,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "三费支援加攻，后排稳定输出；身材普通，两张开路足够。"
+      "actor_prob": 0.435,
+      "v_gain": -0.0022,
+      "util_score": 0.2808947087119188,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 55.3,
+      "win_impact": -2.4,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "三费后排支援加攻，三防身材偏脆，仅作备编补伤害。"
     },
     {
-      "id": 900,
-      "name": "商人",
+      "id": 207,
+      "name": "霜盾见习官",
       "faction": "Blue",
-      "origin_type": "中立通用",
-      "is_neutral": true,
+      "origin_type": "Blue专属",
+      "is_neutral": false,
       "cost": 2,
       "card_type": "MINION",
-      "base_dp": 2,
+      "base_dp": 1,
       "atk_val": 0,
       "def_val": 0,
       "tags": [
-        "DRAW_1"
+        "FORTIFY_1",
+        "SUPPORT_ATK_1"
       ],
-      "actor_prob": 0.27637756839394567,
-      "v_gain": -0.06770036071538925,
-      "raw_val": 0.1043386038392782,
-      "pick_rate": 66.7,
-      "score": 83.5,
-      "win_impact": 1.8,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "两费二防过一，站场兼润滑；前期不亏手牌，两张主力。"
+      "actor_prob": 0.432,
+      "v_gain": -0.0051,
+      "util_score": 0.2765947621592731,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 55.0,
+      "win_impact": -2.4,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "二费固守一加攻一，身材太差，功能杂而不精，备编即可。"
     },
     {
       "id": 904,
@@ -1301,17 +2626,346 @@
         "FORTIFY_1",
         "DEATH_DRAW_1"
       ],
-      "actor_prob": 0.26234604194760325,
-      "v_gain": -0.05768512710928917,
-      "raw_val": 0.10233045741915704,
-      "pick_rate": 66.7,
-      "score": 83.0,
-      "win_impact": 1.8,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "三费固守一亡语抽一，换牌不亏；稳住前期，两张合适。"
+      "actor_prob": 0.433,
+      "v_gain": -0.0146,
+      "util_score": 0.26683976483164085,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 54.2,
+      "win_impact": -2.6,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "三费固守一亡语抽一，延迟收益低，构筑不投入。"
+    },
+    {
+      "id": 403,
+      "name": "赤蓝灵质导能师",
+      "faction": "Blue",
+      "origin_type": "Red/Blue双色",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "MINION",
+      "base_dp": 4,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "SUPPORT_ATK_1",
+        "DEATH_MANA_1"
+      ],
+      "actor_prob": 0.383,
+      "v_gain": -0.0055,
+      "util_score": 0.2565671833244254,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 53.5,
+      "win_impact": -2.7,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "四费支援一亡语得一费，收益分散，构筑不投入。"
+    },
+    {
+      "id": 205,
+      "name": "藤甲兵",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "MINION",
+      "base_dp": 4,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "FORTIFY_2"
+      ],
+      "actor_prob": 0.413,
+      "v_gain": -0.0183,
+      "util_score": 0.2548846606092998,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 53.2,
+      "win_impact": -2.8,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "四费固守二仅四防，节奏笨重且被破甲克制，暂不投入。"
+    },
+    {
+      "id": 224,
+      "name": "深潮高阶学者",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "MINION",
+      "base_dp": 4,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "DEATH_DRAW_1"
+      ],
+      "actor_prob": 0.391,
+      "v_gain": -0.0116,
+      "util_score": 0.2532466060929984,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 52.8,
+      "win_impact": -2.9,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "四费亡语抽一，延迟过牌且站场弱，暂不推荐。"
+    },
+    {
+      "id": 402,
+      "name": "赤蓝锋刃护卫",
+      "faction": "Blue",
+      "origin_type": "Red/Blue双色",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "MINION",
+      "base_dp": 4,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "SUPPORT_ATK_1"
+      ],
+      "actor_prob": 0.413,
+      "v_gain": -0.0202,
+      "util_score": 0.2528536611437734,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 52.5,
+      "win_impact": -3.0,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "四费支援一，四防站场普通，辅助收益低，不推荐。"
+    },
+    {
+      "id": 230,
+      "name": "碧波灵鳍",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "MINION",
+      "base_dp": 4,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "SPAWN_1_1",
+        "FORTIFY_1"
+      ],
+      "actor_prob": 0.395,
+      "v_gain": -0.0156,
+      "util_score": 0.25057081774452167,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 52.1,
+      "win_impact": -3.0,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "四费固守一并召唤衍生物，铺场收益低，暂不推荐。"
+    },
+    {
+      "id": 503,
+      "name": "蓝绿潮涌使",
+      "faction": "Blue",
+      "origin_type": "Blue/Green双色",
+      "is_neutral": false,
+      "cost": 5,
+      "card_type": "MINION",
+      "base_dp": 5,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "RAMP_1",
+        "DEATH_DRAW_1"
+      ],
+      "actor_prob": 0.4,
+      "v_gain": -0.0182,
+      "util_score": 0.24979155531801178,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 51.8,
+      "win_impact": -3.1,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "五费跳一费亡语抽一，延迟过牌，构筑不投入。"
+    },
+    {
+      "id": 219,
+      "name": "法力回流哨兵",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "MINION",
+      "base_dp": 4,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "DEATH_MANA_2"
+      ],
+      "actor_prob": 0.395,
+      "v_gain": -0.0191,
+      "util_score": 0.24682950293960454,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 51.4,
+      "win_impact": -3.2,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "四费亡语得二费，节奏滞后且亏身材，暂不推荐投入。"
+    },
+    {
+      "id": 400,
+      "name": "赤蓝战术统领",
+      "faction": "Blue",
+      "origin_type": "Red/Blue双色",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "MINION",
+      "base_dp": 4,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "SUPPORT_ATK_1"
+      ],
+      "actor_prob": 0.377,
+      "v_gain": -0.0153,
+      "util_score": 0.2436915018706574,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 51.0,
+      "win_impact": -3.3,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "四费支援一，身材平庸且辅助收益低，暂不推荐。"
+    },
+    {
+      "id": 225,
+      "name": "深海守望者",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 5,
+      "card_type": "MINION",
+      "base_dp": 5,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "FORTIFY_3"
+      ],
+      "actor_prob": 0.402,
+      "v_gain": -0.0252,
+      "util_score": 0.24310892570817746,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 50.7,
+      "win_impact": -3.3,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "五费固守三仅五防，高费低防难返场，构筑不投入。"
+    },
+    {
+      "id": 229,
+      "name": "深流变奏师",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 5,
+      "card_type": "MINION",
+      "base_dp": 5,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "SUPPORT_ATK_1",
+        "DEATH_MANA_2"
+      ],
+      "actor_prob": 0.39,
+      "v_gain": -0.0236,
+      "util_score": 0.24001924104756817,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 50.3,
+      "win_impact": -3.4,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "五费支援一亡语得二费，节奏太慢，构筑不投入。"
+    },
+    {
+      "id": 213,
+      "name": "蔚蓝破甲师",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 3,
+      "card_type": "MINION",
+      "base_dp": 3,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "DEGRADE_1"
+      ],
+      "actor_prob": 0.415,
+      "v_gain": -0.0421,
+      "util_score": 0.23024371993586318,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 49.3,
+      "win_impact": -3.6,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "三费破甲一身材平庸，减攻收益低，构筑不建议投入。"
+    },
+    {
+      "id": 231,
+      "name": "秘蓝回溯",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 3,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 0,
+      "def_val": 3,
+      "tags": [
+        "DRAW_1"
+      ],
+      "actor_prob": 0.408,
+      "v_gain": -0.0403,
+      "util_score": 0.22936782469267772,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 48.9,
+      "win_impact": -3.7,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "三费防三抽一，效率低于寒晶护壁，构筑不投入。"
     },
     {
       "id": 500,
@@ -1328,270 +2982,73 @@
         "DEATH_MANA_2",
         "FORTIFY_2"
       ],
-      "actor_prob": 0.2687394507229328,
-      "v_gain": -0.06483305394649505,
-      "raw_val": 0.10195319838821888,
-      "pick_rate": 66.7,
-      "score": 82.5,
-      "win_impact": 1.7,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "五费固守二，亡语回两费；衔接高费终端，两张保证续航。"
-    },
-    {
-      "id": 212,
-      "name": "蔚蓝守卫",
-      "faction": "Blue",
-      "origin_type": "Blue专属",
-      "is_neutral": false,
-      "cost": 2,
-      "card_type": "MINION",
-      "base_dp": 2,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [
-        "FORTIFY_2"
-      ],
-      "actor_prob": 0.25706333145499227,
-      "v_gain": -0.05604186169803142,
-      "raw_val": 0.10051073487848042,
-      "pick_rate": 66.7,
-      "score": 82.0,
-      "win_impact": 1.6,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "两费固守二，前期最稳防线；保护后排并过渡，两张主力。"
-    },
-    {
-      "id": 901,
-      "name": "雇佣兵",
-      "faction": "Blue",
-      "origin_type": "中立通用",
-      "is_neutral": true,
-      "cost": 3,
-      "card_type": "MINION",
-      "base_dp": 5,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [],
-      "actor_prob": 0.2668855458498001,
-      "v_gain": -0.07327664792537689,
-      "raw_val": 0.09680444896221162,
-      "pick_rate": 66.7,
-      "score": 81.5,
-      "win_impact": 1.5,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "三费五防裸墙，吸收伤害扎实；无词条但替要塞拖回合，两张。"
-    },
-    {
-      "id": 902,
-      "name": "训练假人",
-      "faction": "Blue",
-      "origin_type": "中立通用",
-      "is_neutral": true,
-      "cost": 1,
-      "card_type": "MINION",
-      "base_dp": 1,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [],
-      "actor_prob": 0.35521200895309446,
-      "v_gain": -0.026155375689268113,
-      "raw_val": 0.16452831663191317,
-      "pick_rate": 33.3,
-      "score": 79.0,
-      "win_impact": 1.1,
-      "tier": "B",
-      "tier_name": "优质拼图",
-      "rec_count": "1 张 (按需携带)",
-      "tier_class": "tier-b",
-      "comment": "一费一防，垫刀拖延；功能有限，仅作低费曲线补位。"
-    },
-    {
-      "id": 203,
-      "name": "防御！",
-      "faction": "Blue",
-      "origin_type": "Blue专属",
-      "is_neutral": false,
-      "cost": 1,
-      "card_type": "SPELL",
-      "base_dp": 0,
-      "atk_val": 0,
-      "def_val": 2,
-      "tags": [],
-      "actor_prob": 0.4084576599299908,
-      "v_gain": -0.08201376050710678,
-      "raw_val": 0.163221949711442,
-      "pick_rate": 33.3,
-      "score": 78.5,
-      "win_impact": 1.0,
-      "tier": "B",
-      "tier_name": "优质拼图",
-      "rec_count": "1 张 (按需携带)",
-      "tier_class": "tier-b",
-      "comment": "一费防两伤，关键回合保随从或脸；非主计划，按需一张。"
-    },
-    {
-      "id": 200,
-      "name": "蔚蓝卫士",
-      "faction": "Blue",
-      "origin_type": "Blue专属",
-      "is_neutral": false,
-      "cost": 2,
-      "card_type": "MINION",
-      "base_dp": 2,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [
-        "FORTIFY_1"
-      ],
-      "actor_prob": 0.2926376014947891,
-      "v_gain": -0.04908314272761345,
-      "raw_val": 0.12177722938358784,
-      "pick_rate": 33.3,
-      "score": 76.5,
-      "win_impact": 0.7,
-      "tier": "B",
-      "tier_name": "优质拼图",
-      "rec_count": "1 张 (按需携带)",
-      "tier_class": "tier-b",
-      "comment": "低费固守墙，可补前期曲线；同费蔚蓝守卫更硬，仅按需一张。"
-    },
-    {
-      "id": 208,
-      "name": "壁垒工匠",
-      "faction": "Blue",
-      "origin_type": "Blue专属",
-      "is_neutral": false,
-      "cost": 3,
-      "card_type": "MINION",
-      "base_dp": 3,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [
-        "FORTIFY_2"
-      ],
-      "actor_prob": 0.2875958330929279,
-      "v_gain": -0.06462402567267418,
-      "raw_val": 0.11148590371012687,
-      "pick_rate": 33.3,
-      "score": 75.5,
-      "win_impact": 0.6,
-      "tier": "B",
-      "tier_name": "优质拼图",
-      "rec_count": "1 张 (按需携带)",
-      "tier_class": "tier-b",
-      "comment": "三费固守二，防守及格；同费竞争多，仅作针对性一张。"
-    },
-    {
-      "id": 213,
-      "name": "蔚蓝破甲师",
-      "faction": "Blue",
-      "origin_type": "Blue专属",
-      "is_neutral": false,
-      "cost": 3,
-      "card_type": "MINION",
-      "base_dp": 3,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [
-        "DEGRADE_1"
-      ],
-      "actor_prob": 0.2510773383080959,
-      "v_gain": -0.058254323154687884,
-      "raw_val": 0.09641150757670403,
-      "pick_rate": 33.3,
-      "score": 71.0,
-      "win_impact": -0.2,
-      "tier": "B",
-      "tier_name": "优质拼图",
-      "rec_count": "1 张 (按需携带)",
-      "tier_class": "tier-b",
-      "comment": "三费减益一，针对高防大哥；环境对策，一张足够。"
-    },
-    {
-      "id": 215,
-      "name": "蔚蓝冲击",
-      "faction": "Blue",
-      "origin_type": "Blue专属",
-      "is_neutral": false,
-      "cost": 2,
-      "card_type": "SPELL",
-      "base_dp": 0,
-      "atk_val": 3,
-      "def_val": 0,
-      "tags": [],
-      "actor_prob": 0.32,
-      "v_gain": 0.0,
-      "raw_val": 0.16,
+      "actor_prob": 0.366,
+      "v_gain": -0.0303,
+      "util_score": 0.22325729556386958,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 58.0,
-      "win_impact": -2.2,
+      "score": 48.6,
+      "win_impact": -3.8,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "两费打三，直伤效率普通；防守卡组不缺解，不带。"
+      "comment": "五费亡语得二费并固守二，节奏矛盾，构筑不投入。"
     },
     {
-      "id": 209,
-      "name": "寒晶护壁",
+      "id": 501,
+      "name": "蓝绿潮汐织法者",
       "faction": "Blue",
-      "origin_type": "Blue专属",
+      "origin_type": "Blue/Green双色",
       "is_neutral": false,
-      "cost": 2,
-      "card_type": "SPELL",
-      "base_dp": 0,
-      "atk_val": 0,
-      "def_val": 2,
-      "tags": [
-        "DRAW_1"
-      ],
-      "actor_prob": 0.3485343188047409,
-      "v_gain": -0.1086416307836771,
-      "raw_val": 0.11994634401053189,
-      "pick_rate": 0.0,
-      "score": 56.0,
-      "win_impact": -2.6,
-      "tier": "D",
-      "tier_name": "低效备选",
-      "rec_count": "0 张 (暂不推荐)",
-      "tier_class": "tier-d",
-      "comment": "两费防二过一，效率尚可；但防法术卡位紧，暂不带。"
-    },
-    {
-      "id": 214,
-      "name": "蔚蓝盾卫",
-      "faction": "Blue",
-      "origin_type": "Blue专属",
-      "is_neutral": false,
-      "cost": 4,
+      "cost": 5,
       "card_type": "MINION",
       "base_dp": 4,
       "atk_val": 0,
       "def_val": 0,
       "tags": [
-        "FORTIFY_3",
-        "SUPPORT_ATK_1"
+        "SUPPORT_ATK_1",
+        "RAMP_1"
       ],
-      "actor_prob": 0.29157022163271906,
-      "v_gain": -0.07480743527412415,
-      "raw_val": 0.10838139317929746,
+      "actor_prob": 0.366,
+      "v_gain": -0.0365,
+      "util_score": 0.21662982362373062,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 54.5,
-      "win_impact": -2.8,
+      "score": 47.8,
+      "win_impact": -3.9,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "四费固守三加攻一，单卡不弱；四费曲线拥挤，优先雇佣兵。"
+      "comment": "五费支援一并跳一费，身材亏节奏慢，构筑不投入。"
+    },
+    {
+      "id": 502,
+      "name": "蓝绿潮涌",
+      "faction": "Blue",
+      "origin_type": "Blue/Green双色",
+      "is_neutral": false,
+      "cost": 3,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "DRAW_2"
+      ],
+      "actor_prob": 0.378,
+      "v_gain": -0.0545,
+      "util_score": 0.20218877605558525,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 47.1,
+      "win_impact": -4.1,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "三费抽二无防守，过牌快但让节奏，暂不推荐。"
     },
     {
       "id": 903,
@@ -1608,202 +3065,125 @@
         "DRAW_2",
         "DISCARD_1"
       ],
-      "actor_prob": 0.28199793472886087,
-      "v_gain": -0.10263408571481705,
-      "raw_val": 0.0896819245070219,
+      "actor_prob": 0.392,
+      "v_gain": -0.0624,
+      "util_score": 0.19934409406734369,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 50.5,
-      "win_impact": -3.4,
+      "score": 46.8,
+      "win_impact": -4.1,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "四费抽二弃一，节奏亏损；防守卡组要留手牌，不带。"
+      "comment": "四费抽二弃一，过滤质量差且亏节奏，暂不推荐。"
     },
     {
-      "id": 400,
-      "name": "赤蓝交织者",
+      "id": 401,
+      "name": "赤蓝战术交换",
       "faction": "Blue",
       "origin_type": "Red/Blue双色",
       "is_neutral": false,
-      "cost": 4,
-      "card_type": "MINION",
-      "base_dp": 4,
-      "atk_val": 0,
+      "cost": 2,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 3,
       "def_val": 0,
       "tags": [
-        "SUPPORT_ATK_1"
+        "DRAW_1"
       ],
-      "actor_prob": 0.251646364480257,
-      "v_gain": -0.0734021820127964,
-      "raw_val": 0.0891220912337303,
+      "actor_prob": 0.257,
+      "v_gain": -0.0447,
+      "util_score": 0.16426445750935328,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 50.0,
-      "win_impact": -3.5,
+      "score": 46.4,
+      "win_impact": -4.2,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "四费支援加一，输出增益低；同费有雇佣兵撑场，不带。"
+      "comment": "二费打三抽一，看似灵活但效率一般，暂不推荐。"
     },
     {
-      "id": 206,
-      "name": "火铳手",
+      "id": 215,
+      "name": "蔚蓝冲击",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 2,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 4,
+      "def_val": 0,
+      "tags": [],
+      "actor_prob": 0.268,
+      "v_gain": -0.0509,
+      "util_score": 0.16203698556921434,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 46.1,
+      "win_impact": -4.3,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "二费打四无附带，效率不如冰封禁制，暂不推荐带。"
+    },
+    {
+      "id": 226,
+      "name": "寒冰解离",
       "faction": "Blue",
       "origin_type": "Blue专属",
       "is_neutral": false,
       "cost": 3,
-      "card_type": "MINION",
-      "base_dp": 4,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [
-        "SUPPORT_ATK_2"
-      ],
-      "actor_prob": 0.24715792909264564,
-      "v_gain": -0.06914298161864281,
-      "raw_val": 0.08900747373700141,
-      "pick_rate": 0.0,
-      "score": 49.5,
-      "win_impact": -3.6,
-      "tier": "D",
-      "tier_name": "低效备选",
-      "rec_count": "0 张 (暂不推荐)",
-      "tier_class": "tier-d",
-      "comment": "三费支援加二攻，输出不错；但三费曲线拥挤，支援位有弓箭手，暂不投入。"
-    },
-    {
-      "id": 205,
-      "name": "藤甲兵",
-      "faction": "Blue",
-      "origin_type": "Blue专属",
-      "is_neutral": false,
-      "cost": 4,
-      "card_type": "MINION",
-      "base_dp": 4,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [
-        "FORTIFY_2"
-      ],
-      "actor_prob": 0.24926217496395112,
-      "v_gain": -0.0730610579252243,
-      "raw_val": 0.08810055851936341,
-      "pick_rate": 0.0,
-      "score": 49.0,
-      "win_impact": -3.7,
-      "tier": "D",
-      "tier_name": "低效备选",
-      "rec_count": "0 张 (暂不推荐)",
-      "tier_class": "tier-d",
-      "comment": "四费四防固守二，数值平庸；四费竞争激烈，卡位不够。"
-    },
-    {
-      "id": 204,
-      "name": "石像鬼",
-      "faction": "Blue",
-      "origin_type": "Blue专属",
-      "is_neutral": false,
-      "cost": 6,
-      "card_type": "MINION",
-      "base_dp": 8,
-      "atk_val": 0,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 4,
       "def_val": 0,
       "tags": [],
-      "actor_prob": 0.2443366415798664,
-      "v_gain": -0.07705387100577354,
-      "raw_val": 0.08364138528704643,
+      "actor_prob": 0.253,
+      "v_gain": -0.0702,
+      "util_score": 0.135406306787814,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 48.0,
-      "win_impact": -3.8,
+      "score": 45.4,
+      "win_impact": -4.4,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "六费八防无词条，节奏太慢；高费位要塞更强，故不带。"
+      "comment": "三费打四无特效，解场不如冰封禁制，暂不推荐。"
+    },
+    {
+      "id": 220,
+      "name": "寒霜破甲",
+      "faction": "Blue",
+      "origin_type": "Blue专属",
+      "is_neutral": false,
+      "cost": 2,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 3,
+      "def_val": 0,
+      "tags": [
+        "DEGRADE_1"
+      ],
+      "actor_prob": 0.27,
+      "v_gain": -0.1022,
+      "util_score": 0.10800000000000001,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 45.0,
+      "win_impact": -4.5,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "二费打三带破甲一，解场效率一般，构筑不宜投入。"
     }
   ],
   "Green": [
-    {
-      "id": 310,
-      "name": "灭世翡翠巨龙",
-      "faction": "Green",
-      "origin_type": "Green专属",
-      "is_neutral": false,
-      "cost": 10,
-      "card_type": "MINION",
-      "base_dp": 8,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [
-        "RUSH",
-        "BONUS_SCORE_1"
-      ],
-      "actor_prob": 0.318678605556488,
-      "v_gain": 0.44554159678518773,
-      "raw_val": 0.3821101011708379,
-      "pick_rate": 100.0,
-      "score": 98.0,
-      "win_impact": 4.2,
-      "tier": "S+",
-      "tier_name": "核心主轴",
-      "rec_count": "3 张 (核心满编)",
-      "tier_class": "tier-s",
-      "comment": "十费突袭终结，附加得分拉大差距；跳费后核心制胜点，满编提高上手与续航。"
-    },
-    {
-      "id": 309,
-      "name": "翡翠幼龙",
-      "faction": "Green",
-      "origin_type": "Green专属",
-      "is_neutral": false,
-      "cost": 5,
-      "card_type": "MINION",
-      "base_dp": 4,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [
-        "RUSH",
-        "DEATH_MANA_1"
-      ],
-      "actor_prob": 0.3253032296895981,
-      "v_gain": 0.2831781547516584,
-      "raw_val": 0.3042406922206282,
-      "pick_rate": 100.0,
-      "score": 97.0,
-      "win_impact": 4.0,
-      "tier": "S+",
-      "tier_name": "核心主轴",
-      "rec_count": "3 张 (核心满编)",
-      "tier_class": "tier-s",
-      "comment": "五费突袭解场，亡语返一费；兼顾节奏与跳费链，满编保证中期不断档。"
-    },
-    {
-      "id": 307,
-      "name": "芽苗祭司",
-      "faction": "Green",
-      "origin_type": "Green专属",
-      "is_neutral": false,
-      "cost": 4,
-      "card_type": "MINION",
-      "base_dp": 3,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [
-        "RAMP_1"
-      ],
-      "actor_prob": 0.2910558141767979,
-      "v_gain": -0.07571343630552292,
-      "raw_val": 0.10767118893563749,
-      "pick_rate": 100.0,
-      "score": 93.0,
-      "win_impact": 3.4,
-      "tier": "S",
-      "tier_name": "核心主轴",
-      "rec_count": "3 张 (核心满编)",
-      "tier_class": "tier-s",
-      "comment": "四费站场并跳一费，衔接高费核心；前期必争节奏点，满编保证按时扩张法力。"
-    },
     {
       "id": 905,
       "name": "佣兵斥候",
@@ -1818,69 +3198,46 @@
       "tags": [
         "RUSH"
       ],
-      "actor_prob": 0.39954831898212434,
-      "v_gain": 0.2687882795929909,
-      "raw_val": 0.33416829928755765,
-      "pick_rate": 66.7,
-      "score": 89.5,
-      "win_impact": 2.8,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "两费突袭补刀，解掉一血随从并夺回先手；身材偏弱，两张作功能性解场。"
+      "actor_prob": 0.669,
+      "v_gain": 0.437,
+      "util_score": 0.8675999999999999,
+      "copies": 3,
+      "pick_rate": 100.0,
+      "score": 98.0,
+      "win_impact": 5.2,
+      "tier": "S+",
+      "tier_name": "核心主轴",
+      "rec_count": "3 张 (核心满编)",
+      "tier_class": "tier-s",
+      "comment": "二费突袭补刀，低费解场利器，三张满编抢前期节奏。"
     },
     {
-      "id": 302,
-      "name": "剧毒花",
+      "id": 310,
+      "name": "灭世翡翠巨龙",
       "faction": "Green",
       "origin_type": "Green专属",
       "is_neutral": false,
-      "cost": 2,
+      "cost": 9,
       "card_type": "MINION",
-      "base_dp": 2,
+      "base_dp": 5,
       "atk_val": 0,
       "def_val": 0,
       "tags": [
-        "DEGRADE_2"
+        "RUSH",
+        "BONUS_SCORE_1"
       ],
-      "actor_prob": 0.3816664181649685,
-      "v_gain": -0.04557882621884346,
-      "raw_val": 0.16804379597306252,
-      "pick_rate": 66.7,
-      "score": 88.5,
-      "win_impact": 2.6,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "两费削减对手两点攻，针对快攻前锋；可换掉小随从，主力配置两张稳前期。"
-    },
-    {
-      "id": 900,
-      "name": "商人",
-      "faction": "Green",
-      "origin_type": "中立通用",
-      "is_neutral": true,
-      "cost": 2,
-      "card_type": "MINION",
-      "base_dp": 2,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [
-        "DRAW_1"
-      ],
-      "actor_prob": 0.35755534246563914,
-      "v_gain": -0.04113842397928238,
-      "raw_val": 0.1582084592431784,
-      "pick_rate": 66.7,
-      "score": 87.5,
-      "win_impact": 2.5,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "两费站场并抽一，润滑跳费曲线；前期不亏手牌，两张维持展开与资源平衡。"
+      "actor_prob": 0.388,
+      "v_gain": 0.3254,
+      "util_score": 0.6898986541837332,
+      "copies": 3,
+      "pick_rate": 100.0,
+      "score": 96.9,
+      "win_impact": 4.9,
+      "tier": "S+",
+      "tier_name": "核心主轴",
+      "rec_count": "3 张 (核心满编)",
+      "tier_class": "tier-s",
+      "comment": "九费核弹终端，突袭加分可返场斩杀，核心三张满编。"
     },
     {
       "id": 902,
@@ -1894,44 +3251,156 @@
       "atk_val": 0,
       "def_val": 0,
       "tags": [],
-      "actor_prob": 0.3351286843419075,
-      "v_gain": -0.02778744027018547,
-      "raw_val": 0.15367062203586102,
+      "actor_prob": 0.676,
+      "v_gain": 0.0045,
+      "util_score": 0.6173280280866004,
+      "copies": 3,
+      "pick_rate": 100.0,
+      "score": 96.7,
+      "win_impact": 4.9,
+      "tier": "S+",
+      "tier_name": "核心主轴",
+      "rec_count": "3 张 (核心满编)",
+      "tier_class": "tier-s",
+      "comment": "一费前期站场挡刀，保护跳费，三张满编稳定开局。"
+    },
+    {
+      "id": 311,
+      "name": "世界树恩泽",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 5,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 0,
+      "def_val": 3,
+      "tags": [
+        "RAMP_1"
+      ],
+      "actor_prob": 0.391,
+      "v_gain": -0.0791,
+      "util_score": 0.45441053247513163,
+      "copies": 3,
+      "pick_rate": 100.0,
+      "score": 88.4,
+      "win_impact": 2.7,
+      "tier": "A",
+      "tier_name": "主力组件",
+      "rec_count": "3 张 (主力配置)",
+      "tier_class": "tier-a",
+      "comment": "五费跳费兼三点防，中期扩张核心，三张满编抢科技。"
+    },
+    {
+      "id": 328,
+      "name": "荆棘反制者",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 3,
+      "card_type": "MINION",
+      "base_dp": 3,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "RUSH",
+        "DEGRADE_1"
+      ],
+      "actor_prob": 0.471,
+      "v_gain": 0.4246,
+      "util_score": 0.7811442949093036,
+      "copies": 2,
       "pick_rate": 66.7,
-      "score": 87.0,
+      "score": 87.3,
+      "win_impact": 2.5,
+      "tier": "A",
+      "tier_name": "主力组件",
+      "rec_count": "2 张 (主力配置)",
+      "tier_class": "tier-a",
+      "comment": "三费突袭削弱，解小怪抢节奏，两张补前期场面交互。"
+    },
+    {
+      "id": 323,
+      "name": "藤蔓突袭者",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "MINION",
+      "base_dp": 4,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "RUSH"
+      ],
+      "actor_prob": 0.448,
+      "v_gain": 0.4111,
+      "util_score": 0.7640449385605617,
+      "copies": 2,
+      "pick_rate": 66.7,
+      "score": 87.1,
       "win_impact": 2.4,
       "tier": "A",
       "tier_name": "主力组件",
       "rec_count": "2 张 (主力配置)",
       "tier_class": "tier-a",
-      "comment": "一费垫场吸收攻击，保护跳费随从；功能单一，两张用于前期过渡即可。"
+      "comment": "四费四攻突袭，解场返场主力，两张优质抢前期节奏。"
     },
     {
-      "id": 313,
-      "name": "翠绿哨兵",
+      "id": 602,
+      "name": "红绿共生",
       "faction": "Green",
-      "origin_type": "Green专属",
+      "origin_type": "Red/Green双色",
       "is_neutral": false,
-      "cost": 2,
+      "cost": 5,
       "card_type": "MINION",
-      "base_dp": 2,
+      "base_dp": 5,
       "atk_val": 0,
       "def_val": 0,
       "tags": [
-        "FORTIFY_2",
+        "RUSH",
         "DEATH_DRAW_1"
       ],
-      "actor_prob": 0.3359838239848614,
-      "v_gain": -0.04454759806394577,
-      "raw_val": 0.1457181129604578,
+      "actor_prob": 0.398,
+      "v_gain": 0.3867,
+      "util_score": 0.7297675833820948,
+      "copies": 2,
       "pick_rate": 66.7,
-      "score": 86.5,
-      "win_impact": 2.3,
+      "score": 86.9,
+      "win_impact": 2.4,
       "tier": "A",
       "tier_name": "主力组件",
       "rec_count": "2 张 (主力配置)",
       "tier_class": "tier-a",
-      "comment": "两费双层护甲，亡语补一张；前期稳血兼过牌，主力两张强化防守与资源。"
+      "comment": "五费突袭亡语过牌，解场兼补资源，两张优质主力。"
+    },
+    {
+      "id": 309,
+      "name": "翡翠幼龙",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 7,
+      "card_type": "MINION",
+      "base_dp": 4,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "RUSH",
+        "DEATH_MANA_1"
+      ],
+      "actor_prob": 0.371,
+      "v_gain": 0.3486,
+      "util_score": 0.6966738443534229,
+      "copies": 2,
+      "pick_rate": 66.7,
+      "score": 86.7,
+      "win_impact": 2.4,
+      "tier": "A",
+      "tier_name": "主力组件",
+      "rec_count": "2 张 (主力配置)",
+      "tier_class": "tier-a",
+      "comment": "七费突袭补刀，亡语回一费，主力二张润滑后期节奏。"
     },
     {
       "id": 312,
@@ -1947,41 +3416,208 @@
       "tags": [
         "FORTIFY_1"
       ],
-      "actor_prob": 0.3197653226554394,
-      "v_gain": -0.03166695162653923,
-      "raw_val": 0.1440491855144501,
+      "actor_prob": 0.603,
+      "v_gain": -0.0004,
+      "util_score": 0.5852608543007607,
+      "copies": 2,
       "pick_rate": 66.7,
       "score": 86.0,
+      "win_impact": 2.3,
+      "tier": "A",
+      "tier_name": "主力组件",
+      "rec_count": "2 张 (主力配置)",
+      "tier_class": "tier-a",
+      "comment": "一费站场带强化，护脸过渡，两张稳定补一费曲线。"
+    },
+    {
+      "id": 327,
+      "name": "翡翠藤盾卫",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 2,
+      "card_type": "MINION",
+      "base_dp": 2,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "FORTIFY_2"
+      ],
+      "actor_prob": 0.558,
+      "v_gain": -0.0104,
+      "util_score": 0.5614094792276185,
+      "copies": 2,
+      "pick_rate": 66.7,
+      "score": 85.6,
       "win_impact": 2.2,
       "tier": "A",
       "tier_name": "主力组件",
       "rec_count": "2 张 (主力配置)",
       "tier_class": "tier-a",
-      "comment": "一费早期站场带护甲，吸收快攻伤害；跳费前低费曲线，两张够用避免卡手。"
+      "comment": "二费二攻高强化，优质护脸站场，两张稳住前期防线。"
     },
     {
-      "id": 901,
-      "name": "雇佣兵",
+      "id": 302,
+      "name": "剧毒花",
       "faction": "Green",
-      "origin_type": "中立通用",
-      "is_neutral": true,
-      "cost": 3,
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 2,
       "card_type": "MINION",
-      "base_dp": 5,
+      "base_dp": 2,
       "atk_val": 0,
       "def_val": 0,
-      "tags": [],
-      "actor_prob": 0.2794203609228134,
-      "v_gain": -0.073882906883955,
-      "raw_val": 0.10276872701942921,
+      "tags": [
+        "DEGRADE_2"
+      ],
+      "actor_prob": 0.591,
+      "v_gain": -0.055,
+      "util_score": 0.5485123464014043,
+      "copies": 2,
       "pick_rate": 66.7,
-      "score": 84.5,
-      "win_impact": 2.0,
+      "score": 85.4,
+      "win_impact": 2.2,
       "tier": "A",
       "tier_name": "主力组件",
       "rec_count": "2 张 (主力配置)",
       "tier_class": "tier-a",
-      "comment": "三费五攻身材扎实，前期交换占优；无词条但能扛线，两张补足低费站场压力。"
+      "comment": "二费降攻压制，交换赚节奏；主力二张，稳住前期防线。"
+    },
+    {
+      "id": 318,
+      "name": "萌芽跳费使",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "MINION",
+      "base_dp": 3,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "RAMP_1"
+      ],
+      "actor_prob": 0.422,
+      "v_gain": -0.0282,
+      "util_score": 0.4965940315974254,
+      "copies": 2,
+      "pick_rate": 66.7,
+      "score": 82.6,
+      "win_impact": 1.8,
+      "tier": "A",
+      "tier_name": "主力组件",
+      "rec_count": "2 张 (主力配置)",
+      "tier_class": "tier-a",
+      "comment": "四费站场同时跳费，中期扩张主力，两张稳定曲线节奏。"
+    },
+    {
+      "id": 320,
+      "name": "翠绿资源滋长",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "RAMP_1",
+        "DRAW_1"
+      ],
+      "actor_prob": 0.411,
+      "v_gain": -0.0715,
+      "util_score": 0.46685757753071966,
+      "copies": 2,
+      "pick_rate": 66.7,
+      "score": 79.5,
+      "win_impact": 1.4,
+      "tier": "B",
+      "tier_name": "优质拼图",
+      "rec_count": "2 张 (按需携带)",
+      "tier_class": "tier-b",
+      "comment": "四费跳费过牌，按需两张补资源，过牌与科技兼顾。"
+    },
+    {
+      "id": 900,
+      "name": "商人",
+      "faction": "Green",
+      "origin_type": "中立通用",
+      "is_neutral": true,
+      "cost": 2,
+      "card_type": "MINION",
+      "base_dp": 2,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "DRAW_1"
+      ],
+      "actor_prob": 0.562,
+      "v_gain": -0.0034,
+      "util_score": 0.567105441778818,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 58.2,
+      "win_impact": -1.8,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "二费站场过一张，润滑尚可，但卡位紧仅备编可选。"
+    },
+    {
+      "id": 301,
+      "name": "树人",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 3,
+      "card_type": "MINION",
+      "base_dp": 2,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "FORTIFY_1"
+      ],
+      "actor_prob": 0.525,
+      "v_gain": -0.0222,
+      "util_score": 0.5413048566413108,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 57.1,
+      "win_impact": -2.0,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "三费二攻带强化，身材平庸无返场，仅特定站场环境备编。"
+    },
+    {
+      "id": 317,
+      "name": "翠绿驻防藤蔓",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 2,
+      "card_type": "MINION",
+      "base_dp": 2,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "FORTIFY_1"
+      ],
+      "actor_prob": 0.485,
+      "v_gain": -0.0006,
+      "util_score": 0.5379438267992978,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 56.7,
+      "win_impact": -2.1,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "二费站场带强化，合格前期防守牌，但卡位紧仅备编。"
     },
     {
       "id": 904,
@@ -1998,17 +3634,43 @@
         "FORTIFY_1",
         "DEATH_DRAW_1"
       ],
-      "actor_prob": 0.2548323892056942,
-      "v_gain": -0.06763978004455566,
-      "raw_val": 0.09359630458056925,
-      "pick_rate": 66.7,
-      "score": 83.5,
-      "win_impact": 1.8,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "三费护甲加亡语抽牌，防守同时补资源；适合拖入高费，两张稳定中前期。"
+      "actor_prob": 0.479,
+      "v_gain": -0.0186,
+      "util_score": 0.5250113516676419,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 56.4,
+      "win_impact": -2.2,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "三费强化亡语过牌，防守合格，但竞争位只能备编。"
+    },
+    {
+      "id": 901,
+      "name": "雇佣兵",
+      "faction": "Green",
+      "origin_type": "中立通用",
+      "is_neutral": true,
+      "cost": 3,
+      "card_type": "MINION",
+      "base_dp": 5,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [],
+      "actor_prob": 0.447,
+      "v_gain": 0.0017,
+      "util_score": 0.5240896430661206,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 56.0,
+      "win_impact": -2.2,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "三费五攻白板，交换强但无词条，仅备编针对慢速。"
     },
     {
       "id": 315,
@@ -2025,44 +3687,18 @@
         "RAMP_1",
         "DRAW_1"
       ],
-      "actor_prob": 0.2790964536368847,
-      "v_gain": -0.1015002254396677,
-      "raw_val": 0.0887981140986085,
-      "pick_rate": 66.7,
-      "score": 82.5,
-      "win_impact": 1.7,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "三费跳一费并抽一，加速与补牌兼备；关键过渡牌，两张保证中期资源不断。"
-    },
-    {
-      "id": 903,
-      "name": "酒馆密账",
-      "faction": "Green",
-      "origin_type": "中立通用",
-      "is_neutral": true,
-      "cost": 4,
-      "card_type": "SPELL",
-      "base_dp": 0,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [
-        "DRAW_2",
-        "DISCARD_1"
-      ],
-      "actor_prob": 0.26939393281936647,
-      "v_gain": -0.10057671293616295,
-      "raw_val": 0.08440860994160176,
-      "pick_rate": 66.7,
-      "score": 80.5,
-      "win_impact": 1.4,
-      "tier": "A",
-      "tier_name": "主力组件",
-      "rec_count": "2 张 (主力配置)",
-      "tier_class": "tier-a",
-      "comment": "四费抽二弃一，低费法术加速过牌；跳费后快速找核心，弃牌代价可接受。"
+      "actor_prob": 0.507,
+      "v_gain": -0.0432,
+      "util_score": 0.5218169689877121,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 55.7,
+      "win_impact": -2.3,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "三费跳费过牌一体，前期节奏偏慢，仅备编补润滑。"
     },
     {
       "id": 300,
@@ -2078,45 +3714,128 @@
       "tags": [
         "RAMP_1"
       ],
-      "actor_prob": 0.2734591603279114,
-      "v_gain": -0.10238943807780743,
-      "raw_val": 0.08553486112505199,
-      "pick_rate": 33.3,
-      "score": 71.5,
-      "win_impact": -0.1,
-      "tier": "B",
-      "tier_name": "优质拼图",
-      "rec_count": "1 张 (按需携带)",
-      "tier_class": "tier-b",
-      "comment": "三费跳一费，节奏偏慢；特定大费对局作额外加速，常规卡位只留一张。"
+      "actor_prob": 0.505,
+      "v_gain": -0.0446,
+      "util_score": 0.5201977764774722,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 55.3,
+      "win_impact": -2.4,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "三费空过跳费，前期亏场明显；仅备编补科技上限，非主力。"
     },
     {
-      "id": 306,
-      "name": "荆棘缠绕",
+      "id": 326,
+      "name": "自然生长",
       "faction": "Green",
       "origin_type": "Green专属",
       "is_neutral": false,
-      "cost": 2,
+      "cost": 3,
       "card_type": "SPELL",
       "base_dp": 0,
-      "atk_val": 2,
+      "atk_val": 0,
       "def_val": 0,
-      "tags": [],
-      "actor_prob": 0.32,
-      "v_gain": 0.0,
-      "raw_val": 0.16,
+      "tags": [
+        "RAMP_1"
+      ],
+      "actor_prob": 0.487,
+      "v_gain": -0.0523,
+      "util_score": 0.5084922176711527,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 58.0,
-      "win_impact": -2.2,
+      "score": 55.0,
+      "win_impact": -2.4,
+      "tier": "C",
+      "tier_name": "环境对策",
+      "rec_count": "0~1 张 (可选备编)",
+      "tier_class": "tier-c",
+      "comment": "三费单纯跳费，前期让节奏，仅备编极端提速使用。"
+    },
+    {
+      "id": 321,
+      "name": "古树庇护",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 3,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 0,
+      "def_val": 5,
+      "tags": [
+        "FORTIFY_1"
+      ],
+      "actor_prob": 0.463,
+      "v_gain": -0.0405,
+      "util_score": 0.5057968402574605,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 54.6,
+      "win_impact": -2.5,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "两费打二效率普通，仅能处理小随从；剧毒花与突袭已够解场，无需额外直伤。"
+      "comment": "三费五点防加强化，增益有限，不解决前期节奏问题。"
     },
     {
-      "id": 301,
-      "name": "树人",
+      "id": 304,
+      "name": "森林之狼",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "MINION",
+      "base_dp": 4,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [],
+      "actor_prob": 0.44,
+      "v_gain": -0.0272,
+      "util_score": 0.5043791691047396,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 54.2,
+      "win_impact": -2.6,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "四费白板四攻，竞争位全被突袭跳费挤掉，构筑不带。"
+    },
+    {
+      "id": 502,
+      "name": "蓝绿潮涌",
+      "faction": "Green",
+      "origin_type": "Blue/Green双色",
+      "is_neutral": false,
+      "cost": 3,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "DRAW_2"
+      ],
+      "actor_prob": 0.474,
+      "v_gain": -0.0559,
+      "util_score": 0.5011857226448215,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 53.9,
+      "win_impact": -2.7,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "三费抽二，纯过牌亏节奏，跳费体系完全不考虑此卡。"
+    },
+    {
+      "id": 313,
+      "name": "翠绿哨兵",
       "faction": "Green",
       "origin_type": "Green专属",
       "is_neutral": false,
@@ -2126,19 +3845,48 @@
       "atk_val": 0,
       "def_val": 0,
       "tags": [
-        "FORTIFY_1"
+        "FORTIFY_2",
+        "DEATH_DRAW_1"
       ],
-      "actor_prob": 0.2837894044816494,
-      "v_gain": -0.05210293419659138,
-      "raw_val": 0.11584323514252902,
+      "actor_prob": 0.427,
+      "v_gain": -0.0243,
+      "util_score": 0.5008760678759508,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 55.5,
-      "win_impact": -2.6,
+      "score": 53.5,
+      "win_impact": -2.7,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "三费二攻仅带护甲，站场压制不足；跳费体系更需即时解场或抽牌，无卡位。"
+      "comment": "三费二攻亡语过牌，身材太亏，节奏卡组整体不带。"
+    },
+    {
+      "id": 322,
+      "name": "翠绿守林人",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 3,
+      "card_type": "MINION",
+      "base_dp": 3,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "FORTIFY_2"
+      ],
+      "actor_prob": 0.407,
+      "v_gain": -0.0132,
+      "util_score": 0.49937109420713865,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 53.2,
+      "win_impact": -2.8,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "三费三攻高强化，纯站场无返场，竞争不过突袭节奏。"
     },
     {
       "id": 314,
@@ -2154,17 +3902,234 @@
       "tags": [
         "RAMP_1"
       ],
-      "actor_prob": 0.28372822850942614,
-      "v_gain": -0.0817362204194069,
-      "raw_val": 0.10099600404500962,
+      "actor_prob": 0.396,
+      "v_gain": -0.0143,
+      "util_score": 0.49432744294909303,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 54.0,
-      "win_impact": -2.9,
+      "score": 52.5,
+      "win_impact": -3.0,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "四费三攻跳一费，身材亏损且当回合无压制；芽苗祭司更稳，卡位不留。"
+      "comment": "四费三攻跳费慢，同费有跳费使与资源滋长，淘汰。"
+    },
+    {
+      "id": 303,
+      "name": "狂暴生长",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 3,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 0,
+      "def_val": 3,
+      "tags": [],
+      "actor_prob": 0.445,
+      "v_gain": -0.0499,
+      "util_score": 0.4930965476887068,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 52.1,
+      "win_impact": -3.0,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "三费仅给防无跳费过牌，前期节奏太差，完全不带。"
+    },
+    {
+      "id": 307,
+      "name": "芽苗祭司",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "MINION",
+      "base_dp": 3,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "RAMP_1"
+      ],
+      "actor_prob": 0.407,
+      "v_gain": -0.0252,
+      "util_score": 0.492349444119368,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 51.8,
+      "win_impact": -3.1,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "四费三攻跳费太慢，被同费跳费使压制，不进构筑。"
+    },
+    {
+      "id": 316,
+      "name": "翠绿守护",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 3,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 0,
+      "def_val": 5,
+      "tags": [],
+      "actor_prob": 0.421,
+      "v_gain": -0.0375,
+      "util_score": 0.49075225277940315,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 51.4,
+      "win_impact": -3.2,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "三费纯五点防，无跳费过牌，防守效率低不进构筑。"
+    },
+    {
+      "id": 501,
+      "name": "蓝绿潮汐织法者",
+      "faction": "Green",
+      "origin_type": "Blue/Green双色",
+      "is_neutral": false,
+      "cost": 5,
+      "card_type": "MINION",
+      "base_dp": 4,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "SUPPORT_ATK_1",
+        "RAMP_1"
+      ],
+      "actor_prob": 0.4,
+      "v_gain": -0.0286,
+      "util_score": 0.48755997659449973,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 51.0,
+      "win_impact": -3.3,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "五费跳费带支援，身材速度都不佳，构筑完全淘汰。"
+    },
+    {
+      "id": 319,
+      "name": "林地衍生兽",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "MINION",
+      "base_dp": 3,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "SPAWN_1_1"
+      ],
+      "actor_prob": 0.405,
+      "v_gain": -0.0328,
+      "util_score": 0.48710239906377995,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 50.7,
+      "win_impact": -3.3,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "四费三攻召一丁，铺场尚可但拖节奏，跳费体系不带。"
+    },
+    {
+      "id": 330,
+      "name": "翠绿复苏使",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "MINION",
+      "base_dp": 4,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "DEATH_MANA_2",
+        "FORTIFY_1"
+      ],
+      "actor_prob": 0.379,
+      "v_gain": -0.0246,
+      "util_score": 0.4815005266237566,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 50.3,
+      "win_impact": -3.4,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "四费亡语回二费，但延迟收益慢，与抢节奏体系冲突。"
+    },
+    {
+      "id": 503,
+      "name": "蓝绿潮涌使",
+      "faction": "Green",
+      "origin_type": "Blue/Green双色",
+      "is_neutral": false,
+      "cost": 5,
+      "card_type": "MINION",
+      "base_dp": 5,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "RAMP_1",
+        "DEATH_DRAW_1"
+      ],
+      "actor_prob": 0.371,
+      "v_gain": -0.027,
+      "util_score": 0.4768961966062024,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 50.0,
+      "win_impact": -3.5,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "五费跳费亡语过牌，延迟收益慢，不如直接跳费卡。"
+    },
+    {
+      "id": 329,
+      "name": "古木护林官",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 5,
+      "card_type": "MINION",
+      "base_dp": 5,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "SUPPORT_ATK_1",
+        "DEATH_DRAW_1"
+      ],
+      "actor_prob": 0.395,
+      "v_gain": -0.0445,
+      "util_score": 0.47625629022820365,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 49.6,
+      "win_impact": -3.5,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "五费支援过牌，身材合格但跳费大哥体系整体不需。"
     },
     {
       "id": 500,
@@ -2181,92 +4146,46 @@
         "DEATH_MANA_2",
         "FORTIFY_2"
       ],
-      "actor_prob": 0.25114149153232573,
-      "v_gain": -0.06703267768025398,
-      "raw_val": 0.09205440692603588,
+      "actor_prob": 0.383,
+      "v_gain": -0.0397,
+      "util_score": 0.4742649502633119,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 53.0,
-      "win_impact": -3.0,
+      "score": 49.3,
+      "win_impact": -3.6,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "五费亡语返两费，但死亡时机不可控；同费翡翠幼龙能即时解场，优先级更高。"
+      "comment": "五费亡语回二费，延迟且混色，翠绿体系不优先携带。"
     },
     {
-      "id": 304,
-      "name": "森林之狼",
+      "id": 903,
+      "name": "酒馆密账",
       "faction": "Green",
-      "origin_type": "Green专属",
-      "is_neutral": false,
+      "origin_type": "中立通用",
+      "is_neutral": true,
       "cost": 4,
-      "card_type": "MINION",
-      "base_dp": 4,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [],
-      "actor_prob": 0.2534458227455616,
-      "v_gain": -0.07826660647988319,
-      "raw_val": 0.0875896081328392,
-      "pick_rate": 0.0,
-      "score": 52.0,
-      "win_impact": -3.2,
-      "tier": "D",
-      "tier_name": "低效备选",
-      "rec_count": "0 张 (暂不推荐)",
-      "tier_class": "tier-d",
-      "comment": "四费四攻白板，交换不赚节奏；无法返场也抢不过突袭，卡位优先跳费。"
-    },
-    {
-      "id": 600,
-      "name": "红绿共生体",
-      "faction": "Green",
-      "origin_type": "Red/Green双色",
-      "is_neutral": false,
-      "cost": 6,
-      "card_type": "MINION",
-      "base_dp": 6,
-      "atk_val": 0,
-      "def_val": 0,
-      "tags": [
-        "SUPPORT_ATK_2",
-        "FORTIFY_2"
-      ],
-      "actor_prob": 0.24923220425844192,
-      "v_gain": -0.07996477335691451,
-      "raw_val": 0.0846337154507637,
-      "pick_rate": 0.0,
-      "score": 51.0,
-      "win_impact": -3.4,
-      "tier": "D",
-      "tier_name": "低效备选",
-      "rec_count": "0 张 (暂不推荐)",
-      "tier_class": "tier-d",
-      "comment": "六费光环加攻带护甲，偏向铺场；本阵营依赖跳费突袭，配合度低不入选。"
-    },
-    {
-      "id": 316,
-      "name": "翠绿守护",
-      "faction": "Green",
-      "origin_type": "Green专属",
-      "is_neutral": false,
-      "cost": 3,
       "card_type": "SPELL",
       "base_dp": 0,
       "atk_val": 0,
-      "def_val": 5,
-      "tags": [],
-      "actor_prob": 0.3041739799082279,
-      "v_gain": -0.13566659726202487,
-      "raw_val": 0.08425369132310152,
+      "def_val": 0,
+      "tags": [
+        "DRAW_2",
+        "DISCARD_1"
+      ],
+      "actor_prob": 0.427,
+      "v_gain": -0.0709,
+      "util_score": 0.47360866003510826,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 50.0,
-      "win_impact": -3.5,
+      "score": 48.9,
+      "win_impact": -3.7,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "三费五防只护脸，无法影响场面；跳费后需要进攻压制，纯防御牌易被穿透。"
+      "comment": "四费抽二弃一，亏节奏且弃牌风险高，构筑完全不带。"
     },
     {
       "id": 305,
@@ -2282,17 +4201,45 @@
       "tags": [
         "FORTIFY_2"
       ],
-      "actor_prob": 0.24690808951854706,
-      "v_gain": -0.08604435250163078,
-      "raw_val": 0.08043186850845814,
+      "actor_prob": 0.391,
+      "v_gain": -0.0528,
+      "util_score": 0.4697996489174957,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 49.5,
-      "win_impact": -3.6,
+      "score": 48.6,
+      "win_impact": -3.8,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "七费八攻带护甲，身材达标却无突袭；后期需立即终结，它留给对手应对回合。"
+      "comment": "七费八攻虽厚，无突袭难返场，大哥位优先核弹终端。"
+    },
+    {
+      "id": 325,
+      "name": "萌芽巨兽",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 7,
+      "card_type": "MINION",
+      "base_dp": 7,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "FORTIFY_3"
+      ],
+      "actor_prob": 0.399,
+      "v_gain": -0.0597,
+      "util_score": 0.46896220011702755,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 48.2,
+      "win_impact": -3.8,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "七费七攻厚实强化，无突袭终结慢，核弹位不优先选。"
     },
     {
       "id": 308,
@@ -2308,83 +4255,1316 @@
       "tags": [
         "FORTIFY_2"
       ],
-      "actor_prob": 0.24858772456645967,
-      "v_gain": -0.08776413649320602,
-      "raw_val": 0.08041179403662682,
+      "actor_prob": 0.369,
+      "v_gain": -0.0419,
+      "util_score": 0.4673776477472205,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 49.0,
-      "win_impact": -3.7,
+      "score": 47.8,
+      "win_impact": -3.9,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "六费六攻双护甲，防守尚可但缺突袭；同费不如跳费或预备终结，难扭转战局。"
+      "comment": "六费六攻强化，无突袭无跳费，六费曲线没有位置。"
     },
     {
-      "id": 303,
-      "name": "狂暴生长",
+      "id": 600,
+      "name": "红绿林冠共生体",
       "faction": "Green",
-      "origin_type": "Green专属",
+      "origin_type": "Red/Green双色",
       "is_neutral": false,
-      "cost": 3,
-      "card_type": "SPELL",
-      "base_dp": 0,
+      "cost": 6,
+      "card_type": "MINION",
+      "base_dp": 6,
       "atk_val": 0,
-      "def_val": 3,
-      "tags": [],
-      "actor_prob": 0.2662914998829365,
-      "v_gain": -0.111487602815032,
-      "raw_val": 0.07740194853395224,
-      "pick_rate": 0.0,
-      "score": 48.5,
-      "win_impact": -3.8,
-      "tier": "D",
-      "tier_name": "低效备选",
-      "rec_count": "0 张 (暂不推荐)",
-      "tier_class": "tier-d",
-      "comment": "三费加三点防却无跳费抽牌，被动挨打；跳费嫌慢，快攻抗性不如低费守护。"
-    },
-    {
-      "id": 311,
-      "name": "世界树恩泽",
-      "faction": "Green",
-      "origin_type": "Green专属",
-      "is_neutral": false,
-      "cost": 5,
-      "card_type": "SPELL",
-      "base_dp": 0,
-      "atk_val": 0,
-      "def_val": 3,
+      "def_val": 0,
       "tags": [
-        "RAMP_1"
+        "SUPPORT_ATK_2",
+        "FORTIFY_2"
       ],
-      "actor_prob": 0.27092721983790397,
-      "v_gain": -0.13487594798207284,
-      "raw_val": 0.06802563592791556,
+      "actor_prob": 0.392,
+      "v_gain": -0.0598,
+      "util_score": 0.4661036863662962,
+      "copies": 0,
       "pick_rate": 0.0,
-      "score": 48.0,
-      "win_impact": -3.8,
+      "score": 47.1,
+      "win_impact": -4.1,
       "tier": "D",
       "tier_name": "低效备选",
       "rec_count": "0 张 (暂不推荐)",
       "tier_class": "tier-d",
-      "comment": "五费才跳一费且加防，节奏滞后；高费回合更需直接施压，此牌拖慢核心落地。"
+      "comment": "六费支援强化，偏铺场增益，跳费大哥轴不需要此卡。"
+    },
+    {
+      "id": 601,
+      "name": "红绿古树桥梁",
+      "faction": "Green",
+      "origin_type": "Red/Green双色",
+      "is_neutral": false,
+      "cost": 6,
+      "card_type": "MINION",
+      "base_dp": 6,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "FORTIFY_2",
+        "DEATH_DRAW_1"
+      ],
+      "actor_prob": 0.383,
+      "v_gain": -0.0574,
+      "util_score": 0.4639080163838502,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 46.8,
+      "win_impact": -4.1,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "六费强化亡语过牌，混色且慢，翠绿不缺这个卡位。"
+    },
+    {
+      "id": 324,
+      "name": "古树智者",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 6,
+      "card_type": "MINION",
+      "base_dp": 6,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "DEATH_MANA_2"
+      ],
+      "actor_prob": 0.361,
+      "v_gain": -0.0434,
+      "util_score": 0.4632999414862493,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 46.4,
+      "win_impact": -4.2,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "六费六攻亡语回二费，节奏太慢，大哥终端不需要它。"
+    },
+    {
+      "id": 603,
+      "name": "红绿破势巨兽",
+      "faction": "Green",
+      "origin_type": "Red/Green双色",
+      "is_neutral": false,
+      "cost": 6,
+      "card_type": "MINION",
+      "base_dp": 6,
+      "atk_val": 0,
+      "def_val": 0,
+      "tags": [
+        "FORTIFY_2",
+        "BONUS_SCORE_1"
+      ],
+      "actor_prob": 0.372,
+      "v_gain": -0.0578,
+      "util_score": 0.4592739613809246,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 46.1,
+      "win_impact": -4.3,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "六费强化加分，无突袭难兑现，核弹位完全不选此卡。"
+    },
+    {
+      "id": 306,
+      "name": "荆棘缠绕",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 2,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 5,
+      "def_val": 0,
+      "tags": [],
+      "actor_prob": 0.307,
+      "v_gain": -0.0612,
+      "util_score": 0.43128449385605616,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 45.4,
+      "win_impact": -4.4,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "二费五点伤害效率尚可，但无返场与跳费，不进构筑。"
+    },
+    {
+      "id": 331,
+      "name": "自然献祭",
+      "faction": "Green",
+      "origin_type": "Green专属",
+      "is_neutral": false,
+      "cost": 4,
+      "card_type": "SPELL",
+      "base_dp": 0,
+      "atk_val": 3,
+      "def_val": 0,
+      "tags": [
+        "SACRIFICE_1_KILL_1"
+      ],
+      "actor_prob": 0.201,
+      "v_gain": -0.5884,
+      "util_score": 0.08040000000000001,
+      "copies": 0,
+      "pick_rate": 0.0,
+      "score": 45.0,
+      "win_impact": -4.5,
+      "tier": "D",
+      "tier_name": "低效备选",
+      "rec_count": "0 张 (暂不推荐)",
+      "tier_class": "tier-d",
+      "comment": "四费牺牲一杀一，条件苛刻且亏场，体系不采用此卡。"
     }
-  ]
+  ],
+  "_deck_meta": {
+    "Red": {
+      "deck_name": "赤红·突破攻势流",
+      "archetype": "Aggro/Sacrifice",
+      "tactical_concept": "基于 PPO 神经网络效用评估与实战博弈测试构筑，平均费用 4.43 费。",
+      "key_combos": [
+        "佣兵斥候 (评分 98.0): 核心关键卡，状态价值增益最高。",
+        "赤焰哨卫 (评分 98.0): 辅助节奏卡，协同支撑场面与战术推进。"
+      ],
+      "decision_evolution_logs": [
+        "第 1 代微调: 增选 [佣兵斥候] (+1张)，减选 [裂甲掷斧手] (-1张)",
+        "第 2 代微调: 增选 [赤红掠袭者] (+1张)，减选 [佣兵斥候] (-1张)"
+      ],
+      "introspections": [
+        {
+          "generation": 1,
+          "winrate": 60.0,
+          "prev_winrate": 50.0,
+          "promoted": {
+            "id": 905,
+            "name": "佣兵斥候",
+            "win_pct": 75.0,
+            "play_count": 4,
+            "thought": "[佣兵斥候] 实测出场 4 次 (胜率 75.0%)，增补 1 张至 3 张。"
+          },
+          "demoted": {
+            "id": 108,
+            "name": "裂甲掷斧手",
+            "win_pct": 0.0,
+            "play_count": 4,
+            "thought": "[裂甲掷斧手] 实测出场 4 次 (胜率 0.0%)，调减 1 张至 0 张。"
+          },
+          "monologue": "[裂甲掷斧手] 实测出场 4 次 (胜率 0.0%)，调减 1 张至 0 张。\n      [佣兵斥候] 实测出场 4 次 (胜率 75.0%)，增补 1 张至 3 张。"
+        },
+        {
+          "generation": 2,
+          "winrate": 53.333333333333336,
+          "prev_winrate": 60.0,
+          "promoted": {
+            "id": 111,
+            "name": "赤红掠袭者",
+            "win_pct": 100.0,
+            "play_count": 1,
+            "thought": "[赤红掠袭者] 实测出场 1 次 (胜率 100.0%)，增补 1 张至 3 张。"
+          },
+          "demoted": {
+            "id": 905,
+            "name": "佣兵斥候",
+            "win_pct": 28.57142857142857,
+            "play_count": 21,
+            "thought": "[佣兵斥候] 实测出场 21 次 (胜率 28.6%)，调减 1 张至 2 张。"
+          },
+          "monologue": "[佣兵斥候] 实测出场 21 次 (胜率 28.6%)，调减 1 张至 2 张。\n      [赤红掠袭者] 实测出场 1 次 (胜率 100.0%)，增补 1 张至 3 张。"
+        }
+      ],
+      "total_cards": 30,
+      "minion_count": 28,
+      "spell_count": 2,
+      "avg_cost": 4.13,
+      "mana_curve": {
+        "0": 0,
+        "1": 2,
+        "2": 10,
+        "3": 3,
+        "4": 3,
+        "5": 2,
+        "6": 3,
+        "7": 3,
+        "8": 4
+      },
+      "card_allocation": {
+        "101": 3,
+        "107": 3,
+        "111": 3,
+        "112": 2,
+        "114": 3,
+        "115": 2,
+        "117": 2,
+        "120": 1,
+        "127": 3,
+        "128": 3,
+        "900": 3,
+        "905": 2
+      },
+      "card_details": [
+        {
+          "id": 112,
+          "name": "赤红新兵",
+          "cost": 1,
+          "card_type": "MINION",
+          "base_dp": 2,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [],
+          "count": 2,
+          "ppo_play_prob": 42.9,
+          "ppo_value_gain": -0.007,
+          "ppo_score": 73.13
+        },
+        {
+          "id": 107,
+          "name": "集结号手",
+          "cost": 2,
+          "card_type": "MINION",
+          "base_dp": 1,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "SPAWN_1_1",
+            "ATTACK_ONLY"
+          ],
+          "count": 3,
+          "ppo_play_prob": 46.1,
+          "ppo_value_gain": -0.028,
+          "ppo_score": 66.33
+        },
+        {
+          "id": 115,
+          "name": "赤红献祭",
+          "cost": 2,
+          "card_type": "SPELL",
+          "base_dp": 0,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "SACRIFICE_1_KILL_1"
+          ],
+          "count": 2,
+          "ppo_play_prob": 0.0,
+          "ppo_value_gain": 0.0,
+          "ppo_score": 50.0
+        },
+        {
+          "id": 900,
+          "name": "商人",
+          "cost": 2,
+          "card_type": "MINION",
+          "base_dp": 2,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "DRAW_1"
+          ],
+          "count": 3,
+          "ppo_play_prob": 45.9,
+          "ppo_value_gain": -0.001,
+          "ppo_score": 77.26
+        },
+        {
+          "id": 905,
+          "name": "佣兵斥候",
+          "cost": 2,
+          "card_type": "MINION",
+          "base_dp": 1,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "RUSH"
+          ],
+          "count": 2,
+          "ppo_play_prob": 53.2,
+          "ppo_value_gain": 0.356,
+          "ppo_score": 98.0
+        },
+        {
+          "id": 101,
+          "name": "红色小队长",
+          "cost": 3,
+          "card_type": "MINION",
+          "base_dp": 3,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "SPAWN_1_1"
+          ],
+          "count": 3,
+          "ppo_play_prob": 61.8,
+          "ppo_value_gain": -0.052,
+          "ppo_score": 66.37
+        },
+        {
+          "id": 127,
+          "name": "赤焰哨卫",
+          "cost": 4,
+          "card_type": "MINION",
+          "base_dp": 3,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "RUSH",
+            "FORTIFY_1"
+          ],
+          "count": 3,
+          "ppo_play_prob": 42.8,
+          "ppo_value_gain": 0.36,
+          "ppo_score": 98.0
+        },
+        {
+          "id": 117,
+          "name": "赤红破阵兵",
+          "cost": 5,
+          "card_type": "MINION",
+          "base_dp": 3,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "RUSH"
+          ],
+          "count": 2,
+          "ppo_play_prob": 44.7,
+          "ppo_value_gain": 0.364,
+          "ppo_score": 98.0
+        },
+        {
+          "id": 128,
+          "name": "熔岩破阵者",
+          "cost": 6,
+          "card_type": "MINION",
+          "base_dp": 4,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "RUSH",
+            "BONUS_SCORE_1"
+          ],
+          "count": 3,
+          "ppo_play_prob": 39.8,
+          "ppo_value_gain": 0.353,
+          "ppo_score": 98.0
+        },
+        {
+          "id": 120,
+          "name": "赤红中期突破手",
+          "cost": 8,
+          "card_type": "MINION",
+          "base_dp": 5,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "RUSH",
+            "BONUS_SCORE_1"
+          ],
+          "count": 1,
+          "ppo_play_prob": 41.8,
+          "ppo_value_gain": 0.314,
+          "ppo_score": 98.0
+        },
+        {
+          "id": 111,
+          "name": "赤红掠袭者",
+          "cost": 8,
+          "card_type": "MINION",
+          "base_dp": 6,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "RUSH",
+            "BONUS_SCORE_1"
+          ],
+          "count": 3,
+          "ppo_play_prob": 39.6,
+          "ppo_value_gain": 0.178,
+          "ppo_score": 98.0
+        },
+        {
+          "id": 114,
+          "name": "赤红突破手",
+          "cost": 7,
+          "card_type": "MINION",
+          "base_dp": 5,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "RUSH",
+            "BONUS_SCORE_1"
+          ],
+          "count": 3,
+          "ppo_play_prob": 36.8,
+          "ppo_value_gain": 0.212,
+          "ppo_score": 98.0
+        }
+      ],
+      "decklist": [
+        112,
+        112,
+        107,
+        107,
+        107,
+        115,
+        115,
+        900,
+        900,
+        900,
+        905,
+        905,
+        101,
+        101,
+        101,
+        127,
+        127,
+        127,
+        117,
+        117,
+        128,
+        128,
+        128,
+        120,
+        111,
+        111,
+        111,
+        114,
+        114,
+        114
+      ]
+    },
+    "Blue": {
+      "deck_name": "蔚蓝·防御控制流",
+      "archetype": "Control/Fortify",
+      "tactical_concept": "基于 PPO 神经网络效用评估与实战博弈测试构筑，平均费用 2.93 费。",
+      "key_combos": [
+        "佣兵斥候 (评分 98.0): 核心关键卡，状态价值增益最高。",
+        "破甲潮汐兵 (评分 98.0): 辅助节奏卡，协同支撑场面与战术推进。"
+      ],
+      "decision_evolution_logs": [
+        "第 1 代微调: 增选 [商人] (+1张)，减选 [蔚蓝盾卫] (-1张)",
+        "第 2 代微调: 增选 [潮汐学者] (+1张)，减选 [训练假人] (-1张)"
+      ],
+      "introspections": [
+        {
+          "generation": 1,
+          "winrate": 33.33333333333333,
+          "prev_winrate": 50.0,
+          "promoted": {
+            "id": 900,
+            "name": "商人",
+            "win_pct": 50.0,
+            "play_count": 8,
+            "thought": "[商人] 实测出场 8 次 (胜率 50.0%)，增补 1 张至 2 张。"
+          },
+          "demoted": {
+            "id": 214,
+            "name": "蔚蓝盾卫",
+            "win_pct": 6.25,
+            "play_count": 16,
+            "thought": "[蔚蓝盾卫] 实测出场 16 次 (胜率 6.2%)，调减 1 张至 1 张。"
+          },
+          "monologue": "[蔚蓝盾卫] 实测出场 16 次 (胜率 6.2%)，调减 1 张至 1 张。\n      [商人] 实测出场 8 次 (胜率 50.0%)，增补 1 张至 2 张。"
+        },
+        {
+          "generation": 2,
+          "winrate": 33.33333333333333,
+          "prev_winrate": 33.33333333333333,
+          "promoted": {
+            "id": 227,
+            "name": "潮汐学者",
+            "win_pct": 0.0,
+            "play_count": 0,
+            "thought": "[潮汐学者] 候补卡牌网络估值 74.7，调入 1 张至 1 张进行测试。"
+          },
+          "demoted": {
+            "id": 902,
+            "name": "训练假人",
+            "win_pct": 16.666666666666664,
+            "play_count": 6,
+            "thought": "[训练假人] 实测出场 6 次 (胜率 16.7%)，调减 1 张至 0 张。"
+          },
+          "monologue": "[训练假人] 实测出场 6 次 (胜率 16.7%)，调减 1 张至 0 张。\n      [潮汐学者] 候补卡牌网络估值 74.7，调入 1 张至 1 张进行测试。"
+        }
+      ],
+      "total_cards": 30,
+      "minion_count": 20,
+      "spell_count": 10,
+      "avg_cost": 2.93,
+      "mana_curve": {
+        "0": 0,
+        "1": 4,
+        "2": 12,
+        "3": 8,
+        "4": 0,
+        "5": 0,
+        "6": 6,
+        "7": 0,
+        "8": 0
+      },
+      "card_allocation": {
+        "201": 2,
+        "203": 2,
+        "204": 3,
+        "209": 2,
+        "210": 2,
+        "211": 2,
+        "212": 2,
+        "214": 1,
+        "216": 2,
+        "218": 2,
+        "221": 2,
+        "223": 2,
+        "227": 1,
+        "900": 2,
+        "905": 3
+      },
+      "card_details": [
+        {
+          "id": 201,
+          "name": "盾兵",
+          "cost": 1,
+          "card_type": "MINION",
+          "base_dp": 1,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "FORTIFY_1"
+          ],
+          "count": 2,
+          "ppo_play_prob": 37.6,
+          "ppo_value_gain": -0.001,
+          "ppo_score": 72.36
+        },
+        {
+          "id": 203,
+          "name": "防御！",
+          "cost": 1,
+          "card_type": "SPELL",
+          "base_dp": 0,
+          "atk_spell_val": 0,
+          "def_spell_val": 2,
+          "tags": [],
+          "count": 2,
+          "ppo_play_prob": 49.0,
+          "ppo_value_gain": -0.006,
+          "ppo_score": 77.11
+        },
+        {
+          "id": 209,
+          "name": "寒晶护壁",
+          "cost": 2,
+          "card_type": "SPELL",
+          "base_dp": 0,
+          "atk_spell_val": 0,
+          "def_spell_val": 2,
+          "tags": [
+            "DRAW_1"
+          ],
+          "count": 2,
+          "ppo_play_prob": 37.8,
+          "ppo_value_gain": -0.02,
+          "ppo_score": 64.76
+        },
+        {
+          "id": 210,
+          "name": "冰封禁制",
+          "cost": 2,
+          "card_type": "SPELL",
+          "base_dp": 0,
+          "atk_spell_val": 6,
+          "def_spell_val": 2,
+          "tags": [],
+          "count": 2,
+          "ppo_play_prob": 0.0,
+          "ppo_value_gain": 0.0,
+          "ppo_score": 50.0
+        },
+        {
+          "id": 212,
+          "name": "蔚蓝守卫",
+          "cost": 2,
+          "card_type": "MINION",
+          "base_dp": 2,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "FORTIFY_2"
+          ],
+          "count": 2,
+          "ppo_play_prob": 38.8,
+          "ppo_value_gain": -0.032,
+          "ppo_score": 60.49
+        },
+        {
+          "id": 227,
+          "name": "潮汐学徒",
+          "cost": 2,
+          "card_type": "MINION",
+          "base_dp": 2,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "DEATH_DRAW_1"
+          ],
+          "count": 1,
+          "ppo_play_prob": 54.6,
+          "ppo_value_gain": -0.02,
+          "ppo_score": 74.74
+        },
+        {
+          "id": 900,
+          "name": "商人",
+          "cost": 2,
+          "card_type": "MINION",
+          "base_dp": 2,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "DRAW_1"
+          ],
+          "count": 2,
+          "ppo_play_prob": 38.6,
+          "ppo_value_gain": -0.013,
+          "ppo_score": 68.15
+        },
+        {
+          "id": 905,
+          "name": "佣兵斥候",
+          "cost": 2,
+          "card_type": "MINION",
+          "base_dp": 1,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "RUSH"
+          ],
+          "count": 3,
+          "ppo_play_prob": 42.3,
+          "ppo_value_gain": 0.357,
+          "ppo_score": 98.0
+        },
+        {
+          "id": 216,
+          "name": "蔚蓝智慧",
+          "cost": 3,
+          "card_type": "SPELL",
+          "base_dp": 0,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "DRAW_2",
+            "TEMP_MANA_1"
+          ],
+          "count": 2,
+          "ppo_play_prob": 40.6,
+          "ppo_value_gain": 0.014,
+          "ppo_score": 80.1
+        },
+        {
+          "id": 218,
+          "name": "破甲潮汐兵",
+          "cost": 3,
+          "card_type": "MINION",
+          "base_dp": 3,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "RUSH",
+            "DEGRADE_1"
+          ],
+          "count": 2,
+          "ppo_play_prob": 41.7,
+          "ppo_value_gain": 0.391,
+          "ppo_score": 98.0
+        },
+        {
+          "id": 221,
+          "name": "蔚蓝护盾反击",
+          "cost": 3,
+          "card_type": "SPELL",
+          "base_dp": 0,
+          "atk_spell_val": 0,
+          "def_spell_val": 4,
+          "tags": [
+            "FORTIFY_1"
+          ],
+          "count": 2,
+          "ppo_play_prob": 40.3,
+          "ppo_value_gain": -0.048,
+          "ppo_score": 54.97
+        },
+        {
+          "id": 223,
+          "name": "冰潮突袭者",
+          "cost": 3,
+          "card_type": "MINION",
+          "base_dp": 3,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "RUSH"
+          ],
+          "count": 2,
+          "ppo_play_prob": 38.2,
+          "ppo_value_gain": 0.369,
+          "ppo_score": 98.0
+        },
+        {
+          "id": 204,
+          "name": "石像鬼",
+          "cost": 6,
+          "card_type": "MINION",
+          "base_dp": 8,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [],
+          "count": 3,
+          "ppo_play_prob": 33.8,
+          "ppo_value_gain": -0.055,
+          "ppo_score": 48.46
+        },
+        {
+          "id": 211,
+          "name": "蔚蓝要塞",
+          "cost": 6,
+          "card_type": "MINION",
+          "base_dp": 6,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "FORTIFY_3",
+            "SUPPORT_ATK_1"
+          ],
+          "count": 2,
+          "ppo_play_prob": 36.6,
+          "ppo_value_gain": -0.081,
+          "ppo_score": 39.77
+        },
+        {
+          "id": 214,
+          "name": "蔚蓝泰坦盾卫",
+          "cost": 6,
+          "card_type": "MINION",
+          "base_dp": 6,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "FORTIFY_3",
+            "SUPPORT_ATK_1"
+          ],
+          "count": 1,
+          "ppo_play_prob": 41.3,
+          "ppo_value_gain": -0.082,
+          "ppo_score": 41.88
+        }
+      ],
+      "decklist": [
+        201,
+        201,
+        203,
+        203,
+        209,
+        209,
+        210,
+        210,
+        212,
+        212,
+        227,
+        900,
+        900,
+        905,
+        905,
+        905,
+        216,
+        216,
+        218,
+        218,
+        221,
+        221,
+        223,
+        223,
+        204,
+        204,
+        204,
+        211,
+        211,
+        214
+      ]
+    },
+    "Green": {
+      "deck_name": "翠绿·古树成长流",
+      "archetype": "Ramp/Behemoth",
+      "tactical_concept": "基于 PPO 神经网络效用评估与实战博弈测试构筑，平均费用 3.83 费。",
+      "key_combos": [
+        "佣兵斥候 (评分 98.0): 核心关键卡，状态价值增益最高。",
+        "荆棘反制者 (评分 98.0): 辅助节奏卡，协同支撑场面与战术推进。"
+      ],
+      "decision_evolution_logs": [
+        "第 1 代微调: 增选 [萌芽跳费使] (+1张)，减选 [翡翠幼龙] (-1张)",
+        "第 2 代微调: 增选 [荆棘反制者] (+1张)，减选 [萌芽跳费使] (-1张)"
+      ],
+      "introspections": [
+        {
+          "generation": 1,
+          "winrate": 73.33333333333333,
+          "prev_winrate": 50.0,
+          "promoted": {
+            "id": 318,
+            "name": "萌芽跳费使",
+            "win_pct": 70.0,
+            "play_count": 10,
+            "thought": "[萌芽跳费使] 实测出场 10 次 (胜率 70.0%)，增补 1 张至 3 张。"
+          },
+          "demoted": {
+            "id": 309,
+            "name": "翡翠幼龙",
+            "win_pct": 44.44444444444444,
+            "play_count": 18,
+            "thought": "[翡翠幼龙] 实测出场 18 次 (胜率 44.4%)，调减 1 张至 2 张。"
+          },
+          "monologue": "[翡翠幼龙] 实测出场 18 次 (胜率 44.4%)，调减 1 张至 2 张。\n      [萌芽跳费使] 实测出场 10 次 (胜率 70.0%)，增补 1 张至 3 张。"
+        },
+        {
+          "generation": 2,
+          "winrate": 60.0,
+          "prev_winrate": 73.33333333333333,
+          "promoted": {
+            "id": 328,
+            "name": "荆棘反制者",
+            "win_pct": 80.0,
+            "play_count": 5,
+            "thought": "[荆棘反制者] 实测出场 5 次 (胜率 80.0%)，增补 1 张至 2 张。"
+          },
+          "demoted": {
+            "id": 318,
+            "name": "萌芽跳费使",
+            "win_pct": 30.76923076923077,
+            "play_count": 13,
+            "thought": "[萌芽跳费使] 实测出场 13 次 (胜率 30.8%)，调减 1 张至 2 张。"
+          },
+          "monologue": "[萌芽跳费使] 实测出场 13 次 (胜率 30.8%)，调减 1 张至 2 张。\n      [荆棘反制者] 实测出场 5 次 (胜率 80.0%)，增补 1 张至 2 张。"
+        }
+      ],
+      "total_cards": 30,
+      "minion_count": 25,
+      "spell_count": 5,
+      "avg_cost": 3.83,
+      "mana_curve": {
+        "0": 0,
+        "1": 5,
+        "2": 7,
+        "3": 2,
+        "4": 6,
+        "5": 5,
+        "6": 0,
+        "7": 2,
+        "8": 0,
+        "9": 3
+      },
+      "card_allocation": {
+        "302": 2,
+        "309": 2,
+        "310": 3,
+        "311": 3,
+        "312": 2,
+        "318": 2,
+        "320": 2,
+        "323": 2,
+        "327": 2,
+        "328": 2,
+        "902": 3,
+        "905": 3,
+        "602": 2
+      },
+      "card_details": [
+        {
+          "id": 312,
+          "name": "翠绿幼苗",
+          "cost": 1,
+          "card_type": "MINION",
+          "base_dp": 1,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "FORTIFY_1"
+          ],
+          "count": 2,
+          "ppo_play_prob": 38.2,
+          "ppo_value_gain": -0.019,
+          "ppo_score": 65.37
+        },
+        {
+          "id": 902,
+          "name": "训练假人",
+          "cost": 1,
+          "card_type": "MINION",
+          "base_dp": 1,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [],
+          "count": 3,
+          "ppo_play_prob": 54.4,
+          "ppo_value_gain": -0.026,
+          "ppo_score": 72.16
+        },
+        {
+          "id": 302,
+          "name": "剧毒花",
+          "cost": 2,
+          "card_type": "MINION",
+          "base_dp": 2,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "DEGRADE_2"
+          ],
+          "count": 2,
+          "ppo_play_prob": 32.4,
+          "ppo_value_gain": -0.041,
+          "ppo_score": 53.15
+        },
+        {
+          "id": 327,
+          "name": "翡翠藤盾卫",
+          "cost": 2,
+          "card_type": "MINION",
+          "base_dp": 2,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "FORTIFY_2"
+          ],
+          "count": 2,
+          "ppo_play_prob": 41.6,
+          "ppo_value_gain": -0.02,
+          "ppo_score": 66.86
+        },
+        {
+          "id": 905,
+          "name": "佣兵斥候",
+          "cost": 2,
+          "card_type": "MINION",
+          "base_dp": 1,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "RUSH"
+          ],
+          "count": 3,
+          "ppo_play_prob": 46.9,
+          "ppo_value_gain": 0.353,
+          "ppo_score": 98.0
+        },
+        {
+          "id": 328,
+          "name": "荆棘反制者",
+          "cost": 3,
+          "card_type": "MINION",
+          "base_dp": 3,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "RUSH",
+            "DEGRADE_1"
+          ],
+          "count": 2,
+          "ppo_play_prob": 33.5,
+          "ppo_value_gain": 0.362,
+          "ppo_score": 98.0
+        },
+        {
+          "id": 318,
+          "name": "萌芽跳费使",
+          "cost": 4,
+          "card_type": "MINION",
+          "base_dp": 3,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "RAMP_1"
+          ],
+          "count": 2,
+          "ppo_play_prob": 33.8,
+          "ppo_value_gain": -0.052,
+          "ppo_score": 49.54
+        },
+        {
+          "id": 320,
+          "name": "翠绿资源滋长",
+          "cost": 4,
+          "card_type": "SPELL",
+          "base_dp": 0,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "RAMP_1",
+            "DRAW_1"
+          ],
+          "count": 2,
+          "ppo_play_prob": 38.2,
+          "ppo_value_gain": -0.063,
+          "ppo_score": 47.84
+        },
+        {
+          "id": 323,
+          "name": "藤蔓突袭者",
+          "cost": 4,
+          "card_type": "MINION",
+          "base_dp": 4,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "RUSH"
+          ],
+          "count": 2,
+          "ppo_play_prob": 36.5,
+          "ppo_value_gain": 0.364,
+          "ppo_score": 98.0
+        },
+        {
+          "id": 311,
+          "name": "世界树恩泽",
+          "cost": 5,
+          "card_type": "SPELL",
+          "base_dp": 0,
+          "atk_spell_val": 0,
+          "def_spell_val": 3,
+          "tags": [
+            "RAMP_1"
+          ],
+          "count": 3,
+          "ppo_play_prob": 33.8,
+          "ppo_value_gain": -0.132,
+          "ppo_score": 20.0
+        },
+        {
+          "id": 602,
+          "name": "红绿共生",
+          "cost": 5,
+          "card_type": "MINION",
+          "base_dp": 5,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "RUSH",
+            "DEATH_DRAW_1"
+          ],
+          "count": 2,
+          "ppo_play_prob": 36.7,
+          "ppo_value_gain": 0.385,
+          "ppo_score": 98.0
+        },
+        {
+          "id": 309,
+          "name": "翡翠幼龙",
+          "cost": 7,
+          "card_type": "MINION",
+          "base_dp": 4,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "RUSH",
+            "DEATH_MANA_1"
+          ],
+          "count": 2,
+          "ppo_play_prob": 33.9,
+          "ppo_value_gain": 0.343,
+          "ppo_score": 98.0
+        },
+        {
+          "id": 310,
+          "name": "灭世翡翠巨龙",
+          "cost": 9,
+          "card_type": "MINION",
+          "base_dp": 5,
+          "atk_spell_val": 0,
+          "def_spell_val": 0,
+          "tags": [
+            "RUSH",
+            "BONUS_SCORE_1"
+          ],
+          "count": 3,
+          "ppo_play_prob": 34.7,
+          "ppo_value_gain": 0.294,
+          "ppo_score": 98.0
+        }
+      ],
+      "decklist": [
+        312,
+        312,
+        902,
+        902,
+        902,
+        302,
+        302,
+        327,
+        327,
+        905,
+        905,
+        905,
+        328,
+        328,
+        318,
+        318,
+        320,
+        320,
+        323,
+        323,
+        311,
+        311,
+        311,
+        602,
+        602,
+        309,
+        309,
+        310,
+        310,
+        310
+      ]
+    }
+  }
 };
     let currentDeck = 'Red';
     let currentTier = 'ALL';
+    let currentTag = 'ALL';
     let currentSort = 'score_desc';
     let currentView = 'grid';
     let searchKeyword = '';
+
+    const TAG_MAP = {
+      'RUSH': { label: '⚡ 突袭', cls: 'tag-rush' },
+      'FORTIFY_1': { label: '🛡️ 坚守+1', cls: 'tag-fortify' },
+      'FORTIFY_2': { label: '🛡️ 坚守+2', cls: 'tag-fortify' },
+      'FORTIFY_3': { label: '🛡️ 坚守+3', cls: 'tag-fortify' },
+      'RAMP_1': { label: '💎 跳费+1', cls: 'tag-ramp' },
+      'TEMP_MANA_1': { label: '💎 法力+1', cls: 'tag-ramp' },
+      'TEMP_MANA_2': { label: '💎 法力+2', cls: 'tag-ramp' },
+      'DEATH_MANA_1': { label: '💀 亡语水晶+1', cls: 'tag-ramp' },
+      'DEATH_MANA_2': { label: '💀 亡语水晶+2', cls: 'tag-ramp' },
+      'DRAW_1': { label: '📜 抽牌+1', cls: 'tag-draw' },
+      'DRAW_2': { label: '📜 抽牌+2', cls: 'tag-draw' },
+      'DEATH_DRAW_1': { label: '💀 亡语抽牌+1', cls: 'tag-draw' },
+      'SACRIFICE_1_KILL_1': { label: '💀 献祭强解', cls: 'tag-kill' },
+      'DEGRADE_1': { label: '⚔️ 削弱-1', cls: 'tag-degrade' },
+      'DEGRADE_2': { label: '⚔️ 削弱-2', cls: 'tag-degrade' },
+      'BONUS_SCORE_1': { label: '⭐ 破阵得分+1', cls: 'tag-bonus' },
+      'SUPPORT_ATK_1': { label: '🌟 合击支援+1', cls: 'tag-support' },
+      'SUPPORT_ATK_2': { label: '🌟 合击支援+2', cls: 'tag-support' },
+      'SPAWN_1_1': { label: '👥 铺场召唤', cls: 'tag-spawn' },
+      'DISCARD_1': { label: '🎯 弃牌-1', cls: 'tag-discard' },
+      'DISCARD_2': { label: '🎯 弃牌-2', cls: 'tag-discard' },
+      'ATTACK_ONLY': { label: '⚔️ 仅可进攻', cls: 'tag-default' }
+    };
+
+    function getTagBadgesHtml(tags, cardType) {
+      if (!tags || tags.length === 0) {
+        const plainLabel = cardType === 'MINION' ? '🛡️ 常规随从' : '✨ 基础法术';
+        return `<span class="tag-badge tag-plain">${plainLabel}</span>`;
+      }
+      return tags.map(t => {
+        const def = TAG_MAP[t] || { label: `🏷️ ${t}`, cls: 'tag-default' };
+        return `<span class="tag-badge ${def.cls}">${def.label}</span>`;
+      }).join('');
+    }
+
+    function renderDeckBanner() {
+      const meta = (FACTIONS_DATA['_deck_meta'] && FACTIONS_DATA['_deck_meta'][currentDeck]) || {};
+      const deckName = meta.deck_name || `${currentDeck}·主力竞技卡组`;
+      const archetype = meta.archetype || '综合战术';
+      const avgCost = meta.avg_cost || '3.50';
+      const minionCount = meta.minion_count || 28;
+      const spellCount = meta.spell_count || 2;
+      const manaCurve = meta.mana_curve || {};
+
+      const maxCount = Math.max(...Object.values(manaCurve), 1);
+
+      let curveBarsHtml = '';
+      for (let m = 1; m <= 8; m++) {
+        const count = manaCurve[m] || 0;
+        const height = Math.round((count / maxCount) * 36) + 4;
+        curveBarsHtml += `
+          <div class="curve-bar-col">
+            <span class="curve-count">${count}</span>
+            <div class="curve-bar" style="height: ${height}px;"></div>
+            <span class="curve-mana-label">${m >= 8 ? '8+' : m}</span>
+          </div>
+        `;
+      }
+
+      const themeColor = currentDeck === 'Red' ? '#ff4757' : (currentDeck === 'Blue' ? '#1e90ff' : '#2ed573');
+
+      document.getElementById('deckBanner').innerHTML = `
+        <div class="deck-title-meta">
+          <div class="deck-main-name" style="color: ${themeColor};">
+            <span>${deckName}</span>
+          </div>
+          <div class="deck-desc-tag">核心战术主轴：${archetype} · PPO 神经网络实战自博弈收敛构筑</div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <div style="font-size: 0.78rem; color: var(--text-dim); text-align: right;">
+            <div>法力费用曲线</div>
+            <div style="font-size: 0.68rem; color: #ffeaa7;">(Mana Histogram)</div>
+          </div>
+          <div class="mana-curve-container">
+            ${curveBarsHtml}
+          </div>
+        </div>
+
+        <div class="deck-stat-pills">
+          <div class="stat-pill">
+            <span class="stat-pill-label">卡组容量</span>
+            <span class="stat-pill-val">30 张满编</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-pill-label">随从 / 法术</span>
+            <span class="stat-pill-val">${minionCount} / ${spellCount}</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-pill-label">平均费用</span>
+            <span class="stat-pill-val">${avgCost} 费</span>
+          </div>
+        </div>
+      `;
+    }
 
     function getFilteredCards() {
       let list = FACTIONS_DATA[currentDeck] || [];
       if (currentTier !== 'ALL') {
         list = list.filter(c => c.tier.startsWith(currentTier));
       }
+      if (currentTag !== 'ALL') {
+        list = list.filter(c => {
+          if (!c.tags) return false;
+          if (currentTag === 'RAMP') return c.tags.some(t => t.includes('RAMP') || t.includes('MANA'));
+          if (currentTag === 'DRAW') return c.tags.some(t => t.includes('DRAW'));
+          if (currentTag === 'SACRIFICE') return c.tags.some(t => t.includes('SACRIFICE'));
+          if (currentTag === 'FORTIFY') return c.tags.some(t => t.includes('FORTIFY'));
+          if (currentTag === 'SUPPORT') return c.tags.some(t => t.includes('SUPPORT'));
+          return c.tags.some(t => t.includes(currentTag));
+        });
+      }
       if (searchKeyword) {
-        list = list.filter(c => c.name.includes(searchKeyword) || c.comment.includes(searchKeyword));
+        list = list.filter(c => 
+          c.name.includes(searchKeyword) || 
+          c.comment.includes(searchKeyword) ||
+          (c.tags && c.tags.some(t => t.toLowerCase().includes(searchKeyword.toLowerCase())))
+        );
       }
 
       if (currentSort === 'score_desc') list.sort((a, b) => b.score - a.score);
@@ -2396,6 +5576,7 @@
     }
 
     function render() {
+      renderDeckBanner();
       const cards = getFilteredCards();
       const grid = document.getElementById('cardGrid');
       const tableBox = document.getElementById('tableBox');
@@ -2409,10 +5590,13 @@
           const cardEl = document.createElement('div');
           cardEl.className = `card-card ${c.tier_class}`;
 
-          const statsText = c.card_type === 'MINION' ? `DP: ${c.base_dp}` : `攻${c.atk_val}/防${c.def_val}`;
+          const statsText = c.card_type === 'MINION' ? `DP: ${c.base_dp} · 随从` : `攻${c.atk_val}/防${c.def_val} · 法术`;
           const winSign = c.win_impact > 0 ? `+${c.win_impact}%` : `${c.win_impact}%`;
-          const winColor = c.win_impact >= 10 ? '#00b894' : (c.win_impact >= 0 ? '#55efc4' : (c.win_impact >= -8 ? '#e17055' : '#d63031'));
+          const winColor = c.win_impact >= 3.5 ? '#00b894' : (c.win_impact >= 1.0 ? '#55efc4' : (c.win_impact >= -1.0 ? '#dfe6e9' : (c.win_impact >= -3.0 ? '#e17055' : '#d63031')));
           const scoreColor = c.tier.startsWith('S') ? '#ff4757' : (c.tier === 'A' ? '#ffa502' : (c.tier === 'B' ? '#2ed573' : (c.tier === 'C' ? '#1e90ff' : '#747d8c')));
+
+          const copiesColor = c.copies === 3 ? '#ff7675' : (c.copies === 2 ? '#ffeaa7' : (c.copies === 1 ? '#81ecec' : '#636e72'));
+          const copiesBg = c.copies === 3 ? 'rgba(255, 118, 117, 0.15)' : (c.copies === 2 ? 'rgba(255, 234, 167, 0.12)' : (c.copies === 1 ? 'rgba(129, 236, 236, 0.12)' : 'rgba(255, 255, 255, 0.05)'));
 
           cardEl.innerHTML = `
             <div>
@@ -2421,10 +5605,11 @@
                   <div class="mana-circle">${c.cost}</div>
                   <div class="card-info-box">
                     <div class="card-title">
-                      ${c.name}
+                      <span>${c.name}</span>
                       <span class="card-tag-origin">${c.origin_type}</span>
+                      <span class="card-tag-copies" style="background: ${copiesBg}; color: ${copiesColor};">${c.copies}张入套</span>
                     </div>
-                    <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;">${statsText} · ${c.card_type}</div>
+                    <div style="font-size: 0.74rem; color: var(--text-dim); margin-top: 2px;">${statsText}</div>
                   </div>
                 </div>
                 <div class="score-view">
@@ -2433,10 +5618,15 @@
                 </div>
               </div>
 
+              <!-- 机制词条徽章 -->
+              <div class="card-tags-container">
+                ${getTagBadgesHtml(c.tags, c.card_type)}
+              </div>
+
               <div class="metric-bars">
                 <div class="metric-row">
                   <span class="metric-title">卡组携带率:</span>
-                  <span class="metric-number" style="color: #ffeaa7;">${c.pick_rate}%</span>
+                  <span class="metric-number" style="color: #ffeaa7;">${c.pick_rate}% (${c.copies}/3)</span>
                 </div>
                 <div class="metric-row">
                   <span class="metric-title">胜率贡献 (ΔWR):</span>
@@ -2444,8 +5634,13 @@
                 </div>
               </div>
 
+              <div class="neural-meta-bar">
+                <span>🤖 Actor 出牌偏好: <strong>${(c.actor_prob * 100).toFixed(1)}%</strong></span>
+                <span>📈 Critic ΔV: <strong>${c.v_gain > 0 ? '+' + c.v_gain.toFixed(3) : c.v_gain.toFixed(3)}</strong></span>
+              </div>
+
               <div class="rec-bar">
-                <span>推荐配置: <strong style="color: #ffeaa7;">${c.rec_count}</strong></span>
+                <span>建议配置: <strong style="color: #ffeaa7;">${c.rec_count}</strong></span>
                 <span style="color: var(--text-dim);">ID: #${c.id}</span>
               </div>
             </div>
@@ -2470,10 +5665,12 @@
                 <th>费用</th>
                 <th>类型</th>
                 <th>身材/数值</th>
+                <th>战术词条特质</th>
                 <th>综合评分</th>
                 <th>梯队</th>
-                <th>卡组携带率</th>
+                <th>携带率</th>
                 <th>胜率贡献 (ΔWR)</th>
+                <th>PPO出牌意愿/增益</th>
                 <th>推荐配置</th>
                 <th>实战构筑解析</th>
               </tr>
@@ -2484,7 +5681,7 @@
         cards.forEach((c, idx) => {
           const statsText = c.card_type === 'MINION' ? `DP: ${c.base_dp}` : `攻${c.atk_val}/防${c.def_val}`;
           const winSign = c.win_impact > 0 ? `+${c.win_impact}%` : `${c.win_impact}%`;
-          const winColor = c.win_impact >= 10 ? '#00b894' : (c.win_impact >= 0 ? '#55efc4' : (c.win_impact >= -8 ? '#e17055' : '#d63031'));
+          const winColor = c.win_impact >= 3.5 ? '#00b894' : (c.win_impact >= 1.0 ? '#55efc4' : (c.win_impact >= -1.0 ? '#dfe6e9' : (c.win_impact >= -3.0 ? '#e17055' : '#d63031')));
           const scoreColor = c.tier.startsWith('S') ? '#ff4757' : (c.tier === 'A' ? '#ffa502' : (c.tier === 'B' ? '#2ed573' : (c.tier === 'C' ? '#1e90ff' : '#747d8c')));
 
           html += `
@@ -2495,12 +5692,14 @@
               <td><strong style="color: #74b9ff;">${c.cost} 费</strong></td>
               <td>${c.card_type}</td>
               <td>${statsText}</td>
+              <td>${getTagBadgesHtml(c.tags, c.card_type)}</td>
               <td><strong style="font-family: 'Cinzel'; font-size: 1.15rem; color: ${scoreColor};">${c.score}</strong></td>
               <td><span style="background: ${scoreColor}; color: ${c.tier === 'A' || c.tier === 'B' ? '#000' : '#fff'}; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">${c.tier}</span></td>
               <td><strong style="color: #ffeaa7;">${c.pick_rate}%</strong></td>
               <td><strong style="color: ${winColor};">${winSign}</strong></td>
+              <td style="font-size: 0.75rem; color: #a4b0be;">${(c.actor_prob * 100).toFixed(0)}% / ${c.v_gain.toFixed(3)}</td>
               <td style="color: #ffeaa7; font-weight: 500;">${c.rec_count}</td>
-              <td style="font-size: 0.8rem; color: #dfe6e9; max-width: 320px;">${c.comment}</td>
+              <td style="font-size: 0.8rem; color: #dfe6e9; max-width: 300px;">${c.comment}</td>
             </tr>
           `;
         });
@@ -2520,6 +5719,13 @@
     function filterTier(t, btn) {
       currentTier = t;
       document.querySelectorAll('.btn-tier').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      render();
+    }
+
+    function filterTag(tag, btn) {
+      currentTag = tag;
+      document.querySelectorAll('.btn-tag').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       render();
     }

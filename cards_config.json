@@ -4,8 +4,8 @@
       "id": 100,
       "name": "赤红突击手",
       "card_type": "MINION",
-      "cost": 3,
-      "base_dp": 1,
+      "cost": 2,
+      "base_dp": 2,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -78,8 +78,8 @@
       "id": 105,
       "name": "掠夺者",
       "card_type": "MINION",
-      "cost": 7,
-      "base_dp": 3,
+      "cost": 5,
+      "base_dp": 5,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -124,8 +124,8 @@
       "id": 108,
       "name": "裂甲掷斧手",
       "card_type": "MINION",
-      "cost": 6,
-      "base_dp": 1,
+      "cost": 4,
+      "base_dp": 3,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -140,8 +140,8 @@
       "id": 109,
       "name": "破阵狂徒",
       "card_type": "MINION",
-      "cost": 8,
-      "base_dp": 2,
+      "cost": 6,
+      "base_dp": 6,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -171,8 +171,8 @@
       "id": 111,
       "name": "赤红掠袭者",
       "card_type": "MINION",
-      "cost": 9,
-      "base_dp": 1,
+      "cost": 8,
+      "base_dp": 6,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -216,8 +216,8 @@
       "id": 114,
       "name": "赤红突破手",
       "card_type": "MINION",
-      "cost": 9,
-      "base_dp": 1,
+      "cost": 7,
+      "base_dp": 5,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -696,7 +696,7 @@
     },
     {
       "id": 214,
-      "name": "蔚蓝盾卫",
+      "name": "蔚蓝泰坦盾卫",
       "card_type": "MINION",
       "cost": 6,
       "base_dp": 6,
@@ -741,7 +741,7 @@
     },
     {
       "id": 217,
-      "name": "蔚蓝盾卫",
+      "name": "蔚蓝轻装盾卫",
       "card_type": "MINION",
       "cost": 2,
       "base_dp": 2,
@@ -847,7 +847,7 @@
     },
     {
       "id": 224,
-      "name": "潮汐学者",
+      "name": "深潮高阶学者",
       "card_type": "MINION",
       "cost": 4,
       "base_dp": 4,
@@ -890,7 +890,7 @@
     },
     {
       "id": 227,
-      "name": "潮汐学者",
+      "name": "潮汐学徒",
       "card_type": "MINION",
       "cost": 2,
       "base_dp": 2,
@@ -1542,7 +1542,7 @@
   "Dual": [
     {
       "id": 400,
-      "name": "赤蓝交织者",
+      "name": "赤蓝战术统领",
       "card_type": "MINION",
       "cost": 4,
       "base_dp": 4,
@@ -1575,7 +1575,7 @@
     },
     {
       "id": 600,
-      "name": "红绿共生体",
+      "name": "红绿林冠共生体",
       "card_type": "MINION",
       "cost": 6,
       "base_dp": 6,
@@ -1642,7 +1642,7 @@
     },
     {
       "id": 402,
-      "name": "赤蓝交织者",
+      "name": "赤蓝锋刃护卫",
       "card_type": "MINION",
       "cost": 4,
       "base_dp": 4,
@@ -1691,7 +1691,7 @@
     },
     {
       "id": 403,
-      "name": "赤蓝交织者",
+      "name": "赤蓝灵质导能师",
       "card_type": "MINION",
       "cost": 4,
       "base_dp": 4,
@@ -1725,7 +1725,7 @@
     },
     {
       "id": 603,
-      "name": "红绿共生体",
+      "name": "红绿破势巨兽",
       "card_type": "MINION",
       "cost": 6,
       "base_dp": 6,
