@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>ec4e62ce-f698-42ca-bf9e-58b9b7259348</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>train.py</StartupFile>
+    <StartupFile>pipeline_orchestrator.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -23,14 +23,23 @@
   <ItemGroup>
     <Compile Include="agent.py" />
     <Compile Include="auto_balancer_deepseek.py" />
+    <Compile Include="auto_meta_balancer.py" />
+    <Compile Include="card_printer_deepseek.py" />
+    <Compile Include="deck_builder_deepseek.py" />
+    <Compile Include="deck_builder_ppo.py" />
     <Compile Include="eval_play.py" />
+    <Compile Include="generate_hearthstone_tier_table.py" />
+    <Compile Include="pipeline_orchestrator.py" />
     <Compile Include="plot_experiments.py" />
-    <Compile Include="plot_results.py" />
     <Compile Include="sandbox.py" />
     <Compile Include="train.py" />
+    <Compile Include="train_brawl.py" />
+    <Compile Include="visualizer.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="cards_config.json" />
+    <Content Include="decks_config.json" />
+    <Content Include="training_metrics_brawl.json" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

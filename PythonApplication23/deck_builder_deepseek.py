@@ -44,7 +44,24 @@ def clean_json_response(raw_text: str) -> str:
 def get_faction_pool(card_database: dict, faction: str) -> List[dict]:
     f_cards = card_database.get(faction, [])
     n_cards = card_database.get("Neutral", [])
-    return f_cards + n_cards
+    dual_cards = []
+    for k, card_list in card_database.items():
+        for c in card_list:
+            c_f = c.get("id", 0) // 100
+            facs = c.get("factions", [])
+            if faction in facs:
+                if c not in dual_cards and c not in f_cards and c not in n_cards:
+                    dual_cards.append(c)
+            elif c_f == 4 and faction in ("Red", "Blue"):
+                if c not in dual_cards and c not in f_cards and c not in n_cards:
+                    dual_cards.append(c)
+            elif c_f == 5 and faction in ("Blue", "Green"):
+                if c not in dual_cards and c not in f_cards and c not in n_cards:
+                    dual_cards.append(c)
+            elif c_f == 6 and faction in ("Red", "Green"):
+                if c not in dual_cards and c not in f_cards and c not in n_cards:
+                    dual_cards.append(c)
+    return f_cards + n_cards + dual_cards
 
 
 def normalize_counts(counts: Dict[int, int], pool: List[dict]) -> Dict[int, int]:

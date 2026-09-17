@@ -27,8 +27,10 @@ class Card:
     cost: int
     base_dp: int
     atk_spell_val: int
-    def_spell_val: int
+    def_spell_val: int = 0
     tags: List[str] = field(default_factory=list)
+    factions: List[str] = field(default_factory=list)
+    is_token: bool = False
 
 
 @dataclass
@@ -101,6 +103,9 @@ class DuelEnv:
         db = {}
         for faction_key, card_list in raw_data.items():
             for c in card_list:
+                f_list = c.get("factions", [])
+                if not f_list and faction_key != "Dual":
+                    f_list = [faction_key]
                 card = Card(
                     id=c["id"],
                     name=c["name"],
@@ -109,7 +114,9 @@ class DuelEnv:
                     base_dp=c.get("base_dp", 0),
                     atk_spell_val=c.get("atk_spell_val", 0),
                     def_spell_val=c.get("def_spell_val", 0),
-                    tags=c.get("tags", [])
+                    tags=c.get("tags", []),
+                    factions=f_list,
+                    is_token=c.get("is_token", False)
                 )
                 db[card.id] = card
         return db
@@ -123,8 +130,29 @@ class DuelEnv:
             base_dp=c.base_dp,
             atk_spell_val=c.atk_spell_val,
             def_spell_val=c.def_spell_val,
-            tags=list(c.tags)
+            tags=list(c.tags),
+            factions=list(c.factions),
+            is_token=c.is_token
         )
+
+    def _is_card_allowed_for_faction(self, c: Card, faction_code: int) -> bool:
+        if c.is_token:
+            return False  # 系统衍生令牌绝不允许编入常规牌库
+        f_target = "Red" if faction_code == 1 else ("Blue" if faction_code == 2 else "Green")
+        # 1. 优先读取显式 factions 属性 (彻底解耦 ID 大小与数量上限，支持任意大 ID)
+        if c.factions:
+            return f_target in c.factions or "Neutral" in c.factions
+        # 2. 向下兼容旧 ID 前缀规则 (1xx:红, 2xx:蓝, 3xx:绿, 4xx:红蓝, 5xx:蓝绿, 6xx:红绿, 9xx:中立)
+        c_f = c.id // 100
+        if c_f == faction_code or c_f == 9:
+            return True
+        if c_f == 4 and faction_code in (1, 2):
+            return True
+        if c_f == 5 and faction_code in (2, 3):
+            return True
+        if c_f == 6 and faction_code in (1, 3):
+            return True
+        return False
 
     def _build_deck(self, faction: Faction, custom_decklist: Optional[List[int]] = None) -> List[Card]:
         """
@@ -140,8 +168,7 @@ class DuelEnv:
             for cid in custom_decklist:
                 if cid in self.card_database:
                     c = self.card_database[cid]
-                    card_faction = c.id // 100
-                    if card_faction != faction_code and card_faction != 9:
+                    if not self._is_card_allowed_for_faction(c, faction_code):
                         valid = False
                         break
                     card_counts[cid] = card_counts.get(cid, 0) + 1
@@ -155,9 +182,7 @@ class DuelEnv:
             if valid and len(deck) == self.DECK_SIZE:
                 random.shuffle(deck)
                 return deck
-        faction_pool = [c for c in self.card_database.values() if c.id // 100 == faction_code]
-        neutral_pool = [c for c in self.card_database.values() if c.id // 100 == 9]
-        all_pool = faction_pool + neutral_pool
+        all_pool = [c for c in self.card_database.values() if self._is_card_allowed_for_faction(c, faction_code)]
 
         if not all_pool:
             return []
@@ -205,8 +230,8 @@ class DuelEnv:
         for _ in range(4):
             self._draw_card(self.players[1])
 
-        # 后手幸运币补给
-        coin = Card(id=996, name="幸运币", card_type=CardType.SPELL, cost=0, base_dp=0, atk_spell_val=0, def_spell_val=0, tags=["TEMP_MANA_1"])
+        # 后手幸运币补给 (标记为 is_token=True, 永久绝缘于构筑)
+        coin = Card(id=996, name="幸运币", card_type=CardType.SPELL, cost=0, base_dp=0, atk_spell_val=0, def_spell_val=0, tags=["TEMP_MANA_1"], factions=["System"], is_token=True)
         if len(self.players[1].hand) < self.MAX_HAND_SIZE:
             self.players[1].hand.append(coin)
 
@@ -454,7 +479,9 @@ class DuelEnv:
                         base_dp=card.def_spell_val,
                         atk_spell_val=0,
                         def_spell_val=0,
-                        tags=[]
+                        tags=[],
+                        factions=["System"],
+                        is_token=True
                     )
                     lane.defenders.append(MinionInstance(
                         card=shield_card,
@@ -473,7 +500,9 @@ class DuelEnv:
             base_dp=0,
             atk_spell_val=0,
             def_spell_val=0,
-            tags=["DRAW_1"]
+            tags=["DRAW_1"],
+            factions=["System"],
+            is_token=True
         )
         if len(player.hand) < self.MAX_HAND_SIZE:
             player.hand.append(overload_card)
@@ -526,7 +555,9 @@ class DuelEnv:
                         base_dp=spawn_dp,
                         atk_spell_val=0,
                         def_spell_val=0,
-                        tags=[]
+                        tags=[],
+                        factions=["System"],
+                        is_token=True
                     )
                     can_token_rush = "RUSH" in card.tags
                     container.append(MinionInstance(

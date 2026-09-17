@@ -41,7 +41,25 @@ def load_card_pool(cards_path: str = "cards_config.json") -> dict:
 def get_faction_candidates(pool_data: dict, faction: str) -> List[dict]:
     f_cards = pool_data.get(faction, [])
     n_cards = pool_data.get("Neutral", [])
-    return f_cards + n_cards
+    dual_cards = []
+    # 扫描卡池中所有双色卡 (支持存在于 Dual 分组或匹配 4xx/5xx/6xx 前缀的卡牌)
+    for k, card_list in pool_data.items():
+        for c in card_list:
+            c_f = c.get("id", 0) // 100
+            facs = c.get("factions", [])
+            if faction in facs:
+                if c not in dual_cards and c not in f_cards and c not in n_cards:
+                    dual_cards.append(c)
+            elif c_f == 4 and faction in ("Red", "Blue"):
+                if c not in dual_cards and c not in f_cards and c not in n_cards:
+                    dual_cards.append(c)
+            elif c_f == 5 and faction in ("Blue", "Green"):
+                if c not in dual_cards and c not in f_cards and c not in n_cards:
+                    dual_cards.append(c)
+            elif c_f == 6 and faction in ("Red", "Green"):
+                if c not in dual_cards and c not in f_cards and c not in n_cards:
+                    dual_cards.append(c)
+    return f_cards + n_cards + dual_cards
 
 def evaluate_card_neural_utility(model: CardNet, device: torch.device, candidate: dict, 
                                  faction: Faction, cards_path: str, samples: int = 15) -> dict:

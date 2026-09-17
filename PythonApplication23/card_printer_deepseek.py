@@ -66,11 +66,16 @@ def clean_json_response(raw_text: str) -> str:
         return match.group(1).strip()
     return raw_text.strip()
 
+SYSTEM_RESERVED_IDS = {996, 997, 998, 999}
+
 def get_next_id(existing_cards: List[dict], default_start: int) -> int:
-    """自动计算不冲突的安全卡牌 ID"""
+    """自动计算不冲突的安全卡牌 ID (严格规避系统衍生牌 990~999 保留区)"""
     if not existing_cards:
         return default_start
-    return max(c.get("id", default_start) for c in existing_cards) + 1
+    curr_id = max(c.get("id", default_start) for c in existing_cards) + 1
+    while curr_id in SYSTEM_RESERVED_IDS or (990 <= curr_id <= 999):
+        curr_id += 1
+    return curr_id
 
 def build_prompt(current_pool: dict, faction: str, count: int, theme: str) -> str:
     faction_desc = {
