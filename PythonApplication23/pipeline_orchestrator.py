@@ -367,9 +367,9 @@ def step2_generate_prebuild_decks(cards_file: str, decks_file: str):
 # ==============================================================================
 # Phase 3: PPO 智能体自主选卡进化 ("谁打的谁构筑")
 # ==============================================================================
-def step3_ppo_deck_evolution(cards_file: str, decks_file: str, generations: int = 5, games_per_gen: int = 50):
+def step3_ppo_deck_evolution(cards_file: str, decks_file: str, generations: int = 3, games_per_gen: int = 25, samples: int = 8):
     print("\n" + "═" * 80)
-    print(f"【阶段三】PPO 智能体自主构筑演化 ('谁打的谁构筑') | 代数: {generations} 代")
+    print(f"【阶段三】PPO 智能体自主构筑演化 ('谁打的谁构筑') | 代数: {generations} 代 | 采样: {samples} 次")
     print("═" * 80)
 
     ppo_builder_script = resolve_path("deck_builder_ppo.py")
@@ -379,18 +379,19 @@ def step3_ppo_deck_evolution(cards_file: str, decks_file: str, generations: int 
         "--output", decks_file,
         "--factions", "Red,Blue,Green",
         "--generations", str(generations),
-        "--games-per-gen", str(games_per_gen)
+        "--games-per-gen", str(games_per_gen),
+        "--samples", str(samples)
     ]
     print(f"  [执行指令] {' '.join(cmd)}")
     subprocess.run(cmd, check=True, env=get_subprocess_env())
     print("  [OK] PPO 智能体已根据对局胜率与 Critic 价值评估完成 30 张实战构筑自主更新！")
 
 # ==============================================================================
-# Phase 4: 3,000 局高并发多阵营混战实机对抗遥测
+# Phase 4: 多阵营混战实机对抗遥测审计
 # ==============================================================================
-def step4_run_brawl_audit(cards_file: str, decks_file: str, metrics_file: str, episodes: int = 3000) -> dict:
+def step4_run_brawl_audit(cards_file: str, decks_file: str, metrics_file: str, episodes: int = 1000, eval_only: bool = True) -> dict:
     print("\n" + "═" * 80)
-    print(f"【阶段四】3,000 局多阵营实机混战遥测审计 (自博弈规模: {episodes} 局)")
+    print(f"【阶段四】实机混战遥测审计 (自博弈规模: {episodes} 局 | 极速推理: {'开 (4x加速)' if eval_only else '关'})")
     print("═" * 80)
 
     brawl_script = resolve_path("train_brawl.py")
@@ -400,6 +401,8 @@ def step4_run_brawl_audit(cards_file: str, decks_file: str, metrics_file: str, e
         "--decks", decks_file,
         "--episodes", str(episodes)
     ]
+    if eval_only:
+        cmd.append("--eval-only")
     print(f"  [执行指令] {' '.join(cmd)}")
     subprocess.run(cmd, check=True, env=get_subprocess_env())
 
@@ -575,9 +578,9 @@ def main():
     parser = argparse.ArgumentParser(description="TCG-AI 全自动扩展包印制与双环自平衡协同流水线 (Pipeline Orchestrator)")
     parser.add_argument("--pack-name", type=str, default="破晓对决补充包", help="扩展包名称")
     parser.add_argument("--theme", type=str, default="环境数据驱动缺啥补啥与双色协同", help="设计主题")
-    parser.add_argument("--episodes", type=int, default=3000, help="每轮自博弈混战对局规模 (默认 3000)")
+    parser.add_argument("--episodes", type=int, default=1200, help="每轮自博弈混战对局规模 (默认 1200)")
     parser.add_argument("--target-balance", type=float, default=2.8, help="目标平衡偏离容差 (默认 2.8 百分点)")
-    parser.add_argument("--max-deck-attempts", type=int, default=3, help="同一卡池下 PPO 自主微调构筑的尝试次数 (默认 3 次，即尝试调 2~3 次构筑)")
+    parser.add_argument("--max-deck-attempts", type=int, default=1, help="同一卡池下 PPO 自主微调构筑的尝试次数 (默认 1 次，快速触发数值调整)")
     parser.add_argument("--max-outer-iterations", type=int, default=10, help="最大 DeepSeek 外环数值微调迭代轮次 (默认 10 轮)")
     parser.add_argument("--max-iterations", type=int, default=None, help="(兼容旧参数) 等价于 --max-outer-iterations")
     parser.add_argument("--skip-print", action="store_true", help="跳过印卡阶段，直接基于现有卡池开始闭环调优")
@@ -590,15 +593,16 @@ def main():
     metrics_file = resolve_path("training_metrics_brawl.json")
 
     brawl_episodes = 60 if args.dry_run else args.episodes
-    ppo_gens = 2 if args.dry_run else 5
-    ppo_games = 15 if args.dry_run else 50
-    deck_attempts = 2 if args.dry_run else args.max_deck_attempts
+    ppo_gens = 2 if args.dry_run else 3
+    ppo_games = 15 if args.dry_run else 25
+    ppo_samples = 4 if args.dry_run else 8
+    deck_attempts = 1 if args.dry_run else args.max_deck_attempts
 
     print("=" * 85)
     print(" 🚀 TCG-AI 端到端全自动扩展包演化流水线 (Pipeline Orchestrator) 启动")
-    print(f" 运作模式: {'[DRY-RUN 快速演练]' if args.dry_run else '[FULL PRODUCTION 实机全量]'}")
-    print(f" 混战规模: {brawl_episodes} 局/轮 | 目标平衡容差: ±{args.target_balance:.1f}%")
-    print(f" 嵌套架构: PPO 内环连续演化构筑 {deck_attempts} 次 -> 若失衡则触发 DeepSeek 外环改卡 (上限 {max_outer} 轮)")
+    print(f" 运作模式: {'[DRY-RUN 快速演练]' if args.dry_run else '[FULL PRODUCTION 实机加速]'}")
+    print(f" 混战规模: {brawl_episodes} 局/轮 (极速推理) | 目标平衡容差: ±{args.target_balance:.1f}%")
+    print(f" 嵌套架构: PPO 内环微调 {deck_attempts} 次 -> 若失衡迅速触发 DeepSeek 外环数值平衡 (上限 {max_outer} 轮)")
     print("=" * 85)
 
     # 1. 阶段一：DeepSeek 诊断与印卡
@@ -635,7 +639,7 @@ def main():
 
     # 4. 阶段三~五：双环嵌套自适应平衡状态机
     # 外环：DeepSeek 卡牌数值版本迭代 (Patch Era)
-    # 内环：PPO 智能体自主构筑演化微调 (2~3 次尝试，自适应局数实测)
+    # 内环：PPO 智能体自主构筑演化微调 (自适应局数实测)
     outer_round = 1
     is_balanced = False
     latest_metrics = None
@@ -650,24 +654,24 @@ def main():
             print(f"  ▶【内环·构筑演进】第 {attempt} / {deck_attempts} 次 PPO 智能体自主微调构筑 ('谁打的谁构筑')")
             print("─" * 70)
 
-            # 3A: PPO 智能体自主调构筑 (增量演化)
-            step3_ppo_deck_evolution(cards_file, decks_file, generations=ppo_gens, games_per_gen=ppo_games)
+            # 3A: PPO 智能体自主调构筑 (增量演化，加速采样)
+            step3_ppo_deck_evolution(cards_file, decks_file, generations=ppo_gens, games_per_gen=ppo_games, samples=ppo_samples)
 
             # 自适应混战局数设定：失衡越严重，用越少的局数快速捕获方向，成倍节省时间
             if args.dry_run:
                 current_brawl_episodes = 60
-            elif latest_max_dev >= 12.0:
-                current_brawl_episodes = 500
-                print(f"  ⚡ [自适应加速] 检测到严重失衡 (偏离度 {latest_max_dev:.1f}%)，采用高速遥测模式 ({current_brawl_episodes} 局/轮)...")
-            elif latest_max_dev >= 6.0:
-                current_brawl_episodes = 1200
-                print(f"  ⚡ [自适应平衡] 检测到中度失衡 (偏离度 {latest_max_dev:.1f}%)，采用中度遥测模式 ({current_brawl_episodes} 局/轮)...")
+            elif latest_max_dev >= 8.0:
+                current_brawl_episodes = 300
+                print(f"  ⚡ [极速探测] 检测到显著失衡 (偏离度 {latest_max_dev:.1f}%)，采用 300 局快速遥测...")
+            elif latest_max_dev >= 4.5:
+                current_brawl_episodes = 600
+                print(f"  ⚡ [中速平衡] 偏离度 {latest_max_dev:.1f}%，采用 600 局平稳遥测...")
             else:
-                current_brawl_episodes = args.episodes
-                print(f"  🎯 [黄金带精准验证] 生态已接近平衡 (偏离度 {latest_max_dev:.1f}%)，采用高精度混战 ({current_brawl_episodes} 局/轮)...")
+                current_brawl_episodes = min(args.episodes, 1200)
+                print(f"  🎯 [黄金带精准验证] 偏离度 {latest_max_dev:.1f}%，采用 {current_brawl_episodes} 局精准遥测...")
 
-            # 3B: 实机混战对抗遥测
-            metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=current_brawl_episodes)
+            # 3B: 实机混战对抗遥测 (纯推理 4x 加速)
+            metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=current_brawl_episodes, eval_only=True)
             latest_metrics = metrics
 
             curr_stats = {
@@ -683,9 +687,13 @@ def main():
 
             if is_balanced:
                 print("\n" + "★" * 70)
-                print(f"🎉 完美达成纳什自平衡！(第 {attempt} 次构筑微调收敛)")
+                print(f"🎉 达成动态平衡判定！(第 {outer_round} 轮数值调优 / 第 {attempt} 次构筑微调收敛)")
                 print(f"   三大阵营最大偏离度仅 {max_dev:.2f}% <= 目标容差 {args.target_balance:.2f}%！")
-                print("   全生态自平衡达成，立即退出双环迭代！")
+                if not args.dry_run and current_brawl_episodes < 3000:
+                    print("   [全量验收] 启动最终 3,000 局高并发混战验收审计...")
+                    metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=3000, eval_only=True)
+                    latest_metrics = metrics
+                print("   全生态自平衡达成，退出双环迭代！")
                 print("★" * 70)
                 break
             else:

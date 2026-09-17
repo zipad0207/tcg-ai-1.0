@@ -618,6 +618,7 @@ def main():
     parser.add_argument("--factions", type=str, default="Red,Blue,Green", help="目标自主选卡阵营 (默认 Red,Blue,Green)")
     parser.add_argument("--generations", type=int, default=5, help="自博弈进化代数 (默认 5)")
     parser.add_argument("--games-per-gen", type=int, default=60, help="每代自博弈实机局数 (默认 60)")
+    parser.add_argument("--samples", type=int, default=8, help="候选卡神经网络采样次数 (默认 8，速度提升 2.5x)")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -655,7 +656,7 @@ def main():
 
         neural_stats = []
         for c in candidates:
-            st = evaluate_card_neural_utility(model, device, c, f_enum, args.cards, samples=20)
+            st = evaluate_card_neural_utility(model, device, c, f_enum, args.cards, samples=args.samples)
             neural_stats.append(st)
 
         print(f"[2/2] 正在执行【{faction_name}】PPO 自博弈对决与卡组微调...")
