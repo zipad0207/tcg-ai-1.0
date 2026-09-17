@@ -6,166 +6,103 @@
 
 ## 🔴 一、 【赤红 (Red) 卡组】单卡战力与构筑指南
 > **战术核心**：快攻压制 · 牺牲协同 · 节奏斩杀  
-> **候选牌池**：32 张Red专属卡 + 8 张双色协同卡 + 6 张中立通用卡（共 46 张候选，择优遴选 30 张入套）
+> **候选牌池**：17 张Red专属卡 + 2 张双色协同卡 + 6 张中立通用卡（共 25 张候选，择优遴选 30 张入套）
 
 | 排名 | 卡牌名称 | 归属 | 费用 | 类型 | 属性/数值 | **综合评分** | 梯队 | **携带率** | **胜率贡献 (ΔWR)** | 推荐配置 | 实战构筑解析 |
 | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| 1 | **佣兵斥候** | 中立通用 | 2费 | MINION | DP:1 `RUSH` | **98.0** | **S+** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#55efc4; font-weight:bold;">🟢 +4.2%</span> | 3 张 (核心满编) | 两费突袭一点，解场夺先手，满编补低费互动与伤害延伸。 |
-| 2 | **赤焰哨卫** | Red专属 | 4费 | MINION | DP:3 `RUSH,FORTIFY_1` | **97.5** | **S+** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#55efc4; font-weight:bold;">🟢 +4.1%</span> | 3 张 (核心满编) | 四费突袭并加固，解场同时站住频率，满编撑中期攻防转换。 |
-| 3 | **熔岩破阵者** | Red专属 | 5费 | MINION | DP:4 `RUSH,BONUS_SCORE_1` | **97.2** | **S+** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#55efc4; font-weight:bold;">🟢 +4.0%</span> | 3 张 (核心满编) | 五费突袭得分，中期抢血与交换一体，满编保证核心节奏。 |
-| 4 | **赤红突破手** | Red专属 | 8费 | MINION | DP:1 `RUSH,BONUS_SCORE_1` | **96.9** | **S+** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#55efc4; font-weight:bold;">🟢 +4.0%</span> | 3 张 (核心满编) | 八费突袭得分终结，满编确保后期抽到即能补足斩杀与分数。 |
-| 5 | **赤红新兵** | Red专属 | 1费 | MINION | DP:1 | **95.3** | **S+** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#55efc4; font-weight:bold;">🟢 +3.7%</span> | 3 张 (核心满编) | 一费一点场攻，最顺滑的早期曲线，满编支撑铺场与牺牲。 |
-| 6 | **红色小队长** | Red专属 | 3费 | MINION | DP:3 `SPAWN_1_1` | **94.5** | **S+** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#55efc4; font-weight:bold;">🟢 +3.6%</span> | 3 张 (核心满编) | 三费铺两个频率，持续给压力，满编保证三费节奏与牺牲素材。 |
-| 7 | **商人** | 中立通用 | 2费 | MINION | DP:2 `DRAW_1` | **91.3** | **S** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#55efc4; font-weight:bold;">🟢 +3.1%</span> | 3 张 (核心满编) | 两费站场抽一，润滑手牌并延续攻势，满编保证资源不断。 |
-| 8 | **集结号手** | Red专属 | 2费 | MINION | DP:1 `SPAWN_1_1,ATTACK_ONLY` | **90.5** | **S** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#55efc4; font-weight:bold;">🟢 +3.0%</span> | 3 张 (核心满编) | 两费生两个频率，低费铺场核心，满编保证开局压制与交换。 |
-| 9 | **赤红破阵兵** | Red专属 | 5费 | MINION | DP:3 `RUSH` | **89.7** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.8%</span> | 2 张 (主力配置) | 五费突袭三点，解场后保留站场，二张稳固中期争夺先手。 |
-| 10 | **裂甲掷斧手** | Red专属 | 6费 | MINION | DP:1 `RUSH,DEGRADE_1` | **87.6** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.5%</span> | 2 张 (主力配置) | 六费突袭降级，解场后留一点场攻，二张补中后期夺回先手。 |
-| 11 | **赤红献祭** | Red专属 | 2费 | SPELL | 攻0/防0 `SACRIFICE_1_KILL_1` | **84.9** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.1%</span> | 2 张 (主力配置) | 两费牺牲杀单位，灵活解掉关键墙，二张兼顾节奏与手牌资源。 |
-| 12 | **红绿共生** | Red/Green双色 | 5费 | MINION | DP:5 `RUSH,DEATH_DRAW_1` | **58.7** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.1%</span> | 0 张 (暂不推荐) | 五费突袭亡语抽牌，交换后补牌但攻击偏低，节奏偏中速。 |
-| 13 | **赤红掠袭者** | Red专属 | 9费 | MINION | DP:1 `RUSH,BONUS_SCORE_1` | **58.4** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.2%</span> | 0 张 (暂不推荐) | 九费突袭仅一点场攻，终结太慢，高费位有更优得分选择。 |
-| 14 | **赤红中期突破手** | Red专属 | 8费 | MINION | DP:5 `RUSH,BONUS_SCORE_1` | **58.1** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.2%</span> | 0 张 (暂不推荐) | 八费突袭得分，身材更高却仍慢，同费突破手更符合斩杀需求。 |
-| 15 | **破阵先锋** | Red专属 | 6费 | MINION | DP:4 `RUSH,BONUS_SCORE_1` | **57.9** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.3%</span> | 0 张 (暂不推荐) | 六费突袭得分尚可，但五费熔岩破阵者更早，卡位被挤占。 |
-| 16 | **训练假人** | 中立通用 | 1费 | MINION | DP:1 | **57.1** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.4%</span> | 0 张 (暂不推荐) | 一费白板无攻击延伸，赤红新兵同费更契合铺场与牺牲。 |
-| 17 | **切割者** | Red专属 | 2费 | MINION | DP:2 `DEGRADE_1` | **56.8** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.4%</span> | 0 张 (暂不推荐) | 二费降级身材普通，压制力不足，前期更需要站场与打脸。 |
-| 18 | **赤红战盾** | Red专属 | 2费 | SPELL | 攻0/防4 | **56.3** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.5%</span> | 0 张 (暂不推荐) | 两费四点防御，纯防守牌，抢血卡组不需要拖延对局。 |
-| 19 | **牺牲祭师** | Red专属 | 4费 | MINION | DP:3 `SACRIFICE_1_KILL_1,DEATH_DRAW_1` | **56.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.6%</span> | 0 张 (暂不推荐) | 四费牺牲解场加亡语抽牌，节奏偏慢，快攻不需要中期换牌。 |
-| 20 | **赤蓝战术交换** | Red/Blue双色 | 2费 | SPELL | 攻3/防0 `DRAW_1` | **55.7** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.6%</span> | 0 张 (暂不推荐) | 两费打三抽一，效率尚可但占直伤卡位，快攻更愿带生物。 |
-| 21 | **烈焰清算** | Red专属 | 4费 | SPELL | 攻4/防0 `DEGRADE_1` | **55.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.6%</span> | 0 张 (暂不推荐) | 四费打四降级，解场尚可但直伤不足，快攻更需低费打脸。 |
-| 22 | **献祭之焰** | Red专属 | 3费 | SPELL | 攻0/防0 `SACRIFICE_1_KILL_1,DISCARD_1` | **55.2** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.7%</span> | 0 张 (暂不推荐) | 三费牺牲杀牌还要弃牌，资源亏损过大，快攻无法承担。 |
-| 23 | **血祭爆燃** | Red专属 | 3费 | SPELL | 攻3/防0 `SACRIFICE_1_KILL_1,ATTACK_ONLY` | **54.7** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.8%</span> | 0 张 (暂不推荐) | 三费牺牲换三攻解场，亏牌又限攻击，抢血体系无法承受。 |
-| 24 | **射线** | Red专属 | 2费 | SPELL | 攻2/防0 | **54.4** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.8%</span> | 0 张 (暂不推荐) | 两费打二直伤效率平庸，抢血不如低费生物，难以进入构筑。 |
-| 25 | **自爆** | Red专属 | 2费 | SPELL | 攻0/防0 `SACRIFICE_1_KILL_1,ATTACK_ONLY` | **54.1** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.9%</span> | 0 张 (暂不推荐) | 两费牺牲解场且限攻击，亏节奏，快攻不愿用场面换单解。 |
-| 26 | **赤红战意** | Red专属 | 5费 | SPELL | 攻0/防0 `TEMP_MANA_2` | **53.9** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.9%</span> | 0 张 (暂不推荐) | 五费换临时法力，当回合难兑现，快攻不愿为爆发牺牲场面。 |
-| 27 | **赤红突击手** | Red专属 | 3费 | MINION | DP:1 `DEATH_DRAW_1` | **53.6** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.9%</span> | 0 张 (暂不推荐) | 三费一点场攻，亡语抽一太慢，抢血卡组不缺这类滞后资源，空。 |
-| 28 | **赤蓝交织者** | Red/Blue双色 | 4费 | MINION | DP:4 `SUPPORT_ATK_1` | **53.1** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -3.0%</span> | 0 张 (暂不推荐) | 四费支援攻一，中速增益与抢血节奏不合，基础版不带。 |
-| 29 | **拾荒盾卫** | 中立通用 | 3费 | MINION | DP:3 `FORTIFY_1,DEATH_DRAW_1` | **52.8** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.1%</span> | 0 张 (暂不推荐) | 三费防守亡语抽牌，节奏滞后，抢血卡组不愿投入中期防御。 |
-| 30 | **赤红铁卫** | Red专属 | 3费 | MINION | DP:3 `FORTIFY_2` | **52.3** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.2%</span> | 0 张 (暂不推荐) | 三费固守两点偏防守，缺乏进攻压力，不适合抢血思路。 |
-| 31 | **雇佣兵** | 中立通用 | 3费 | MINION | DP:5 | **52.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.2%</span> | 0 张 (暂不推荐) | 三费五点身材扎实，但无词条无压力，快攻需要即时威胁。 |
-| 32 | **酒馆密账** | 中立通用 | 4费 | SPELL | 攻0/防0 `DRAW_2,DISCARD_1` | **51.7** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.2%</span> | 0 张 (暂不推荐) | 四费抽二弃一，费用过重且过滤有限，快攻不需要慢速补牌。 |
-| 33 | **赤蓝交织者** | Red/Blue双色 | 4费 | MINION | DP:4 `SUPPORT_ATK_1` | **51.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.3%</span> | 0 张 (暂不推荐) | 四费支援攻一，中速增益与抢血节奏不合，基础版不带。 |
-| 34 | **余烬反击官** | Red专属 | 5费 | MINION | DP:5 `SUPPORT_ATK_1,DEATH_DRAW_1` | **51.2** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.3%</span> | 0 张 (暂不推荐) | 五费支援亡语抽牌，身材扎实但偏慢，不利于快速压低血线。 |
-| 35 | **牺牲角斗士** | Red专属 | 4费 | MINION | DP:4 `SACRIFICE_1_KILL_1` | **50.9** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.4%</span> | 0 张 (暂不推荐) | 四费牺牲解场虽稳，但快攻更愿直接铺场，费用与卡位不合。 |
-| 36 | **献祭狂徒** | Red专属 | 4费 | MINION | DP:4 `SACRIFICE_1_KILL_1` | **50.7** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.4%</span> | 0 张 (暂不推荐) | 四费牺牲解场，进攻端平庸，快攻不愿用生物换单次移除。 |
-| 37 | **战地督军** | Red专属 | 5费 | MINION | DP:4 `SUPPORT_ATK_1` | **50.4** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.5%</span> | 0 张 (暂不推荐) | 五费支援加攻，需场面配合且启动慢，不如直接突袭抢血。 |
-| 38 | **红绿古树桥梁** | Red/Green双色 | 6费 | MINION | DP:6 `FORTIFY_2,DEATH_DRAW_1` | **50.1** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.5%</span> | 0 张 (暂不推荐) | 六费防守亡语抽牌，厚度足却拖节奏，不适合快速抢血。 |
-| 39 | **余烬传令官** | Red专属 | 5费 | MINION | DP:5 `DEATH_DRAW_1` | **49.9** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.5%</span> | 0 张 (暂不推荐) | 五费亡语抽牌，身材尚可但节奏滞后，抢血卡组无暇经营。 |
-| 40 | **红绿共生体** | Red/Green双色 | 6费 | MINION | DP:6 `FORTIFY_2,BONUS_SCORE_1` | **49.6** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.6%</span> | 0 张 (暂不推荐) | 六费支援加固偏防守，抢血卡组卡位不足，不采用。 |
-| 41 | **赤蓝交织者** | Red/Blue双色 | 4费 | MINION | DP:4 `SUPPORT_ATK_1,DEATH_MANA_1` | **49.3** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.6%</span> | 0 张 (暂不推荐) | 四费支援攻一，中速增益与抢血节奏不合，基础版不带。 |
-| 42 | **破阵狂徒** | Red专属 | 8费 | MINION | DP:2 `DEGRADE_1` | **49.1** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.7%</span> | 0 张 (暂不推荐) | 八费降级仅两点场攻，费用沉重，远逊同曲线突袭得分单位。 |
-| 43 | **大块头** | Red专属 | 6费 | MINION | DP:10 `DISCARD_2` | **48.8** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.7%</span> | 0 张 (暂不推荐) | 六费大墙弃两张手牌，快攻手牌即伤害，拖节奏故不采用。 |
-| 44 | **红绿共生体** | Red/Green双色 | 6费 | MINION | DP:6 `SUPPORT_ATK_2,FORTIFY_2` | **48.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.8%</span> | 0 张 (暂不推荐) | 六费支援加固偏防守，抢血卡组卡位不足，不采用。 |
-| 45 | **掠夺者** | Red专属 | 7费 | MINION | DP:3 `BONUS_SCORE_1` | **48.3** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.8%</span> | 0 张 (暂不推荐) | 七费三点场攻太迟，得分词条救不了节奏，快攻不会等它。 |
-| 46 | **红莲驻防长** | Red专属 | 6费 | MINION | DP:6 `FORTIFY_2` | **48.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.8%</span> | 0 张 (暂不推荐) | 六费固守大墙，防守价值高却拖慢进攻，抢血体系不采用。 |
+| 1 | **赤红突破手** | Red专属 | 8费 | MINION | DP:1 `RUSH,BONUS_SCORE_1` | **97.0** | **S+** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#55efc4; font-weight:bold;">🟢 +4.0%</span> | 3 张 (核心满编) | 八费突袭抢分，落场即交换或压血，满编提高终结手段上手率。 |
+| 2 | **赤红掠袭者** | Red专属 | 9费 | MINION | DP:1 `RUSH,BONUS_SCORE_1` | **96.5** | **S+** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#55efc4; font-weight:bold;">🟢 +3.9%</span> | 3 张 (核心满编) | 九费突袭带额外分，终结与补分兼备，满编保证高费回合稳定上手。 |
+| 3 | **红色小队长** | Red专属 | 3费 | MINION | DP:3 `SPAWN_1_1` | **90.0** | **S** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#dfe6e9;">⚪ +2.9%</span> | 3 张 (核心满编) | 三费站场并召一杠一，横向展开极快，是牺牲与抢血核心，满编保证节奏。 |
+| 4 | **赤红突击手** | Red专属 | 2费 | MINION | DP:1 `DEATH_DRAW_1` | **88.0** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.6%</span> | 2 张 (主力配置) | 两费死亡过牌，交换后不亏手牌，适合铺场链衔接；两张保证前期密度。 |
+| 5 | **集结号手** | Red专属 | 2费 | MINION | DP:1 `SPAWN_1_1` | **87.5** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.5%</span> | 2 张 (主力配置) | 两费铺两个频率，配合牺牲与加攻很顺，两张补曲线且不抢核心位。 |
+| 6 | **训练假人** | 中立通用 | 1费 | MINION | DP:1 | **87.0** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.4%</span> | 2 张 (主力配置) | 一费低身材，前期吸收伤害或当牺牲材料，两张补足低费密度。 |
+| 7 | **赤红新兵** | Red专属 | 1费 | MINION | DP:1 | **86.5** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.3%</span> | 2 张 (主力配置) | 一费生物填曲线，可被牺牲或支援，起手留一张，两张减少后期弱抽。 |
+| 8 | **牺牲祭师** | Red专属 | 3费 | MINION | DP:3 `SACRIFICE_1_KILL_1,DEATH_DRAW_1` | **86.0** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.2%</span> | 2 张 (主力配置) | 三费牺牲解场并死亡过牌，功能复合，两张支撑中段节奏与资源。 |
+| 9 | **拾荒盾卫** | 中立通用 | 3费 | MINION | DP:3 `FORTIFY_1,DEATH_DRAW_1` | **83.5** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +1.8%</span> | 2 张 (主力配置) | 三费防御并死亡过牌，可护住关键生物，两张增强交换与续航。 |
+| 10 | **商人** | 中立通用 | 2费 | MINION | DP:2 `DRAW_1` | **83.0** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +1.8%</span> | 2 张 (主力配置) | 两费站场补一张，衔接曲线并续航，两张足够避免手牌溢出。 |
+| 11 | **雇佣兵** | 中立通用 | 3费 | MINION | DP:5 | **81.0** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +1.4%</span> | 2 张 (主力配置) | 三费五血站场，交换效率高，两张提供扎实中段阻挡与牺牲素材。 |
+| 12 | **佣兵斥候** | 中立通用 | 2费 | MINION | DP:1 `RUSH` | **80.0** | **A** | <span style="color:#81ecec;">33.3%</span> | <span style="color:#dfe6e9;">⚪ +1.3%</span> | 2 张 (主力配置) | 两费突袭即时解小怪，夺回先手并填补二费，两张保证上手。 |
+| 13 | **裂甲掷斧手** | Red专属 | 5费 | MINION | DP:1 `RUSH,DEGRADE_1` | **79.5** | **B** | <span style="color:#81ecec;">33.3%</span> | <span style="color:#dfe6e9;">⚪ +1.2%</span> | 1 张 (按需携带) | 五费突袭削甲，能处理难缠防御单位，针对环境挂一张，不宜多带。 |
+| 14 | **赤蓝交织者** | Red/Blue双色 | 4费 | MINION | DP:4 `SUPPORT_ATK_1` | **79.5** | **B** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +1.2%</span> | 2 张 (按需携带) | 四费为友军加攻，铺场后增伤明显，环境慢时带两张，否则让位。 |
+| 15 | **切割者** | Red专属 | 2费 | MINION | DP:2 `DEGRADE_1` | **72.5** | **B** | <span style="color:#81ecec;">33.3%</span> | <span style="color:#dfe6e9;">⚪ +0.1%</span> | 1 张 (按需携带) | 两费削弱随从可磨防守，针对高攻单位，环境合适时挂一张即可。 |
+| 16 | **赤红献祭** | Red专属 | 2费 | SPELL | 攻0/防0 `SACRIFICE_1_KILL_1` | **55.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.6%</span> | 0 张 (暂不推荐) | 两费单解需牺牲生物，破坏铺场联动，快攻节奏反而受损。 |
+| 17 | **血祭爆燃** | Red专属 | 3费 | SPELL | 攻3/防0 `SACRIFICE_1_KILL_1,ATTACK_ONLY` | **55.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.7%</span> | 0 张 (暂不推荐) | 三费牺牲打三，解场尚可但拖节奏，快攻更愿保留生物持续输出。 |
+| 18 | **射线** | Red专属 | 2费 | SPELL | 攻2/防0 | **54.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.8%</span> | 0 张 (暂不推荐) | 两费打二效率平庸，缺乏解场或斩杀增益，直伤卡位更需功能性。 |
+| 19 | **自爆** | Red专属 | 2费 | SPELL | 攻0/防0 `SACRIFICE_1_KILL_1,ATTACK_ONLY` | **54.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.9%</span> | 0 张 (暂不推荐) | 两费牺牲换单解，节奏亏损明显，快攻不愿让出场面，故不进构筑。 |
+| 20 | **大块头** | Red专属 | 6费 | MINION | DP:10 `DISCARD_2` | **51.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.3%</span> | 0 张 (暂不推荐) | 六费大身材却需弃两张，快攻手牌珍贵，弃牌代价压过站场价值。 |
+| 21 | **掠夺者** | Red专属 | 6费 | MINION | DP:4 `BONUS_SCORE_1` | **50.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.4%</span> | 0 张 (暂不推荐) | 六费仅四点身材，额外得分太慢，快攻六费应已终结或转伤。 |
+| 22 | **赤红战意** | Red专属 | 5费 | SPELL | 攻0/防0 `TEMP_MANA_2` | **50.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.5%</span> | 0 张 (暂不推荐) | 五费换临时两费，费用倒挂难滚雪球，快攻不需此类法术。 |
+| 23 | **红绿共生体** | Red/Green双色 | 6费 | MINION | DP:6 `SUPPORT_ATK_2,FORTIFY_2` | **49.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.7%</span> | 0 张 (暂不推荐) | 六费辅助与防御虽扎实，但快攻六费要伤害或终结，此卡太慢。 |
+| 24 | **酒馆密账** | 中立通用 | 4费 | SPELL | 攻0/防0 `DRAW_2,DISCARD_1` | **48.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.8%</span> | 0 张 (暂不推荐) | 四费抽二弃一，节奏太慢且弃牌伤资源，快攻不需此过牌方式。 |
+| 25 | **破阵狂徒** | Red专属 | 8费 | MINION | DP:2 `DEGRADE_1` | **48.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.8%</span> | 0 张 (暂不推荐) | 八费只提供削弱与低攻，费用过重，快攻无法容忍此等后期空档。 |
 
 ---
 
 ## 🔵 二、 【蔚蓝 (Blue) 卡组】单卡战力与构筑指南
 > **战术核心**：防守反击 · 固守护盾 · 资源消耗  
-> **候选牌池**：32 张Blue专属卡 + 8 张双色协同卡 + 6 张中立通用卡（共 46 张候选，择优遴选 30 张入套）
+> **候选牌池**：17 张Blue专属卡 + 2 张双色协同卡 + 6 张中立通用卡（共 25 张候选，择优遴选 30 张入套）
 
 | 排名 | 卡牌名称 | 归属 | 费用 | 类型 | 属性/数值 | **综合评分** | 梯队 | **携带率** | **胜率贡献 (ΔWR)** | 推荐配置 | 实战构筑解析 |
 | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| 1 | **冰封禁制** | Blue专属 | 2费 | SPELL | 攻6/防2 | **95.1** | **S+** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#55efc4; font-weight:bold;">🟢 +3.7%</span> | 3 张 (核心满编) | 二费打六带二防，高效解场兼保命，核心满编三张不疑。 |
-| 2 | **佣兵斥候** | 中立通用 | 2费 | MINION | DP:1 `RUSH` | **90.0** | **S** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.9%</span> | 3 张 (核心满编) | 二费突袭，解场抢节奏，核心满编三张，前期主动权关键。 |
-| 3 | **冰潮突袭者** | Blue专属 | 3费 | MINION | DP:3 `RUSH` | **89.7** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.8%</span> | 2 张 (主力配置) | 三费突袭三攻，解小怪抢先手，主力两张补防守反攻。 |
-| 4 | **破甲潮汐兵** | Blue专属 | 2费 | MINION | DP:3 `RUSH,DEGRADE_1` | **89.5** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.8%</span> | 2 张 (主力配置) | 二费突袭降攻一，解场抢节奏，主力两张应对快攻与中速。 |
-| 5 | **训练假人** | 中立通用 | 1费 | MINION | DP:1 | **89.2** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.8%</span> | 2 张 (主力配置) | 一费一防白板，拖延快攻攻击频率，主力两张作炮灰。 |
-| 6 | **盾兵** | Blue专属 | 1费 | MINION | DP:1 `FORTIFY_1` | **88.9** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.7%</span> | 2 张 (主力配置) | 一费固守吸收前期伤害，为主力配置，两张开局稳定防线。 |
-| 7 | **蔚蓝智慧** | Blue专属 | 3费 | SPELL | 攻0/防0 `DRAW_2,TEMP_MANA_1` | **86.8** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.4%</span> | 2 张 (主力配置) | 三费抽二返一费，过牌续航兼跳费，主力两张调资源。 |
-| 8 | **商人** | 中立通用 | 2费 | MINION | DP:2 `DRAW_1` | **86.3** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.3%</span> | 2 张 (主力配置) | 二费站场抽一，兼顾曲线与资源，主力两张润滑前期。 |
-| 9 | **寒晶护壁** | Blue专属 | 2费 | SPELL | 攻0/防2 `DRAW_1` | **84.9** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.1%</span> | 2 张 (主力配置) | 二费抽一加二防，润滑手牌与护脸，主力配置两张稳定。 |
-| 10 | **蔚蓝守卫** | Blue专属 | 2费 | MINION | DP:2 `FORTIFY_2` | **84.4** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.0%</span> | 2 张 (主力配置) | 二费二防固守二，前期合格墙，主力两张挡住快攻攻势。 |
-| 11 | **蔚蓝护盾反击** | Blue专属 | 3费 | SPELL | 攻0/防4 `FORTIFY_1` | **79.9** | **B** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +1.3%</span> | 2 张 (按需携带) | 三费加四防附固守，按需两张，强化低费墙对抗爆发。 |
-| 12 | **蔚蓝盾卫** | Blue专属 | 5费 | MINION | DP:6 `FORTIFY_3,SUPPORT_ATK_1` | **79.1** | **B** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +1.1%</span> | 2 张 (按需携带) | 5费DP 6随从，附带【FORTIFY_3,SUPPORT_ATK_1】，承担Blue阵营核心战术组件。 |
-| 13 | **蔚蓝要塞** | Blue专属 | 5费 | MINION | DP:6 `FORTIFY_3,SUPPORT_ATK_1` | **78.5** | **B** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +1.0%</span> | 2 张 (按需携带) | 五费六防固守三，附支援攻一，按需两张撑中期与反打。 |
-| 14 | **石像鬼** | Blue专属 | 6费 | MINION | DP:8 | **78.0** | **B** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +1.0%</span> | 2 张 (按需携带) | 六费八防白板，中后期高质量墙，吸收直伤后为大哥铺路。 |
-| 15 | **防御！** | Blue专属 | 1费 | SPELL | 攻0/防2 | **76.0** | **B** | <span style="color:#81ecec;">33.3%</span> | <span style="color:#dfe6e9;">⚪ +0.6%</span> | 1 张 (按需携带) | 一费加二防，针对快攻的临时解，按环境作一张对策。 |
-| 16 | **蔚蓝守壁** | Blue专属 | 2费 | MINION | DP:2 `FORTIFY_2` | **58.7** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.1%</span> | 0 张 (暂不推荐) | 二费二防固守二，与蔚蓝守卫重复，卡位紧张故舍弃。 |
-| 17 | **潮汐学者** | Blue专属 | 2费 | MINION | DP:2 `DEATH_DRAW_1` | **58.4** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.2%</span> | 0 张 (暂不推荐) | 2费DP 2随从，附带【DEATH_DRAW_1】，承担Blue阵营核心战术组件。 |
-| 18 | **赤蓝战术交换** | Red/Blue双色 | 2费 | SPELL | 攻3/防0 `DRAW_1` | **58.1** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.2%</span> | 0 张 (暂不推荐) | 二费打三抽一，伤害偏低且过牌延迟，不符防守需求。 |
-| 19 | **寒冰解离** | Blue专属 | 3费 | SPELL | 攻4/防0 | **57.9** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.3%</span> | 0 张 (暂不推荐) | 三费打四白板，效率低于冰封禁制，防守卡组无空闲。 |
-| 20 | **寒霜破甲** | Blue专属 | 2费 | SPELL | 攻3/防0 `DEGRADE_1` | **57.6** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.3%</span> | 0 张 (暂不推荐) | 二费打三降攻一，看似灵活，实际解场深度不足，不推荐。 |
-| 21 | **蔚蓝冲击** | Blue专属 | 2费 | SPELL | 攻4/防0 | **57.3** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.4%</span> | 0 张 (暂不推荐) | 二费打四无附加，解场效率一般，防守体系不优先选用。 |
-| 22 | **霜盾见习官** | Blue专属 | 2费 | MINION | DP:1 `FORTIFY_1,SUPPORT_ATK_1` | **56.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.5%</span> | 0 张 (暂不推荐) | 二费身材差，固守与支援攻一收益低，易被解，不配卡位。 |
-| 23 | **蓝晶守御者** | Blue专属 | 3费 | MINION | DP:3 `FORTIFY_1,ATTACK_ONLY` | **55.7** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.6%</span> | 0 张 (暂不推荐) | 三费仅固守一且只能攻击，防御速度差，难以承担护脸。 |
-| 24 | **蔚蓝卫士** | Blue专属 | 2费 | MINION | DP:2 `FORTIFY_1` | **55.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.6%</span> | 0 张 (暂不推荐) | 二费仅一固守，身材平庸，卡位竞争激烈，构筑无需投入。 |
-| 25 | **壁垒工匠** | Blue专属 | 3费 | MINION | DP:3 `FORTIFY_2` | **55.2** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.7%</span> | 0 张 (暂不推荐) | 三费三防固守二尚可，但同费有更优选择，构筑暂不进。 |
-| 26 | **弓箭手** | Blue专属 | 3费 | MINION | DP:3 `SUPPORT_ATK_1` | **54.7** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.8%</span> | 0 张 (暂不推荐) | 三费支援攻一，防御端太弱，防守体系难保它站场，弃用。 |
-| 27 | **蔚蓝破甲师** | Blue专属 | 3费 | MINION | DP:3 `DEGRADE_1` | **54.1** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.9%</span> | 0 张 (暂不推荐) | 三费降攻一，防守卡组不需要软解，占卡位且威胁不足。 |
-| 28 | **赤蓝交织者** | Red/Blue双色 | 4费 | MINION | DP:4 `SUPPORT_ATK_1` | **53.9** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.9%</span> | 0 张 (暂不推荐) | 4费DP 4随从，附带【SUPPORT_ATK_1】，承担Blue阵营核心战术组件。 |
-| 29 | **蔚蓝盾卫** | Blue专属 | 2费 | MINION | DP:2 `FORTIFY_1` | **53.6** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.9%</span> | 0 张 (暂不推荐) | 2费DP 2随从，附带【FORTIFY_1】，承担Blue阵营核心战术组件。 |
-| 30 | **拾荒盾卫** | 中立通用 | 3费 | MINION | DP:3 `FORTIFY_1,DEATH_DRAW_1` | **53.3** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -3.0%</span> | 0 张 (暂不推荐) | 三费固守一亡语抽一，站场与过牌皆慢，竞争不过商人。 |
-| 31 | **潮汐学者** | Blue专属 | 4费 | MINION | DP:4 `DEATH_DRAW_1` | **53.1** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -3.0%</span> | 0 张 (暂不推荐) | 4费DP 4随从，附带【DEATH_DRAW_1】，承担Blue阵营核心战术组件。 |
-| 32 | **赤蓝交织者** | Red/Blue双色 | 4费 | MINION | DP:4 `SUPPORT_ATK_1` | **52.8** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.1%</span> | 0 张 (暂不推荐) | 4费DP 4随从，附带【SUPPORT_ATK_1】，承担Blue阵营核心战术组件。 |
-| 33 | **藤甲兵** | Blue专属 | 4费 | MINION | DP:4 `FORTIFY_2` | **52.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.1%</span> | 0 张 (暂不推荐) | 四费四防固守二，数值不及同费曲线，防守效率低不采用。 |
-| 34 | **秘蓝回溯** | Blue专属 | 3费 | SPELL | 攻0/防3 `DRAW_1` | **52.3** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.2%</span> | 0 张 (暂不推荐) | 三费加三防抽一，费用偏高，同类低费法术更易衔接。 |
-| 35 | **雇佣兵** | 中立通用 | 3费 | MINION | DP:5 | **52.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.2%</span> | 0 张 (暂不推荐) | 三费五防白板，虽耐打但无战术价值，卡位留给功能件。 |
-| 36 | **蓝绿潮涌** | Blue/Green双色 | 3费 | SPELL | 攻0/防0 `DRAW_2` | **51.7** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.2%</span> | 0 张 (暂不推荐) | 三费抽二无护脸，防守卡组需即时影响，纯过牌太慢。 |
-| 37 | **酒馆密账** | 中立通用 | 4费 | SPELL | 攻0/防0 `DRAW_2,DISCARD_1` | **51.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.3%</span> | 0 张 (暂不推荐) | 四费抽二弃一，过滤代价大，防守卡组手牌不容弃。 |
-| 38 | **蓝绿潮汐织法者** | Blue/Green双色 | 5费 | MINION | DP:4 `SUPPORT_ATK_1,RAMP_1` | **51.2** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.3%</span> | 0 张 (暂不推荐) | 五费支援攻一并跳费，进攻与跳费混合，防守卡组不取。 |
-| 39 | **赤蓝交织者** | Red/Blue双色 | 4费 | MINION | DP:4 `SUPPORT_ATK_1,DEATH_MANA_1` | **50.9** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.4%</span> | 0 张 (暂不推荐) | 4费DP 4随从，附带【SUPPORT_ATK_1,DEATH_MANA_1】，承担Blue阵营核心战术组件。 |
-| 40 | **蓝绿潮汐者** | Blue/Green双色 | 5费 | MINION | DP:5 `DEATH_MANA_2,FORTIFY_2` | **50.7** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.4%</span> | 0 张 (暂不推荐) | 五费亡语回费带固守二，节奏拖沓，防守端不如直接大墙。 |
-| 41 | **碧波灵鳍** | Blue专属 | 4费 | MINION | DP:4 `SPAWN_1_1,FORTIFY_1` | **50.4** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.5%</span> | 0 张 (暂不推荐) | 四费铺一崽带固守一，场面收益低，防守卡组不需要铺场。 |
-| 42 | **火铳手** | Blue专属 | 3费 | MINION | DP:4 `SUPPORT_ATK_2` | **50.1** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.5%</span> | 0 张 (暂不推荐) | 三费四防支援攻二，进攻偏慢，防守卡组难靠它取胜。 |
-| 43 | **法力回流哨兵** | Blue专属 | 4费 | MINION | DP:4 `DEATH_MANA_2` | **49.6** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.6%</span> | 0 张 (暂不推荐) | 四费亡语回二费，节奏太慢，防守卡组不缺此等返费。 |
-| 44 | **蓝绿潮涌使** | Blue/Green双色 | 5费 | MINION | DP:5 `RAMP_1,DEATH_DRAW_1` | **49.3** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.6%</span> | 0 张 (暂不推荐) | 五费跳费亡语抽一，偏资源展开，防守端节奏不合拍。 |
-| 45 | **深海守望者** | Blue专属 | 5费 | MINION | DP:5 `FORTIFY_3` | **48.8** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.7%</span> | 0 张 (暂不推荐) | 五费五防固守三，五费优质墙众多，它性价比不够突出。 |
-| 46 | **深流变奏师** | Blue专属 | 5费 | MINION | DP:5 `SUPPORT_ATK_1,DEATH_MANA_2` | **48.3** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.8%</span> | 0 张 (暂不推荐) | 五费支援攻一亡语回二费，偏进攻且节奏滞后，不带。 |
+| 1 | **佣兵斥候** | 中立通用 | 2费 | MINION | DP:1 `RUSH` | **90.0** | **S** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.9%</span> | 3 张 (核心满编) | 两费突袭，解场夺先手；弥补防守被动，满编抢节奏。 |
+| 2 | **霜盾见习官** | Blue专属 | 2费 | MINION | DP:1 `FORTIFY_1,SUPPORT_ATK_1` | **89.5** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.8%</span> | 2 张 (主力配置) | 两费双向功能，固守护场同时加攻；身材偏脆，两张即可。 |
+| 3 | **冰封禁制** | Blue专属 | 2费 | SPELL | 攻4/防2 | **87.5** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.5%</span> | 2 张 (主力配置) | 两费打四附防二，解场兼保脸；中期抢节奏，两张稳。 |
+| 4 | **盾兵** | Blue专属 | 1费 | MINION | DP:1 `FORTIFY_1` | **87.0** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.4%</span> | 2 张 (主力配置) | 一费固守吸收首轮伤害，护住后续展开；中期抽到偏弱，带两张。 |
+| 5 | **蔚蓝要塞** | Blue专属 | 6费 | MINION | DP:6 `FORTIFY_3,SUPPORT_ATK_1` | **86.5** | **A** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#dfe6e9;">⚪ +2.3%</span> | 3 张 (主力配置) | 六费终端，固守三加攻一，落地即压制；满编保后期质量。 |
+| 6 | **蔚蓝智慧** | Blue专属 | 3费 | SPELL | 攻0/防0 `DRAW_2,TEMP_MANA_1` | **85.0** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.1%</span> | 2 张 (主力配置) | 三费抽二返一费，滤牌提速；中期找要塞，两张稳定。 |
+| 7 | **弓箭手** | Blue专属 | 3费 | MINION | DP:3 `SUPPORT_ATK_1` | **84.0** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +1.9%</span> | 2 张 (主力配置) | 三费支援加攻，后排稳定输出；身材普通，两张开路足够。 |
+| 8 | **商人** | 中立通用 | 2费 | MINION | DP:2 `DRAW_1` | **83.5** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +1.8%</span> | 2 张 (主力配置) | 两费二防过一，站场兼润滑；前期不亏手牌，两张主力。 |
+| 9 | **拾荒盾卫** | 中立通用 | 3费 | MINION | DP:3 `FORTIFY_1,DEATH_DRAW_1` | **83.0** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +1.8%</span> | 2 张 (主力配置) | 三费固守一亡语抽一，换牌不亏；稳住前期，两张合适。 |
+| 10 | **蓝绿潮汐者** | Blue/Green双色 | 5费 | MINION | DP:5 `DEATH_MANA_2,FORTIFY_2` | **82.5** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +1.7%</span> | 2 张 (主力配置) | 五费固守二，亡语回两费；衔接高费终端，两张保证续航。 |
+| 11 | **蔚蓝守卫** | Blue专属 | 2费 | MINION | DP:2 `FORTIFY_2` | **82.0** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +1.6%</span> | 2 张 (主力配置) | 两费固守二，前期最稳防线；保护后排并过渡，两张主力。 |
+| 12 | **雇佣兵** | 中立通用 | 3费 | MINION | DP:5 | **81.5** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +1.5%</span> | 2 张 (主力配置) | 三费五防裸墙，吸收伤害扎实；无词条但替要塞拖回合，两张。 |
+| 13 | **训练假人** | 中立通用 | 1费 | MINION | DP:1 | **79.0** | **B** | <span style="color:#81ecec;">33.3%</span> | <span style="color:#dfe6e9;">⚪ +1.1%</span> | 1 张 (按需携带) | 一费一防，垫刀拖延；功能有限，仅作低费曲线补位。 |
+| 14 | **防御！** | Blue专属 | 1费 | SPELL | 攻0/防2 | **78.5** | **B** | <span style="color:#81ecec;">33.3%</span> | <span style="color:#dfe6e9;">⚪ +1.0%</span> | 1 张 (按需携带) | 一费防两伤，关键回合保随从或脸；非主计划，按需一张。 |
+| 15 | **蔚蓝卫士** | Blue专属 | 2费 | MINION | DP:2 `FORTIFY_1` | **76.5** | **B** | <span style="color:#81ecec;">33.3%</span> | <span style="color:#dfe6e9;">⚪ +0.7%</span> | 1 张 (按需携带) | 低费固守墙，可补前期曲线；同费蔚蓝守卫更硬，仅按需一张。 |
+| 16 | **壁垒工匠** | Blue专属 | 3费 | MINION | DP:3 `FORTIFY_2` | **75.5** | **B** | <span style="color:#81ecec;">33.3%</span> | <span style="color:#dfe6e9;">⚪ +0.6%</span> | 1 张 (按需携带) | 三费固守二，防守及格；同费竞争多，仅作针对性一张。 |
+| 17 | **蔚蓝破甲师** | Blue专属 | 3费 | MINION | DP:3 `DEGRADE_1` | **71.0** | **B** | <span style="color:#81ecec;">33.3%</span> | <span style="color:#dfe6e9;">⚪ -0.2%</span> | 1 张 (按需携带) | 三费减益一，针对高防大哥；环境对策，一张足够。 |
+| 18 | **蔚蓝冲击** | Blue专属 | 2费 | SPELL | 攻3/防0 | **58.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.2%</span> | 0 张 (暂不推荐) | 两费打三，直伤效率普通；防守卡组不缺解，不带。 |
+| 19 | **寒晶护壁** | Blue专属 | 2费 | SPELL | 攻0/防2 `DRAW_1` | **56.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.6%</span> | 0 张 (暂不推荐) | 两费防二过一，效率尚可；但防法术卡位紧，暂不带。 |
+| 20 | **蔚蓝盾卫** | Blue专属 | 4费 | MINION | DP:4 `FORTIFY_3,SUPPORT_ATK_1` | **54.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.8%</span> | 0 张 (暂不推荐) | 四费固守三加攻一，单卡不弱；四费曲线拥挤，优先雇佣兵。 |
+| 21 | **酒馆密账** | 中立通用 | 4费 | SPELL | 攻0/防0 `DRAW_2,DISCARD_1` | **50.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.4%</span> | 0 张 (暂不推荐) | 四费抽二弃一，节奏亏损；防守卡组要留手牌，不带。 |
+| 22 | **赤蓝交织者** | Red/Blue双色 | 4费 | MINION | DP:4 `SUPPORT_ATK_1` | **50.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.5%</span> | 0 张 (暂不推荐) | 四费支援加一，输出增益低；同费有雇佣兵撑场，不带。 |
+| 23 | **火铳手** | Blue专属 | 3费 | MINION | DP:4 `SUPPORT_ATK_2` | **49.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.6%</span> | 0 张 (暂不推荐) | 三费支援加二攻，输出不错；但三费曲线拥挤，支援位有弓箭手，暂不投入。 |
+| 24 | **藤甲兵** | Blue专属 | 4费 | MINION | DP:4 `FORTIFY_2` | **49.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.7%</span> | 0 张 (暂不推荐) | 四费四防固守二，数值平庸；四费竞争激烈，卡位不够。 |
+| 25 | **石像鬼** | Blue专属 | 6费 | MINION | DP:8 | **48.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.8%</span> | 0 张 (暂不推荐) | 六费八防无词条，节奏太慢；高费位要塞更强，故不带。 |
 
 ---
 
 ## 🟢 三、 【翠绿 (Green) 卡组】单卡战力与构筑指南
 > **战术核心**：法力跳费 · 质量成长 · 终结大哥  
-> **候选牌池**：32 张Green专属卡 + 8 张双色协同卡 + 6 张中立通用卡（共 46 张候选，择优遴选 30 张入套）
+> **候选牌池**：17 张Green专属卡 + 2 张双色协同卡 + 6 张中立通用卡（共 25 张候选，择优遴选 30 张入套）
 
 | 排名 | 卡牌名称 | 归属 | 费用 | 类型 | 属性/数值 | **综合评分** | 梯队 | **携带率** | **胜率贡献 (ΔWR)** | 推荐配置 | 实战构筑解析 |
 | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| 1 | **灭世翡翠巨龙** | Green专属 | 9费 | MINION | DP:4 `RUSH,BONUS_SCORE_1` | **96.7** | **S+** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#55efc4; font-weight:bold;">🟢 +4.0%</span> | 3 张 (核心满编) | 九费突袭加额外得分，跳费后终结比赛，核心满编不怕卡手。 |
-| 2 | **训练假人** | 中立通用 | 1费 | MINION | DP:1 | **96.4** | **S+** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#55efc4; font-weight:bold;">🟢 +3.9%</span> | 3 张 (核心满编) | 一费低费站场挡突袭，保护跳费单位，核心满编润滑前期。 |
-| 3 | **萌芽跳费使** | Green专属 | 3费 | MINION | DP:3 `RAMP_1` | **94.5** | **S+** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#55efc4; font-weight:bold;">🟢 +3.6%</span> | 3 张 (核心满编) | 三费跳费兼站场，衔接四五六费曲线，核心满编提速。 |
-| 4 | **佣兵斥候** | 中立通用 | 2费 | MINION | DP:1 `RUSH` | **90.0** | **S** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.9%</span> | 3 张 (核心满编) | 两费突袭解小随从，抢回先手兼护跳费，核心满编保前期。 |
-| 5 | **荆棘反制者** | Green专属 | 3费 | MINION | DP:3 `RUSH,DEGRADE_1` | **89.7** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.8%</span> | 2 张 (主力配置) | 三费突袭削弱敌随从，解场兼站场，主力两张争夺前期节奏。 |
-| 6 | **藤蔓突袭者** | Green专属 | 4费 | MINION | DP:4 `RUSH` | **89.5** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.8%</span> | 2 张 (主力配置) | 四费突袭即时解场，夺回先手后继续跳费，主力两张灵活。 |
-| 7 | **红绿共生** | Red/Green双色 | 5费 | MINION | DP:5 `RUSH,DEATH_DRAW_1` | **89.2** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.8%</span> | 2 张 (主力配置) | 五费突袭解场，亡语补手牌，主力两张兼顾返场与续航。 |
-| 8 | **翡翠幼龙** | Green专属 | 7费 | MINION | DP:4 `RUSH,DEATH_MANA_1` | **88.9** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.7%</span> | 2 张 (主力配置) | 七费突袭解场，死亡返费支撑后续核弹，主力两张稳定过渡。 |
-| 9 | **世界树恩泽** | Green专属 | 5费 | SPELL | 攻0/防3 `RAMP_1` | **88.9** | **A** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#dfe6e9;">⚪ +2.7%</span> | 3 张 (主力配置) | 五费跳费并加防，护脸同时扩张法力，满编保证高费准时启动。 |
-| 10 | **翠绿幼苗** | Green专属 | 1费 | MINION | DP:1 `FORTIFY_1` | **87.9** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.5%</span> | 2 张 (主力配置) | 一费低攻防御，前期吸收伤害，带两张润滑跳费曲线。 |
-| 11 | **翡翠藤盾卫** | Green专属 | 2费 | MINION | DP:2 `FORTIFY_2` | **86.8** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.4%</span> | 2 张 (主力配置) | 两费高防御站场，抵御快攻并保护跳费，主力两张稳固前期。 |
-| 12 | **剧毒花** | Green专属 | 2费 | MINION | DP:2 `DEGRADE_2` | **86.3** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.3%</span> | 2 张 (主力配置) | 两费削弱敌随从，前期交换能拖慢快攻，带两张补防守短板。 |
-| 13 | **翠绿跳费者** | Green专属 | 4费 | MINION | DP:3 `RAMP_1` | **73.6** | **B** | <span style="color:#81ecec;">33.3%</span> | <span style="color:#dfe6e9;">⚪ +0.3%</span> | 1 张 (按需携带) | 四费跳费身材一般，节奏不顺时补一张，顺境不必多带。 |
-| 14 | **翠绿资源滋长** | Green专属 | 4费 | SPELL | 攻0/防0 `RAMP_1,DRAW_1` | **73.1** | **B** | <span style="color:#81ecec;">33.3%</span> | <span style="color:#dfe6e9;">⚪ +0.2%</span> | 1 张 (按需携带) | 四费跳费加过牌，后期补资源可用，前期节奏偏慢只挂一。 |
-| 15 | **商人** | 中立通用 | 2费 | MINION | DP:2 `DRAW_1` | **58.1** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.2%</span> | 0 张 (暂不推荐) | 两费过一牌身材弱，跳费体系需法力扩张，过牌位不优先。 |
-| 16 | **自然献祭** | Green专属 | 4费 | SPELL | 攻3/防0 `SACRIFICE_1_KILL_1` | **57.6** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.3%</span> | 0 张 (暂不推荐) | 四费牺牲一随从换解，成本高且亏节奏，跳费不缺此对策。 |
-| 17 | **荆棘缠绕** | Green专属 | 2费 | SPELL | 攻4/防0 | **57.3** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.4%</span> | 0 张 (暂不推荐) | 两费直伤仅四点，解不掉主流随从，还挤占跳费过牌卡位。 |
-| 18 | **翠绿哨兵** | Green专属 | 3费 | MINION | DP:2 `FORTIFY_2,DEATH_DRAW_1` | **57.1** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.4%</span> | 0 张 (暂不推荐) | 三费低攻虽亡语过牌，但交换差节奏慢，跳费更需即时扩张。 |
-| 19 | **拾荒盾卫** | 中立通用 | 3费 | MINION | DP:3 `FORTIFY_1,DEATH_DRAW_1` | **56.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.6%</span> | 0 张 (暂不推荐) | 三费防御亡语过牌，交换尚可但慢，核心跳费位轮不到。 |
-| 20 | **蓝绿潮涌** | Blue/Green双色 | 3费 | SPELL | 攻0/防0 `DRAW_2` | **55.7** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.6%</span> | 0 张 (暂不推荐) | 三费抽二只过牌，不扩张法力，跳费链不需要纯滤抽。 |
-| 21 | **翠绿驻防藤蔓** | Green专属 | 2费 | MINION | DP:2 `FORTIFY_1` | **55.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.6%</span> | 0 张 (暂不推荐) | 两费防御随从，身材与词条皆平庸，前期卡位让给功能牌。 |
-| 22 | **树人** | Green专属 | 3费 | MINION | DP:2 `FORTIFY_1` | **55.2** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.7%</span> | 0 张 (暂不推荐) | 三费两攻防御普通，站场与交换均无优势，跳费体系不采用。 |
-| 23 | **狂暴生长** | Green专属 | 3费 | SPELL | 攻0/防3 | **54.9** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.7%</span> | 0 张 (暂不推荐) | 三费仅加三点防御，无法跳费或交换，防御法术位已被取代。 |
-| 24 | **古树庇护** | Green专属 | 3费 | SPELL | 攻0/防5 `FORTIFY_1` | **54.7** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.8%</span> | 0 张 (暂不推荐) | 三费防御法术收益低，既不解场也不跳费，构筑优先舍弃。 |
-| 25 | **翠绿守林人** | Green专属 | 3费 | MINION | DP:3 `FORTIFY_2` | **54.4** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.8%</span> | 0 张 (暂不推荐) | 三费防御随从交换尚可，但无跳费突袭，核心卡位竞争失败。 |
-| 26 | **自然生长** | Green专属 | 3费 | SPELL | 攻0/防0 `RAMP_1` | **54.1** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.9%</span> | 0 张 (暂不推荐) | 三费单跳无过牌，与低费跳费重复，满编核心后无需追加。 |
-| 27 | **翠绿萌芽** | Green专属 | 3费 | SPELL | 攻0/防0 `RAMP_1` | **53.9** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.9%</span> | 0 张 (暂不推荐) | 三费只跳一费，节奏亏损明显，翠绿已有更低费跳费，卡位不采纳。 |
-| 28 | **森林之狼** | Green专属 | 4费 | MINION | DP:4 | **53.3** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -3.0%</span> | 0 张 (暂不推荐) | 四费白板攻防平平，缺乏突袭与跳费联动，难进竞速构筑。 |
-| 29 | **翠绿守护** | Green专属 | 3费 | SPELL | 攻0/防5 | **52.8** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.1%</span> | 0 张 (暂不推荐) | 三费五防纯防守，不跳费不返场，进攻体系里拖节奏。 |
-| 30 | **酒馆密账** | 中立通用 | 4费 | SPELL | 攻0/防0 `DRAW_2,DISCARD_1` | **52.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.1%</span> | 0 张 (暂不推荐) | 四费抽二弃一，弃牌风险不合跳费，资源计划不依赖此牌。 |
-| 31 | **古木护林官** | Green专属 | 5费 | MINION | DP:5 `SUPPORT_ATK_1,DEATH_DRAW_1` | **52.3** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.2%</span> | 0 张 (暂不推荐) | 五费辅助加攻且亡语过牌，回报偏慢，跳费体系不需中期杂项。 |
-| 32 | **翠绿滋养** | Green专属 | 3费 | SPELL | 攻0/防0 `RAMP_1,DRAW_1` | **52.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.2%</span> | 0 张 (暂不推荐) | 三费跳费过一张，效率不差但卡位紧，已有更优跳费核心。 |
-| 33 | **翠绿复苏使** | Green专属 | 4费 | MINION | DP:4 `DEATH_MANA_2,FORTIFY_1` | **51.7** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.2%</span> | 0 张 (暂不推荐) | 四费亡语返费但身材普通，延迟收益不适合抢跳节奏。 |
-| 34 | **蓝绿潮汐织法者** | Blue/Green双色 | 5费 | MINION | DP:4 `SUPPORT_ATK_1,RAMP_1` | **51.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.3%</span> | 0 张 (暂不推荐) | 五费跳费带辅助，身材偏弱且延迟，三费跳费更高效。 |
-| 35 | **雇佣兵** | 中立通用 | 3费 | MINION | DP:5 | **51.2** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.3%</span> | 0 张 (暂不推荐) | 三费五攻纯站场，无突袭跳费联动，易被解后丢节奏。 |
-| 36 | **林地衍生兽** | Green专属 | 4费 | MINION | DP:3 `SPAWN_1_1` | **50.7** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.4%</span> | 0 张 (暂不推荐) | 四费铺两个小身板，扩张速度慢，无法替代跳费或突袭位。 |
-| 37 | **芽苗祭司** | Green专属 | 4费 | MINION | DP:3 `RAMP_1` | **50.4** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.5%</span> | 0 张 (暂不推荐) | 四费才跳一费且身材差，慢于三费跳费使，不推荐投入。 |
-| 38 | **蓝绿潮汐者** | Blue/Green双色 | 5费 | MINION | DP:5 `DEATH_MANA_2,FORTIFY_2` | **50.1** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.5%</span> | 0 张 (暂不推荐) | 五费防御亡语返费，面板扎实但节奏延迟，双色卡位紧张。 |
-| 39 | **红绿共生体** | Red/Green双色 | 6费 | MINION | DP:6 `FORTIFY_2,BONUS_SCORE_1` | **49.9** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.5%</span> | 0 张 (暂不推荐) | 6费DP 6随从，附带【FORTIFY_2,BONUS_SCORE_1】，承担Green阵营核心战术组件。 |
-| 40 | **萌芽巨兽** | Green专属 | 7费 | MINION | DP:7 `FORTIFY_3` | **49.6** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.6%</span> | 0 张 (暂不推荐) | 七费高防御但缺突袭，终结回合太慢，九费核弹更直接。 |
-| 41 | **古树智者** | Green专属 | 6费 | MINION | DP:6 `DEATH_MANA_2` | **49.3** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.6%</span> | 0 张 (暂不推荐) | 六费亡语返两费太慢，站场无突袭，无法解决中期压力。 |
-| 42 | **蓝绿潮涌使** | Blue/Green双色 | 5费 | MINION | DP:5 `RAMP_1,DEATH_DRAW_1` | **49.1** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.7%</span> | 0 张 (暂不推荐) | 五费跳费亡语过牌，身材一般且慢，已有三费跳费使替代。 |
-| 43 | **翡翠巨熊** | Green专属 | 6费 | MINION | DP:6 `FORTIFY_2` | **48.8** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.7%</span> | 0 张 (暂不推荐) | 六费防御厚但无突袭，不能即时返场，中速位被功能卡挤掉。 |
-| 44 | **红绿古树桥梁** | Red/Green双色 | 6费 | MINION | DP:6 `FORTIFY_2,DEATH_DRAW_1` | **48.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.8%</span> | 0 张 (暂不推荐) | 六费防御亡语过牌，稳定但不提速，无法帮助高费核弹提前。 |
-| 45 | **红绿共生体** | Red/Green双色 | 6费 | MINION | DP:6 `SUPPORT_ATK_2,FORTIFY_2` | **48.3** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.8%</span> | 0 张 (暂不推荐) | 6费DP 6随从，附带【SUPPORT_ATK_2,FORTIFY_2】，承担Green阵营核心战术组件。 |
-| 46 | **远古巨树** | Green专属 | 7费 | MINION | DP:8 `FORTIFY_2` | **48.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.8%</span> | 0 张 (暂不推荐) | 七费八攻虽厚，但无突袭终结慢，九费核弹面前定位重叠。 |
+| 1 | **灭世翡翠巨龙** | Green专属 | 10费 | MINION | DP:8 `RUSH,BONUS_SCORE_1` | **98.0** | **S+** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#55efc4; font-weight:bold;">🟢 +4.2%</span> | 3 张 (核心满编) | 十费突袭终结，附加得分拉大差距；跳费后核心制胜点，满编提高上手与续航。 |
+| 2 | **翡翠幼龙** | Green专属 | 5费 | MINION | DP:4 `RUSH,DEATH_MANA_1` | **97.0** | **S+** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#55efc4; font-weight:bold;">🟢 +4.0%</span> | 3 张 (核心满编) | 五费突袭解场，亡语返一费；兼顾节奏与跳费链，满编保证中期不断档。 |
+| 3 | **芽苗祭司** | Green专属 | 4费 | MINION | DP:3 `RAMP_1` | **93.0** | **S** | <span style="color:#ffeaa7; font-weight:bold;">100.0%</span> | <span style="color:#55efc4; font-weight:bold;">🟢 +3.4%</span> | 3 张 (核心满编) | 四费站场并跳一费，衔接高费核心；前期必争节奏点，满编保证按时扩张法力。 |
+| 4 | **佣兵斥候** | 中立通用 | 2费 | MINION | DP:1 `RUSH` | **89.5** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.8%</span> | 2 张 (主力配置) | 两费突袭补刀，解掉一血随从并夺回先手；身材偏弱，两张作功能性解场。 |
+| 5 | **剧毒花** | Green专属 | 2费 | MINION | DP:2 `DEGRADE_2` | **88.5** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.6%</span> | 2 张 (主力配置) | 两费削减对手两点攻，针对快攻前锋；可换掉小随从，主力配置两张稳前期。 |
+| 6 | **商人** | 中立通用 | 2费 | MINION | DP:2 `DRAW_1` | **87.5** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.5%</span> | 2 张 (主力配置) | 两费站场并抽一，润滑跳费曲线；前期不亏手牌，两张维持展开与资源平衡。 |
+| 7 | **训练假人** | 中立通用 | 1费 | MINION | DP:1 | **87.0** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.4%</span> | 2 张 (主力配置) | 一费垫场吸收攻击，保护跳费随从；功能单一，两张用于前期过渡即可。 |
+| 8 | **翠绿哨兵** | Green专属 | 2费 | MINION | DP:2 `FORTIFY_2,DEATH_DRAW_1` | **86.5** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.3%</span> | 2 张 (主力配置) | 两费双层护甲，亡语补一张；前期稳血兼过牌，主力两张强化防守与资源。 |
+| 9 | **翠绿幼苗** | Green专属 | 1费 | MINION | DP:1 `FORTIFY_1` | **86.0** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.2%</span> | 2 张 (主力配置) | 一费早期站场带护甲，吸收快攻伤害；跳费前低费曲线，两张够用避免卡手。 |
+| 10 | **雇佣兵** | 中立通用 | 3费 | MINION | DP:5 | **84.5** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +2.0%</span> | 2 张 (主力配置) | 三费五攻身材扎实，前期交换占优；无词条但能扛线，两张补足低费站场压力。 |
+| 11 | **拾荒盾卫** | 中立通用 | 3费 | MINION | DP:3 `FORTIFY_1,DEATH_DRAW_1` | **83.5** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +1.8%</span> | 2 张 (主力配置) | 三费护甲加亡语抽牌，防守同时补资源；适合拖入高费，两张稳定中前期。 |
+| 12 | **翠绿滋养** | Green专属 | 3费 | SPELL | 攻0/防0 `RAMP_1,DRAW_1` | **82.5** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +1.7%</span> | 2 张 (主力配置) | 三费跳一费并抽一，加速与补牌兼备；关键过渡牌，两张保证中期资源不断。 |
+| 13 | **酒馆密账** | 中立通用 | 4费 | SPELL | 攻0/防0 `DRAW_2,DISCARD_1` | **80.5** | **A** | <span style="color:#ffeaa7; font-weight:bold;">66.7%</span> | <span style="color:#dfe6e9;">⚪ +1.4%</span> | 2 张 (主力配置) | 四费抽二弃一，低费法术加速过牌；跳费后快速找核心，弃牌代价可接受。 |
+| 14 | **翠绿萌芽** | Green专属 | 3费 | SPELL | 攻0/防0 `RAMP_1` | **71.5** | **B** | <span style="color:#81ecec;">33.3%</span> | <span style="color:#dfe6e9;">⚪ -0.1%</span> | 1 张 (按需携带) | 三费跳一费，节奏偏慢；特定大费对局作额外加速，常规卡位只留一张。 |
+| 15 | **荆棘缠绕** | Green专属 | 2费 | SPELL | 攻2/防0 | **58.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.2%</span> | 0 张 (暂不推荐) | 两费打二效率普通，仅能处理小随从；剧毒花与突袭已够解场，无需额外直伤。 |
+| 16 | **树人** | Green专属 | 3费 | MINION | DP:2 `FORTIFY_1` | **55.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.6%</span> | 0 张 (暂不推荐) | 三费二攻仅带护甲，站场压制不足；跳费体系更需即时解场或抽牌，无卡位。 |
+| 17 | **翠绿跳费者** | Green专属 | 4费 | MINION | DP:3 `RAMP_1` | **54.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -2.9%</span> | 0 张 (暂不推荐) | 四费三攻跳一费，身材亏损且当回合无压制；芽苗祭司更稳，卡位不留。 |
+| 18 | **蓝绿潮汐者** | Blue/Green双色 | 5费 | MINION | DP:5 `DEATH_MANA_2,FORTIFY_2` | **53.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#dfe6e9;">⚪ -3.0%</span> | 0 张 (暂不推荐) | 五费亡语返两费，但死亡时机不可控；同费翡翠幼龙能即时解场，优先级更高。 |
+| 19 | **森林之狼** | Green专属 | 4费 | MINION | DP:4 | **52.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.2%</span> | 0 张 (暂不推荐) | 四费四攻白板，交换不赚节奏；无法返场也抢不过突袭，卡位优先跳费。 |
+| 20 | **红绿共生体** | Red/Green双色 | 6费 | MINION | DP:6 `SUPPORT_ATK_2,FORTIFY_2` | **51.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.4%</span> | 0 张 (暂不推荐) | 六费光环加攻带护甲，偏向铺场；本阵营依赖跳费突袭，配合度低不入选。 |
+| 21 | **翠绿守护** | Green专属 | 3费 | SPELL | 攻0/防5 | **50.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.5%</span> | 0 张 (暂不推荐) | 三费五防只护脸，无法影响场面；跳费后需要进攻压制，纯防御牌易被穿透。 |
+| 22 | **远古巨树** | Green专属 | 7费 | MINION | DP:8 `FORTIFY_2` | **49.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.6%</span> | 0 张 (暂不推荐) | 七费八攻带护甲，身材达标却无突袭；后期需立即终结，它留给对手应对回合。 |
+| 23 | **翡翠巨熊** | Green专属 | 6费 | MINION | DP:6 `FORTIFY_2` | **49.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.7%</span> | 0 张 (暂不推荐) | 六费六攻双护甲，防守尚可但缺突袭；同费不如跳费或预备终结，难扭转战局。 |
+| 24 | **狂暴生长** | Green专属 | 3费 | SPELL | 攻0/防3 | **48.5** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.8%</span> | 0 张 (暂不推荐) | 三费加三点防却无跳费抽牌，被动挨打；跳费嫌慢，快攻抗性不如低费守护。 |
+| 25 | **世界树恩泽** | Green专属 | 5费 | SPELL | 攻0/防3 `RAMP_1` | **48.0** | **D** | <span style="color:#b2bec3;">0.0%</span> | <span style="color:#e17055; font-weight:bold;">🟠 -3.8%</span> | 0 张 (暂不推荐) | 五费才跳一费且加防，节奏滞后；高费回合更需直接施压，此牌拖慢核心落地。 |
 
 ---
 
@@ -174,9 +111,9 @@
 
 | 中立卡名称 | 费用 | 类型 | 🔴 赤红卡组评分 | 🔵 蔚蓝卡组评分 | 🟢 翠绿卡组评分 | 最佳契合卡组 | 跨阵营战术定位 |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **佣兵斥候** | 2费 | MINION | **98.0** | **90.0** | **90.0** | **赤红 (快攻)** | 多体系通用的高质量拼图 |
-| **商人** | 2费 | MINION | **91.3** | **86.3** | **58.1** | **赤红 (快攻)** | 偏向赤红 (快攻)体系的针对性组件 |
-| **训练假人** | 1费 | MINION | **57.1** | **89.2** | **96.4** | **翠绿 (跳费)** | 偏向翠绿 (跳费)体系的针对性组件 |
-| **拾荒盾卫** | 3费 | MINION | **52.8** | **53.3** | **56.0** | **翠绿 (跳费)** | 特定战局下的可选备编卡 |
-| **雇佣兵** | 3费 | MINION | **52.0** | **52.0** | **51.2** | **赤红 (快攻)** | 特定战局下的可选备编卡 |
-| **酒馆密账** | 4费 | SPELL | **51.7** | **51.5** | **52.5** | **翠绿 (跳费)** | 特定战局下的可选备编卡 |
+| **训练假人** | 1费 | MINION | **87.0** | **79.0** | **87.0** | **赤红 (快攻)** | 多体系通用的高质量拼图 |
+| **拾荒盾卫** | 3费 | MINION | **83.5** | **83.0** | **83.5** | **赤红 (快攻)** | 多体系通用的高质量拼图 |
+| **商人** | 2费 | MINION | **83.0** | **83.5** | **87.5** | **翠绿 (跳费)** | 多体系通用的高质量拼图 |
+| **雇佣兵** | 3费 | MINION | **81.0** | **81.5** | **84.5** | **翠绿 (跳费)** | 多体系通用的高质量拼图 |
+| **佣兵斥候** | 2费 | MINION | **80.0** | **90.0** | **89.5** | **蔚蓝 (防守)** | 多体系通用的高质量拼图 |
+| **酒馆密账** | 4费 | SPELL | **48.5** | **50.5** | **80.5** | **翠绿 (跳费)** | 偏向翠绿 (跳费)体系的针对性组件 |
