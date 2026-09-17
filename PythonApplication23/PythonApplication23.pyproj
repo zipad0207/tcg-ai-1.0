@@ -32,14 +32,22 @@
     <Compile Include="pipeline_orchestrator.py" />
     <Compile Include="plot_experiments.py" />
     <Compile Include="sandbox.py" />
+    <Compile Include="test_deck_matchup.py" />
     <Compile Include="train.py" />
     <Compile Include="train_brawl.py" />
     <Compile Include="visualizer.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="cards_config.json" />
+    <Content Include="cards_config_baseline.json" />
+    <Content Include="cards_config_tuned.json" />
     <Content Include="decks_config.json" />
+    <Content Include="training_metrics_baseline.json" />
+    <Content Include="training_metrics_tuned.json" />
     <Content Include="training_metrics_brawl.json" />
+    <Content Include="battle_replay.html" />
+    <Content Include="hearthstone_assistant.html" />
+    <Content Include="card_tier_table.md" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
