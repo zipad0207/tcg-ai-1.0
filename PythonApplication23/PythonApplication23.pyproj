@@ -11,7 +11,6 @@
     <OutputPath>.</OutputPath>
     <Name>PythonApplication23</Name>
     <RootNamespace>PythonApplication23</RootNamespace>
-    <SuppressConfigureTestFrameworkPrompt>true</SuppressConfigureTestFrameworkPrompt>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>

@@ -257,7 +257,9 @@
       "base_dp": 3,
       "atk_spell_val": 0,
       "def_spell_val": 0,
-      "tags": [],
+      "tags": [
+        "RUSH"
+      ],
       "factions": [
         "Red"
       ]
@@ -297,10 +299,12 @@
       "name": "赤红中期突破手",
       "card_type": "MINION",
       "cost": 8,
-      "base_dp": 6,
+      "base_dp": 5,
       "atk_spell_val": 0,
       "def_spell_val": 0,
-      "tags": [],
+      "tags": [
+        "RUSH"
+      ],
       "factions": [
         "Red"
       ]
@@ -341,10 +345,12 @@
       "name": "破阵先锋",
       "card_type": "MINION",
       "cost": 6,
-      "base_dp": 5,
+      "base_dp": 4,
       "atk_spell_val": 0,
       "def_spell_val": 0,
-      "tags": [],
+      "tags": [
+        "RUSH"
+      ],
       "factions": [
         "Red"
       ]
@@ -413,10 +419,12 @@
       "name": "熔岩破阵者",
       "card_type": "MINION",
       "cost": 6,
-      "base_dp": 5,
+      "base_dp": 4,
       "atk_spell_val": 0,
       "def_spell_val": 0,
-      "tags": [],
+      "tags": [
+        "RUSH"
+      ],
       "factions": [
         "Red"
       ]
@@ -530,83 +538,6 @@
       "def_spell_val": 0,
       "tags": [
         "DRAW_2"
-      ],
-      "factions": [
-        "Red"
-      ]
-    },
-    {
-      "id": 137,
-      "name": "疾火先锋",
-      "card_type": "MINION",
-      "cost": 1,
-      "base_dp": 2,
-      "atk_spell_val": 0,
-      "def_spell_val": 0,
-      "tags": [
-        "RUSH"
-      ],
-      "factions": [
-        "Red"
-      ]
-    },
-    {
-      "id": 138,
-      "name": "熔岩碎颅者",
-      "card_type": "MINION",
-      "cost": 3,
-      "base_dp": 3,
-      "atk_spell_val": 0,
-      "def_spell_val": 0,
-      "tags": [
-        "DEGRADE_1"
-      ],
-      "factions": [
-        "Red"
-      ]
-    },
-    {
-      "id": 139,
-      "name": "烈焰突袭长",
-      "card_type": "MINION",
-      "cost": 4,
-      "base_dp": 4,
-      "atk_spell_val": 0,
-      "def_spell_val": 0,
-      "tags": [
-        "RUSH",
-        "BONUS_SCORE_1"
-      ],
-      "factions": [
-        "Red"
-      ]
-    },
-    {
-      "id": 140,
-      "name": "赤红炎魔领主",
-      "card_type": "MINION",
-      "cost": 6,
-      "base_dp": 6,
-      "atk_spell_val": 0,
-      "def_spell_val": 0,
-      "tags": [
-        "DEGRADE_2",
-        "FORTIFY_2"
-      ],
-      "factions": [
-        "Red"
-      ]
-    },
-    {
-      "id": 141,
-      "name": "熔火暴燃",
-      "card_type": "SPELL",
-      "cost": 2,
-      "base_dp": 0,
-      "atk_spell_val": 3,
-      "def_spell_val": 0,
-      "tags": [
-        "DEGRADE_1"
       ],
       "factions": [
         "Red"
@@ -767,8 +698,8 @@
       "card_type": "SPELL",
       "cost": 2,
       "base_dp": 0,
-      "atk_spell_val": 4,
-      "def_spell_val": 0,
+      "atk_spell_val": 6,
+      "def_spell_val": 2,
       "tags": [],
       "factions": [
         "Blue"
@@ -858,7 +789,7 @@
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "DRAW_1",
+        "DRAW_2",
         "TEMP_MANA_1"
       ],
       "factions": [
@@ -889,6 +820,7 @@
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
+        "RUSH",
         "DEGRADE_1"
       ],
       "factions": [
@@ -949,7 +881,7 @@
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "FORTIFY_1"
+        "FORTIFY_2"
       ],
       "factions": [
         "Blue"
@@ -1164,82 +1096,6 @@
       "factions": [
         "Blue"
       ]
-    },
-    {
-      "id": 237,
-      "name": "霜语学徒",
-      "card_type": "MINION",
-      "cost": 1,
-      "base_dp": 1,
-      "atk_spell_val": 0,
-      "def_spell_val": 0,
-      "tags": [
-        "FORTIFY_1",
-        "DRAW_1"
-      ],
-      "factions": [
-        "Blue"
-      ]
-    },
-    {
-      "id": 238,
-      "name": "潮汐壁垒卫",
-      "card_type": "MINION",
-      "cost": 2,
-      "base_dp": 2,
-      "atk_spell_val": 0,
-      "def_spell_val": 0,
-      "tags": [
-        "FORTIFY_2"
-      ],
-      "factions": [
-        "Blue"
-      ]
-    },
-    {
-      "id": 239,
-      "name": "秘法战阵师",
-      "card_type": "MINION",
-      "cost": 4,
-      "base_dp": 3,
-      "atk_spell_val": 0,
-      "def_spell_val": 0,
-      "tags": [
-        "SUPPORT_ATK_2"
-      ],
-      "factions": [
-        "Blue"
-      ]
-    },
-    {
-      "id": 240,
-      "name": "深蓝堡垒领主",
-      "card_type": "MINION",
-      "cost": 5,
-      "base_dp": 5,
-      "atk_spell_val": 0,
-      "def_spell_val": 0,
-      "tags": [
-        "FORTIFY_3"
-      ],
-      "factions": [
-        "Blue"
-      ]
-    },
-    {
-      "id": 241,
-      "name": "极寒庇护",
-      "card_type": "SPELL",
-      "cost": 2,
-      "base_dp": 0,
-      "atk_spell_val": 0,
-      "def_spell_val": 3,
-      "tags": [
-        "DRAW_1"
-      ],
-      "factions": [
-        "Blue"
-      ]
     }
   ],
   "Green": [
@@ -1263,7 +1119,7 @@
       "name": "树人",
       "card_type": "MINION",
       "cost": 3,
-      "base_dp": 3,
+      "base_dp": 2,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -1428,7 +1284,7 @@
       "name": "翠绿幼苗",
       "card_type": "MINION",
       "cost": 1,
-      "base_dp": 2,
+      "base_dp": 1,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -1492,7 +1348,7 @@
       "cost": 3,
       "base_dp": 0,
       "atk_spell_val": 0,
-      "def_spell_val": 6,
+      "def_spell_val": 5,
       "tags": [],
       "factions": [
         "Green"
@@ -1674,7 +1530,8 @@
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "RUSH"
+        "RUSH",
+        "DEGRADE_2"
       ],
       "factions": [
         "Green"
@@ -1732,11 +1589,11 @@
       "name": "荆棘卫士",
       "card_type": "MINION",
       "cost": 1,
-      "base_dp": 2,
+      "base_dp": 1,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "FORTIFY_1"
+        "FORTIFY_2"
       ],
       "factions": [
         "Green"
@@ -1799,83 +1656,6 @@
       "tags": [
         "RAMP_1",
         "DRAW_1"
-      ],
-      "factions": [
-        "Green"
-      ]
-    },
-    {
-      "id": 337,
-      "name": "嫩芽潜伏者",
-      "card_type": "MINION",
-      "cost": 1,
-      "base_dp": 1,
-      "atk_spell_val": 0,
-      "def_spell_val": 0,
-      "tags": [
-        "DEATH_MANA_1"
-      ],
-      "factions": [
-        "Green"
-      ]
-    },
-    {
-      "id": 338,
-      "name": "丛林治愈德鲁伊",
-      "card_type": "MINION",
-      "cost": 2,
-      "base_dp": 2,
-      "atk_spell_val": 0,
-      "def_spell_val": 0,
-      "tags": [
-        "FORTIFY_1",
-        "RAMP_1"
-      ],
-      "factions": [
-        "Green"
-      ]
-    },
-    {
-      "id": 339,
-      "name": "古树先知",
-      "card_type": "MINION",
-      "cost": 4,
-      "base_dp": 4,
-      "atk_spell_val": 0,
-      "def_spell_val": 0,
-      "tags": [
-        "RAMP_1"
-      ],
-      "factions": [
-        "Green"
-      ]
-    },
-    {
-      "id": 340,
-      "name": "苍翠撼地猛犸",
-      "card_type": "MINION",
-      "cost": 5,
-      "base_dp": 5,
-      "atk_spell_val": 0,
-      "def_spell_val": 0,
-      "tags": [
-        "FORTIFY_2",
-        "BONUS_SCORE_1"
-      ],
-      "factions": [
-        "Green"
-      ]
-    },
-    {
-      "id": 341,
-      "name": "翡翠天平",
-      "card_type": "SPELL",
-      "cost": 3,
-      "base_dp": 0,
-      "atk_spell_val": 4,
-      "def_spell_val": 0,
-      "tags": [
-        "DEGRADE_1"
       ],
       "factions": [
         "Green"
@@ -2014,52 +1794,6 @@
       "def_spell_val": 0,
       "tags": [
         "DEGRADE_1"
-      ],
-      "factions": [
-        "Neutral"
-      ]
-    },
-    {
-      "id": 909,
-      "name": "游荡探险者",
-      "card_type": "MINION",
-      "cost": 2,
-      "base_dp": 2,
-      "atk_spell_val": 0,
-      "def_spell_val": 0,
-      "tags": [
-        "DRAW_1"
-      ],
-      "factions": [
-        "Neutral"
-      ]
-    },
-    {
-      "id": 910,
-      "name": "黑铁要塞工匠",
-      "card_type": "MINION",
-      "cost": 3,
-      "base_dp": 3,
-      "atk_spell_val": 0,
-      "def_spell_val": 0,
-      "tags": [
-        "FORTIFY_2"
-      ],
-      "factions": [
-        "Neutral"
-      ]
-    },
-    {
-      "id": 911,
-      "name": "紧急战备补给",
-      "card_type": "SPELL",
-      "cost": 2,
-      "base_dp": 0,
-      "atk_spell_val": 0,
-      "def_spell_val": 2,
-      "tags": [
-        "TEMP_MANA_1",
-        "DRAW_1"
       ],
       "factions": [
         "Neutral"
@@ -2312,56 +2046,6 @@
       "tags": [
         "RUSH",
         "DEATH_DRAW_1"
-      ],
-      "factions": [
-        "Red",
-        "Green"
-      ]
-    },
-    {
-      "id": 405,
-      "name": "赤蓝雷火机动",
-      "card_type": "SPELL",
-      "cost": 4,
-      "base_dp": 0,
-      "atk_spell_val": 4,
-      "def_spell_val": 2,
-      "tags": [
-        "DRAW_1"
-      ],
-      "factions": [
-        "Red",
-        "Blue"
-      ]
-    },
-    {
-      "id": 505,
-      "name": "蓝绿生命织流",
-      "card_type": "SPELL",
-      "cost": 5,
-      "base_dp": 0,
-      "atk_spell_val": 0,
-      "def_spell_val": 5,
-      "tags": [
-        "RAMP_1",
-        "DRAW_1"
-      ],
-      "factions": [
-        "Blue",
-        "Green"
-      ]
-    },
-    {
-      "id": 605,
-      "name": "红绿蛮荒图腾",
-      "card_type": "MINION",
-      "cost": 6,
-      "base_dp": 5,
-      "atk_spell_val": 0,
-      "def_spell_val": 0,
-      "tags": [
-        "FORTIFY_2",
-        "SUPPORT_ATK_2"
       ],
       "factions": [
         "Red",
