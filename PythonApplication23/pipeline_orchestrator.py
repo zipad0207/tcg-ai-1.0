@@ -182,6 +182,10 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
    - 随从费用 (cost) 1~8 费，基础战力 (base_dp) 1~8 点；法术 base_dp 必须为 0；
    - 法术若为直接伤害填入 atk_spell_val，若为护盾填入 def_spell_val；
    - 绝不允许捏造未列入上述清单的非法词条。
+6. **严禁恶性完爆（Anti-Strict-Outclassing Rule，绝对红线）**：
+   - 严禁出现同阵营、同费用区间的绝对完爆（Strictly Worse / Outclassed）！
+   - 绝不允许设计出一张新牌在费用相同的情况下，身材、词条以及机制全维度完全碾压现有卡牌（例如同为 3 费，一张 3 DP 生 1/1 且攻守兼备，另一张 1 DP 生 1/1 且仅能进攻，这属于绝对恶性完爆）；
+   - 同费卡牌之间必须有明确的属性权衡或功能差异（如高攻脆皮 vs 稳健肉盾、即时冲锋 vs 亡语后劲、单点突破 vs 横向多体），确保每张卡具有不可替代的战术生态位。
 
 ### 3. 输出格式要求：
 必须严格输出纯 JSON 对象，格式如下：

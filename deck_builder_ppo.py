@@ -337,16 +337,24 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
 
             if tot >= 3:
                 win_ratio = card_played_win[cid] / tot
-                metric = win_ratio * 10.0
+                # 结合胜率与神经网络估值加权，消除残局高费卡“只在优势局才打出”的幸存者偏差
+                metric = (win_ratio * 7.0 + 3.0) * (ppo_prior / 100.0)
             elif tot > 0:
                 win_ratio = card_played_win[cid] / tot
-                metric = win_ratio * 7.0 + 1.5
+                metric = (win_ratio * 5.0 + 3.0) * (ppo_prior / 100.0)
             else:
-                # 样本为0时：若在卡组中却未打出，说明卡手；若在卡组外，则参考神经网络先验
+                # 样本为0时：
                 if current_counts[cid] == 0:
-                    metric = (ppo_prior / 100.0) * 5.0
+                    # 候补卡探索机制 (打破冷启动壁垒)：基于神经网络估值 (ppo_score) 赋予高探索分
+                    metric = (ppo_prior / 100.0) * 8.5
                 else:
-                    metric = 2.5
+                    # 在卡组内却整轮未能打出：判定为卡手牌
+                    metric = 2.0
+
+            # 曲线超标压制：若高费牌数量严重超过该阵营健康曲线上限，对低效高费牌实施强烈淘汰
+            if c_cost >= 5 and curr_high_count > target_high:
+                if ppo_prior < 85.0:
+                    metric *= 0.5  # 优先削减低效高费臃肿卡 (如 8费纯白板)
 
             if current_counts[cid] < MAX_COPIES_PER_CARD and metric > best_metric:
                 best_metric = metric

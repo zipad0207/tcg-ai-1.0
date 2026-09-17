@@ -123,6 +123,10 @@ def build_prompt(current_pool: dict, faction: str, count: int, theme: str) -> st
    - `RAMP_X`：战吼/施法永久增加 X 点法力上限。
    - `TEMP_MANA_X`：施法当回合获得 X 点临时法力。
    - `DISCARD_X`：负面补偿，使用时从手牌弃掉 X 张牌。
+5. **严禁恶性完爆（Anti-Strict-Outclassing Rule，绝对红线）**：
+   - 严禁出现同费用、同阵营下的绝对完爆关系！
+   - 绝不允许新卡在费用相同的情况下，身材、词条以及机制全方位碾压现有同阵营卡牌（例如同样 3 费，一张 3 DP 生 1/1 能攻能守，另一张 1 DP 生 1/1 且仅能进攻）；
+   - 同费卡牌之间必须有明确的属性权衡或功能差异（如高攻脆皮 vs 稳健肉盾、即时冲锋 vs 亡语后劲、单点突破 vs 横向多体），确保每张卡具有独特的战术生态位。
 
 ### 3. 当前参考卡池现状:
 {json.dumps(current_pool, indent=2, ensure_ascii=False)}

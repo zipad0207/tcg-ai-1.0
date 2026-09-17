@@ -177,27 +177,28 @@ def get_fallback_comment(item: dict, faction: str) -> str:
 
     trait_desc = "兼具" + "与".join(key_traits[:2]) if key_traits else ("扎实的身材面板" if c_type == "MINION" else "攻防直接增益")
 
-    if copies == 3:
-        if cost <= 3:
-            return f"{cost}费核心支柱，{trait_desc}，满编3张以确保起手与前中期节奏稳定展开。"
-        elif cost <= 6:
-            return f"{cost}费中坚力量，{trait_desc}，满编3张保障中期场面统治力与压制。"
+    tier = item.get("tier", "B")
+    if tier in ("S+", "S"):
+        if copies >= 2:
+            return f"{cost}费核心支柱，{trait_desc}，满编保障起手与全期节奏压制。"
+        elif copies == 1:
+            return f"{cost}费超模主轴，{trait_desc}，高实战胜率贡献，建议增补配置。"
         else:
-            return f"{cost}费决胜重器，{trait_desc}，满编3张作为卡组终结对局的绝对核心。"
-    elif copies == 2:
-        if cost <= 4:
-            return f"{cost}费优质主力，{trait_desc}，配置2张兼顾曲线平滑与对局容错。"
+            return f"{cost}费高潜核心，{trait_desc}，实测效用极高，强烈建议调入卡组。"
+    elif tier == "A":
+        if copies >= 1:
+            return f"{cost}费主力组件，{trait_desc}，攻防节奏兼备，支撑体系运转。"
         else:
-            return f"{cost}费高质量拼图，{trait_desc}，配置2张提供强力返场与中期续航。"
-    elif copies == 1:
-        return f"{cost}费环境对策组件，{trait_desc}，单卡挂编1张在特定战局发挥破局效果。"
-    else:
-        if cost >= 7:
-            return f"{cost}费费用偏重，虽具备{trait_desc}，但易导致卡手，当前构筑暂不推荐投入。"
-        elif not tags:
-            return f"{cost}费白板属性缺乏词条联动，在当前快节奏对抗中卡位竞争落后。"
+            return f"{cost}费优质战力，{trait_desc}，单模扎实，适合作为高潜候补调入。"
+    elif tier == "B":
+        return f"{cost}费良好拼图，{trait_desc}，按战术曲线与环境需求灵活选配。"
+    elif tier == "C":
+        return f"{cost}费环境对策牌，{trait_desc}，在特定对弈局势下发挥功能价值。"
+    else:  # D 级
+        if copies > 0:
+            return f"{cost}费白板或低效配置，缺乏关键词条联动，建议优化剔除。"
         else:
-            return f"{cost}费战术定位与卡组主轴相性稍逊，受限于卡位竞争，作为备选备编。"
+            return f"{cost}费模型收益偏弱，受限于卡位竞争，暂不推荐投入构筑。"
 
 def get_real_ai_comments(faction: str, evaluated_list: list) -> dict:
     key = os.environ.get("DEEPSEEK_API_KEY", "")
@@ -367,40 +368,32 @@ def evaluate_faction_pool(target_faction: str, candidates: list, model: CardNet,
         pick_rate = round(copies / 3.0 * 100.0, 1)
         item["pick_rate"] = pick_rate
 
-        # 核心指标 2: 综合评分计算 (实战构筑入选档位 + 神经网络实测效用加成)
-        z = util_rank.get(cid, 0.5)
-        if copies == 3:
-            score = round(88.0 + z * 10.0, 1)   # 88.0 ~ 98.0 (S/S+)
-        elif copies == 2:
-            score = round(78.0 + z * 9.5, 1)    # 78.0 ~ 87.5 (A)
-        elif copies == 1:
-            score = round(68.0 + z * 9.5, 1)    # 68.0 ~ 77.5 (B)
-        else:
-            score = round(45.0 + z * 16.0, 1)   # 45.0 ~ 61.0 (C/D)
+        # 核心指标 2: 综合评分计算 (以神经网络实际实测效用为主体，真实构筑入选为协同修正)
+        z = util_rank.get(cid, 0.5)  # 0.0 ~ 1.0，根据 Critic ΔV 估值增益与 Actor 出牌概率计算的实际效用分位
+        base_score = 48.0 + z * 47.0  # 48.0 ~ 95.0
+        synergy_bonus = (copies / 3.0) * 3.0  # 构筑实装加成 0 ~ 3.0
+        score = round(min(98.0, max(42.0, base_score + synergy_bonus)), 1)
         item["score"] = score
 
         # 核心指标 3: 对局胜率影响 (ΔWR)
-        # 基于真实构筑张数与神经网络 Critic 状态价值微观收益精算，拒绝粗暴线性公式
-        if copies == 3:
-            win_impact = round(2.6 + z * 2.6, 1)   # +2.6% ~ +5.2%
-        elif copies == 2:
-            win_impact = round(1.2 + z * 1.3, 1)   # +1.2% ~ +2.5%
-        elif copies == 1:
-            win_impact = round(-0.3 + z * 1.4, 1)  # -0.3% ~ +1.1%
+        # 基于卡牌在神经网络对弈中的边际胜率预期，真实反映单卡强弱
+        base_delta = (z - 0.5) * 8.0  # -4.0% ~ +4.0%
+        if copies > 0:
+            win_impact = round(base_delta * (0.7 + 0.3 * (copies / 3.0)), 1)
         else:
-            win_impact = round(-4.5 + z * 3.3, 1)  # -4.5% ~ -1.2%
+            win_impact = round(base_delta * 0.7, 1)
         item["win_impact"] = win_impact
 
-        # 梯队划分与严谨建议
+        # 梯队划分与客观建议 (基于卡牌真实综合战力评级，绝不因未入套而盲目打入冷宫)
         if score >= 90.0:
             tier = "S+" if score >= 94.0 else "S"
             tier_name = "核心主轴"
-            rec_count = "3 张 (核心满编)"
+            rec_count = f"3 张 ({'核心满编' if copies >= 2 else '强烈推荐调入'})"
             tier_class = "tier-s"
         elif score >= 80.0:
             tier = "A"
             tier_name = "主力组件"
-            rec_count = f"{max(2, copies)} 张 (主力配置)"
+            rec_count = f"{max(2, copies)} 张 ({'主力配置' if copies >= 1 else '高潜推荐'})"
             tier_class = "tier-a"
         elif score >= 70.0:
             tier = "B"
@@ -415,7 +408,7 @@ def evaluate_faction_pool(target_faction: str, candidates: list, model: CardNet,
         else:
             tier = "D"
             tier_name = "低效备选"
-            rec_count = "0 张 (暂不推荐)"
+            rec_count = "0 张 (建议剔除)"
             tier_class = "tier-d"
 
         item["tier"] = tier

@@ -204,6 +204,10 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
    - `SACRIFICE_1_KILL_1`：献祭己方一名单位，强制消灭敌方一名单位。
    - `ATTACK_ONLY`：限定只能打入进攻区。
    - `DRAW_X` / `RAMP_X` / `TEMP_MANA_1` / `DISCARD_X`：常规法术/战吼词条。
+6. **严禁恶性完爆（Anti-Strict-Outclassing Rule，绝对红线）**：
+   - 严禁调出同费用、同阵营下的绝对完爆关系！
+   - 严禁出现一张卡在同费用下，身材、词条以及机制全方位被另一张卡绝对碾压（如同样 3 费，一张 3 DP 生 1/1 能攻能守，另一张 1 DP 生 1/1 且仅能进攻）；
+   - 若发现同阵营卡牌功能重叠或存在完爆隐患，必须通过调整费用（如将低阶卡降费以拉开费用阶梯）、重塑差异化词条或调整战术定位来化解，确保每张卡具有不可替代的构筑价值。
 
 ### 3. 待调整卡池配置:
 {json.dumps(cards_data, indent=2, ensure_ascii=False)}

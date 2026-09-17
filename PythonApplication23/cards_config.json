@@ -106,7 +106,7 @@
       "id": 107,
       "name": "集结号手",
       "card_type": "MINION",
-      "cost": 3,
+      "cost": 2,
       "base_dp": 1,
       "atk_spell_val": 0,
       "def_spell_val": 0,
