@@ -370,8 +370,8 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
         }
 
         # 4. 关键：强化学习 Accept / Reject 严格检验！
-        # 若胜率提升或在微小容差内保持稳健，则正式采纳并固化新构筑；若胜率发生明显滑坡，坚决拒绝并回滚！
-        if delta_wr >= -1.5:
+        # 若胜率提升或在合理蒙特卡洛抽样容差内保持稳健（45%~55%健康带），则采纳；若胜率发生明显滑坡，坚决拒绝并回滚！
+        if delta_wr >= -3.5:
             thought_demote = f"[{c_name_worst}] 卡手率较高或场面收益偏弱，调减 1 张至 {candidate_counts[worst_candidate]} 张。"
             thought_promote = f"[{c_name_best}] 带来显著节奏优势或胜率提振，增补 1 张至 {candidate_counts[best_candidate]} 张。"
             log_entry = f"第 {gen} 代微调 (胜率 {best_winrate:.1f}% -> {test_winrate:.1f}%, {delta_wr:+.1f}%): 采纳变异，增选 [{c_name_best}]，淘汰 [{c_name_worst}]"

@@ -107,9 +107,9 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
     if "faction_stats" in metrics_data:
         for f, s in metrics_data["faction_stats"].items():
             wr = s.get("winrate", 50.0)
-            if wr > 52.8:
+            if wr > 55.0:
                 overperforming.append((f, wr, wr - 50.0))
-            elif wr < 47.2:
+            elif wr < 45.0:
                 underperforming.append((f, wr, 50.0 - wr))
             else:
                 balanced.append((f, wr))
@@ -117,7 +117,7 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
     over_instructions = []
     for f, wr, diff in overperforming:
         over_instructions.append(f"""
-    * 【削弱过强阵营 —— {f} (当前胜率 {wr:.1f}%，高出基准 +{diff:.1f}%)】：
+    * 【适度削弱超标阵营 —— {f} (当前胜率 {wr:.1f}%，超出 55% 健康上限 +{wr - 55.0:.1f}%)】：
       - 阶梯式平衡逻辑（避免死砍身材）：
         1. 常规调整：优先通过适度提高费用 (+1 费) 或小幅下调身材 (-1~2 DP) 进行平滑抑制；
         2. 转向词条平衡：若发现削弱身材收效甚微（例如带有 RUSH 突袭或 BONUS_SCORE 破阵得分的终结怪，即便面板被砍依然能凭借机制强行偷鸡斩杀），或者身材已达到该费用的合理底线（6费 >= 4 DP, 7~8费 >= 5 DP, 9费 >= 6 DP），说明问题根源在于机制而非白值，此时应果断转向削弱或剥离过于强势的词条（如剥离 BONUS_SCORE_1、将 RUSH 突袭改为蓄势、将双抽/双跳下调为单抽/单跳）；
@@ -126,47 +126,43 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
     under_instructions = []
     for f, wr, diff in underperforming:
         under_instructions.append(f"""
-   * 【补强落后阵营 —— {f} (当前胜率 {wr:.1f}%，落后基准 -{diff:.1f}%)】：
-     - 若关键牌先前被过度调整：适度回调费用 (-1 费) 或增强身材 (+1~+2 DP)；
+   * 【适度补强落后阵营 —— {f} (当前胜率 {wr:.1f}%，低于 45% 健康底线 -{45.0 - wr:.1f}%)】：
+     - 若关键牌先前被过度削弱：适度回调费用 (-1 费) 或增强身材 (+1~+2 DP)；
      - 前期直伤与解场手段：提高低费直伤 atk_spell_val (+1~+2 点) 或降低单解消耗 (-1 费)；
-     - 防守与阻挡能力：提升低费防守怪 base_dp 或赋予 FORTIFY_2/FORTIFY_3 坚守词条；
+     - 防守与阻挡能力：提升低费防守怪 base_dp 或赋予 FORTIFY_1/FORTIFY_2 坚守词条；
      - 中后期制胜核心：适度降低费用 (-1 费) 提升出场率。""")
 
-    over_text = "\n".join(over_instructions) if over_instructions else "   * 暂无超标阵营（各阵营均在安全线以下）。"
-    under_text = "\n".join(under_instructions) if under_instructions else "   * 暂无垫底阵营（各阵营均在安全线以上）。"
+    over_text = "\n".join(over_instructions) if over_instructions else "   * 暂无超标阵营（各阵营均在 55% 安全线以内）。"
+    under_text = "\n".join(under_instructions) if under_instructions else "   * 暂无垫底阵营（各阵营均在 45% 安全线以上）。"
 
-    if max_dev >= 8.0:
-        mode_banner = f"【大幅数值调整模式 (Major Overhaul Mode) | 最大偏离度: {max_dev:.1f}%】"
+    if max_dev >= 10.0:
+        mode_banner = f"【大幅数值调整模式 (Major Overhaul Mode) | 胜率差距超过 10% (偏离度: {max_dev:.1f}%)】"
         balance_instructions = f"""
 ### 【大幅数值调整说明 (Major Overhaul)】
-当前阵营间胜率差距较为显著（最大偏离度 {max_dev:.1f}%）。
-需针对关键卡牌进行多维度属性调整：
-
-1. **调整规模**：
-   - 对 4 ~ 8 张核心卡牌进行针对性属性调整；
-   - 过强阵营削弱 2~4 张，弱势阵营补强 2~4 张；
-   - 必须输出明确的修改。
-
+当前阵营间胜率差距较大（最大偏离度 {max_dev:.1f}% >= 10%，处于 40% 以下或 60% 以上）。
+需针对失衡阵营的关键卡牌进行适度调整：
+1. **调整规模**：针对性调整 3 ~ 6 张核心卡牌（超标阵营削弱 2~3 张，弱势阵营补强 2~3 张）。
 2. **阵营针对性调整**：
 {over_text}
 {under_text}
-
-3. **词条微调**：
-   - 可对过强卡牌精简过于强势的词条（如取消 RUSH 或减少数值）；
-   - 可为弱势卡牌补充急需词条（如赋予 FORTIFY、DEGRADE 等合法词条）。
 """
-    else:
-        mode_banner = f"【精细微调模式 (Fine-Tuning Mode) | 最大偏离度: {max_dev:.1f}%】"
+    elif max_dev >= 5.0:
+        mode_banner = f"【轻量微调模式 (Gentle Tuning Mode) | 偏离度: {max_dev:.1f}%】"
         balance_instructions = f"""
-### 【局部精细微调说明 (Fine-Tuning)】
-当前各阵营胜率已接近平衡区间（最大偏离度 {max_dev:.1f}% < 8%）。
-需基于对战统计进行小幅修剪：
-1. **调整规模**：挑选 2 ~ 4 张关键卡牌进行微调。
-2. **微调原则**：
+### 【轻量微调说明 (Gentle Tuning)】
+当前个别阵营胜率轻微浮出 45%~55% 黄金区间（偏离度 {max_dev:.1f}% 在 5%~10% 之间）。
+仅需对 1 ~ 3 张边际卡牌进行 ±1 费或 ±1 DP 的极小幅修剪，不要过度破坏卡组稳定性。
 {over_text}
 {under_text}
-   - 费用调整 ±1，随从身材 ±1~2 点，法术数值 ±1~2 点；
-   - 保持卡牌体系稳定性，平滑引导各阵营胜率趋近 50%。
+"""
+    else:
+        mode_banner = f"【黄金平衡守成模式 (Equilibrium Mode) | 偏离度: {max_dev:.1f}% <= 5%】"
+        balance_instructions = f"""
+### 【黄金平衡守成说明 (Equilibrium)】
+★ 当前三大阵营胜率均在 45% ~ 55% 的黄金竞技平衡区间内！
+各阵营胜率差距在 10% 以内属于完全健康的克制互动与阵营风格差异。
+**本轮原则上无需对数值进行大规模动刀，必须严格保护当前稳定的牌池生态！**
+若无明显的恶性完爆或玩家体验痛点，建议保持现状（输出空修改或仅对极个别完爆卡进行形态微调）。
 """
 
     prompt = f"""
