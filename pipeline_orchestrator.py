@@ -37,9 +37,6 @@ def resolve_path(p: str) -> str:
     candidates = [
         p,
         os.path.join(SCRIPT_DIR, p),
-        os.path.join(SCRIPT_DIR, "PythonApplication23", p),
-        os.path.join(os.path.dirname(SCRIPT_DIR), p),
-        os.path.join(os.path.dirname(SCRIPT_DIR), "PythonApplication23", p),
     ]
     for c in candidates:
         if os.path.exists(c):
@@ -50,9 +47,6 @@ def get_subprocess_env() -> dict:
     env = os.environ.copy()
     py_paths = [
         SCRIPT_DIR,
-        os.path.join(SCRIPT_DIR, "PythonApplication23"),
-        os.path.dirname(SCRIPT_DIR),
-        os.path.join(os.path.dirname(SCRIPT_DIR), "PythonApplication23"),
     ]
     cur_pypath = env.get("PYTHONPATH", "")
     all_paths = [p for p in py_paths if os.path.exists(p)]
@@ -610,14 +604,14 @@ def step6_export_reports_and_charts(cards_file: str, metrics_file: str, history_
     ui_export_script = resolve_path("export_ui_data.py")
     if os.path.exists(ui_export_script):
         try:
-            print("  [1/3] 正在导出前端 UI 接口数据 (ui_export_data.json)...")
+            print("  [1/2] 正在导出前端 UI 接口数据 (ui_export_data.json)...")
             subprocess.run([sys.executable, ui_export_script], check=True, env=get_subprocess_env())
         except Exception as e:
             print(f"  [警告] UI 数据导出异常: {e}")
 
     # 2. 生成前后对比大屏图表
     try:
-        print("  [2/3] 正在生成对比大屏 (figure_brawl_comparison.png)...")
+        print("  [2/2] 正在生成对比大屏 (figure_brawl_comparison.png)...")
         with open(metrics_file, "r", encoding="utf-8") as f:
             final_metrics = json.load(f)
 
@@ -696,34 +690,13 @@ def step6_export_reports_and_charts(cards_file: str, metrics_file: str, history_
     except Exception as e:
         print(f"  [警告] 对比大屏图表生成异常: {e}")
 
-    # 3. 根目录与子目录双向资产同步
-    try:
-        import shutil
-        root_dir = os.path.dirname(SCRIPT_DIR)
-        sync_files = [
-            "figure_brawl.png", "figure_brawl_comparison.png", "training_metrics_brawl.json",
-            "cards_config.json", "decks_config.json", "ui_export_data.json", "ppo_introspection_report.md",
-            "export_ui_data.py", "pipeline_orchestrator.py", "deck_builder_ppo.py", "auto_balancer_deepseek.py", "sandbox.py",
-            "agent.py", "eval_play.py", "train.py", "card_printer_deepseek.py",
-            "deck_builder_deepseek.py", "plot_experiments.py", "test_deck_matchup.py",
-            "cards_config_baseline.json", "cards_config_tuned.json"
-        ]
-        for fname in sync_files:
-            src = resolve_path(fname)
-            dst = os.path.join(root_dir, fname)
-            if os.path.exists(src) and src != dst:
-                shutil.copy(src, dst)
-        print("  [3/3] 核心资产与战报已自动同步至工作区根目录与子目录！")
-    except Exception as e:
-        print(f"  [警告] 资产同步异常: {e}")
-
 # ==============================================================================
 # Main 流水线总控入口 (双环嵌套闭环系统)
 # ==============================================================================
 def main():
     parser = argparse.ArgumentParser(description="TCG-AI 全自动扩展包印制与双环自平衡协同流水线 (Pipeline Orchestrator)")
-    parser.add_argument("--pack-name", type=str, default="破晓对决补充包", help="扩展包名称")
-    parser.add_argument("--theme", type=str, default="环境数据驱动缺啥补啥与双色协同", help="设计主题")
+    parser.add_argument("--pack-name", type=str, default="新补充包", help="扩展包名称")
+    parser.add_argument("--theme", type=str, default="根据环境数据调试", help="设计主题")
     parser.add_argument("--episodes", type=int, default=3000, help="每轮自博弈混战对局规模 (默认 3000 局，保证学术统计置信度)")
     parser.add_argument("--target-balance", type=float, default=5.0, help="目标平衡偏离容差 (默认 5.0 百分点，即 45%%~55%% 黄金区间)")
     parser.add_argument("--max-deck-attempts", type=int, default=2, help="同一卡池下 PPO 自主微调构筑的尝试次数 (默认 2 次，兼顾智能体构筑优化与流水线效率)")

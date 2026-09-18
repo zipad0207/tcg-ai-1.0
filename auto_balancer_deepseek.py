@@ -273,9 +273,6 @@ def extract_card_list(data) -> list:
 def resolve_path(p):
     if not p or os.path.exists(p):
         return p
-    alt1 = os.path.join("PythonApplication23", p)
-    if os.path.exists(alt1):
-        return alt1
     alt2 = os.path.join(os.path.dirname(__file__), os.path.basename(p))
     if os.path.exists(alt2):
         return alt2

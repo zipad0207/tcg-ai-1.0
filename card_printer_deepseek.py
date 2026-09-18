@@ -244,11 +244,9 @@ def print_card_table(cards_dict: Dict[str, List[dict]], design_notes: List[dict]
 def find_model_path() -> str:
     candidates = [
         "card_ppo_model_tuned.pth",
-        "PythonApplication23/card_ppo_model_tuned.pth",
+        "card_ppo_model_brawl.pth",
         "card_ppo_model.pth",
-        "PythonApplication23/card_ppo_model.pth",
-        "card_ppo_model_baseline.pth",
-        "PythonApplication23/card_ppo_model_baseline.pth"
+        "card_ppo_model_baseline.pth"
     ]
     for p in candidates:
         if os.path.exists(p):

@@ -241,7 +241,7 @@ $env:DEEPSEEK_API_KEY="your-deepseek-api-key"
 
 ```bash
 # 全量端到端执行 (学术级 3,000 局混战采样)
-python pipeline_orchestrator.py --pack-name "破晓对决补充包" --theme "环境数据驱动缺啥补啥与双色协同"
+python pipeline_orchestrator.py --pack-name "新补充包" --theme "根据环境数据调试"
 
 # 快速演练模式 (小规模局数快速验证双环状态机调度)
 python pipeline_orchestrator.py --dry-run --skip-print
@@ -289,8 +289,8 @@ python pipeline_orchestrator.py --dry-run --skip-print
 ---
 
 ## 项目结构
-
-本项目支持在工作区根目录与 `PythonApplication23/` 目录下同构运行（流水线第 6 阶段会自动执行核心资产的双向双副本同步）：
+ 
+项目代码与核心资产结构概览：
 
 ```text
 ├── .gitignore                           # Git 忽略配置

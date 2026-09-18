@@ -84,7 +84,6 @@ class DuelEnv:
     def _load_card_database(self) -> Dict[int, Card]:
         if not os.path.exists(self.cards_path):
             alt_candidates = [
-                os.path.join("PythonApplication23", self.cards_path),
                 os.path.join(os.path.dirname(__file__), os.path.basename(self.cards_path)),
                 os.path.join(os.path.dirname(__file__), self.cards_path)
             ]

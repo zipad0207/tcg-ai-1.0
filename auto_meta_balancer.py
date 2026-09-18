@@ -20,11 +20,8 @@ if sys.platform == "win32":
 from sandbox import DuelEnv, Faction
 
 def resolve_path(p):
-    if not p:
+    if not p or os.path.exists(p):
         return p
-    alt1 = os.path.join("PythonApplication23", p)
-    if os.path.exists(alt1):
-        return alt1
     alt2 = os.path.join(os.path.dirname(__file__), os.path.basename(p))
     if os.path.exists(alt2):
         return alt2
@@ -339,17 +336,6 @@ def main():
 
     # 生成图表
     step3_generate_comparison_plot(initial_stats, final_metrics, history_wr)
-
-    # 同步资产至根目录
-    try:
-        import shutil
-        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        shutil.copy(COMPARISON_FIGURE_PATH, os.path.join(root_dir, "figure_brawl_comparison.png"))
-        shutil.copy(FIGURE_SAVE_PATH, os.path.join(root_dir, "figure_brawl.png"))
-        shutil.copy(METRICS_SAVE_PATH, os.path.join(root_dir, "training_metrics_brawl.json"))
-        print("[OK] 已同步数据资产至根目录")
-    except Exception as e:
-        print(f"[WARN] 资产同步失败: {e}")
 
     print("\n流水线执行完毕！")
 
