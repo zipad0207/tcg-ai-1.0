@@ -77,7 +77,7 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
             wr = s.get("winrate", 50.0)
             dev = abs(wr - 50.0)
             deviations[f] = dev
-            stats_lines.append(f"- 【{f}】阵营: 胜率 {wr:.1f}% ({s.get('wins', 0)} 胜 / {s.get('matches', 0)} 场) | 偏离 50% 黄金基准: {dev:.1f}%")
+            stats_lines.append(f"- 【{f}】阵营: 胜率 {wr:.1f}% ({s.get('wins', 0)} 胜 / {s.get('matches', 0)} 场) | 偏离 50% 基准: {dev:.1f}%")
         data_section = "\n".join(stats_lines)
         if "matchups" in metrics_data:
             data_section += f"\n- 两两交手战报: {json.dumps(metrics_data['matchups'], ensure_ascii=False)}"
@@ -144,26 +144,26 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
 {under_text}
 """
     elif max_dev >= 5.0:
-        mode_banner = f"【轻量微调模式 (Gentle Tuning Mode) | 偏离度: {max_dev:.1f}%】"
+        mode_banner = f"【轻量微调模式 | 偏离度: {max_dev:.1f}%】"
         balance_instructions = f"""
-### 【轻量微调说明 (Gentle Tuning)】
-当前个别阵营胜率轻微浮出 45%~55% 黄金区间（偏离度 {max_dev:.1f}% 在 5%~10% 之间）。
+### 【轻量微调说明】
+当前个别阵营胜率轻微浮出 45%~55% 平衡区间（偏离度 {max_dev:.1f}% 在 5%~10% 之间）。
 仅需对 1 ~ 3 张边际卡牌进行 ±1 费或 ±1 DP 的极小幅修剪，不要过度破坏卡组稳定性。
 {over_text}
 {under_text}
 """
     else:
-        mode_banner = f"【黄金平衡守成模式 (Equilibrium Mode) | 偏离度: {max_dev:.1f}% <= 5%】"
+        mode_banner = f"【平衡维持模式 | 偏离度: {max_dev:.1f}% <= 5%】"
         balance_instructions = f"""
-### 【黄金平衡守成说明 (Equilibrium)】
-★ 当前三大阵营胜率均在 45% ~ 55% 的黄金竞技平衡区间内！
+### 【平衡维持说明】
+★ 当前三大阵营胜率均在 45% ~ 55% 的平衡区间内！
 各阵营胜率差距在 10% 以内属于完全健康的克制互动与阵营风格差异。
-**本轮原则上无需对数值进行大规模动刀，必须严格保护当前稳定的牌池生态！**
-若无明显的恶性完爆或玩家体验痛点，建议保持现状（输出空修改或仅对极个别完爆卡进行形态微调）。
+**本轮原则上无需对数值进行大规模修改，保护当前稳定的牌池生态！**
+若无明显的恶性超模或玩家体验痛点，建议保持现状（输出空修改或仅对极个别超模卡进行轻微微调）。
 """
 
     prompt = f"""
-你是一名 TCG 卡牌总监兼数值平衡科学家。
+你是一名经验丰富的 TCG 卡牌设计师兼数值策划。
 以下是通过强化学习（PPO 自博弈）收集的实战遥测对战数据和当前卡池配置文件。
 
 ### 1. 训练对局数据:

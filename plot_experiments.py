@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-# 配置中文字体，防止学术图表乱码
+# 配置中文字体，防止中文乱码
 plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS', 'sans-serif']
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -27,8 +27,8 @@ def resolve_output(p):
 
 def plot_thesis_comparison(metrics_path, output_filename, is_tuned=False):
     """
-    根据遥测数据绘制学术规范图表
-    :param metrics_path: 遥测数据 JSON 路径
+    根据对战数据绘制对比图表
+    :param metrics_path: 数据 JSON 路径
     :param output_filename: 保存图片的文件名
     :param is_tuned: 是否为调优后数据 (True: 调优后, False: 基准调优前)
     """
@@ -52,7 +52,7 @@ def plot_thesis_comparison(metrics_path, output_filename, is_tuned=False):
     card_names = [item[0] for item in top10]
     play_counts = [item[1] for item in top10]
 
-    # 根据实验阶段设置规范学术标题
+    # 根据实验阶段设置图表标题
     if is_tuned:
         fig_title = f"调优后对局胜率分布 (Tuned, PPO {total_episodes}局)"
         bar_title = "Top 10 核心对局卡牌出场频次分布 (调优后)"

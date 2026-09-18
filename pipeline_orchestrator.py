@@ -691,22 +691,22 @@ def step6_export_reports_and_charts(cards_file: str, metrics_file: str, history_
         print(f"  [警告] 对比大屏图表生成异常: {e}")
 
 # ==============================================================================
-# Main 流水线总控入口 (双环嵌套闭环系统)
+# Main 流水线总控入口
 # ==============================================================================
 def main():
-    parser = argparse.ArgumentParser(description="TCG-AI 全自动扩展包印制与双环自平衡协同流水线 (Pipeline Orchestrator)")
+    parser = argparse.ArgumentParser(description="TCG-AI 全自动扩展包印制与平衡调优流水线 (Pipeline Orchestrator)")
     parser.add_argument("--pack-name", type=str, default="新补充包", help="扩展包名称")
     parser.add_argument("--theme", type=str, default="根据环境数据调试", help="设计主题")
-    parser.add_argument("--episodes", type=int, default=3000, help="每轮自博弈混战对局规模 (默认 3000 局，保证学术统计置信度)")
-    parser.add_argument("--target-balance", type=float, default=5.0, help="目标平衡偏离容差 (默认 5.0 百分点，即 45%%~55%% 黄金区间)")
-    parser.add_argument("--max-deck-attempts", type=int, default=2, help="同一卡池下 PPO 自主微调构筑的尝试次数 (默认 2 次，兼顾智能体构筑优化与流水线效率)")
+    parser.add_argument("--episodes", type=int, default=3000, help="每轮对局规模 (默认 3000 局，保证样本充分)")
+    parser.add_argument("--target-balance", type=float, default=5.0, help="目标平衡偏离容差 (默认 5.0 百分点，即 45%%~55%% 平衡区间)")
+    parser.add_argument("--max-deck-attempts", type=int, default=2, help="同一卡池下 PPO 自主微调构筑的尝试次数 (默认 2 次)")
     parser.add_argument("--severe-imbalance-threshold", type=float, default=10.0, help="阵营胜率严重失衡偏离度阈值 (默认 10.0%%)")
     parser.add_argument("--severe-spread-threshold", type=float, default=15.0, help="阵营胜率极差严重失衡阈值 (默认 15.0%%)")
-    parser.add_argument("--max-outer-iterations", type=int, default=10, help="最大 DeepSeek 外环数值微调迭代轮次 (默认 10 轮)")
+    parser.add_argument("--max-outer-iterations", type=int, default=10, help="最大 DeepSeek 数值微调迭代轮次 (默认 10 轮)")
     parser.add_argument("--max-iterations", type=int, default=None, help="(兼容旧参数) 等价于 --max-outer-iterations")
-    parser.add_argument("--skip-print", action="store_true", help="跳过印卡阶段，直接基于现有卡池开始闭环调优")
-    parser.add_argument("--eval-only", action="store_true", help="纯评估模式 (跳过 PPO 模型梯度更新，默认关闭以执行真强化学习)")
-    parser.add_argument("--dry-run", action="store_true", help="快速演练模式 (小规模局数快速验证端到端状态机)")
+    parser.add_argument("--skip-print", action="store_true", help="跳过印卡阶段，直接基于现有卡池开始调优")
+    parser.add_argument("--eval-only", action="store_true", help="纯评估模式 (跳过 PPO 模型梯度更新)")
+    parser.add_argument("--dry-run", action="store_true", help="快速测试模式 (小规模局数快速跑通流程)")
     args = parser.parse_args()
 
     max_outer = args.max_iterations if args.max_iterations is not None else args.max_outer_iterations

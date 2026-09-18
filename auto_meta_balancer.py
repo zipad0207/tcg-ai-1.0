@@ -34,17 +34,17 @@ METRICS_SAVE_PATH = resolve_path("training_metrics_brawl.json")
 FIGURE_SAVE_PATH = resolve_path("figure_brawl.png")
 COMPARISON_FIGURE_PATH = resolve_path("figure_brawl_comparison.png")
 
-TOTAL_EPISODES = 3000  # 用户指定：3000 局/轮大规模实机验证
+TOTAL_EPISODES = 3000  # 每轮混战对局数
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MAX_ITERATIONS = 4
 
 def step1_tune_cards(iteration: int = 0):
     import subprocess
-    print(f"\n[{iteration+1}/{MAX_ITERATIONS}] 正在唤起 DeepSeek 进行第 {iteration+1} 轮纯数据驱动数值微调...")
+    print(f"\n[{iteration+1}/{MAX_ITERATIONS}] 调用 DeepSeek 进行第 {iteration+1} 轮数值微调...")
     
     metrics_file = METRICS_SAVE_PATH if os.path.exists(METRICS_SAVE_PATH) else resolve_path("training_metrics_brawl.json")
     
-    # 调用 LLM 进行真实卡牌数值平衡 (纯客观数据，无人工偏见指导)
+    # 调用 LLM 根据对战数据微调卡牌数值
     print(f"  [DeepSeek-Flash] 分析 {metrics_file} 战报，优化卡池 {CARDS_FILE}...")
     subprocess.run([
         sys.executable, resolve_path("auto_balancer_deepseek.py"), 
@@ -203,8 +203,8 @@ def step2_run_brawl_sim(prebuilt_decks: dict, iteration: int = 0):
     return metrics
 
 def step3_generate_comparison_plot(initial_stats: dict, final_metrics: dict, history_wr: list):
-    """生成兼具对比与单项细节的学术级对比大图"""
-    print(f"\n正在生成混战前后对比大屏图表: {COMPARISON_FIGURE_PATH} ...")
+    """生成调优前后对比图表"""
+    print(f"\n正在生成对比图表: {COMPARISON_FIGURE_PATH} ...")
     plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS', 'sans-serif']
     plt.rcParams['axes.unicode_minus'] = False
 
@@ -226,7 +226,7 @@ def step3_generate_comparison_plot(initial_stats: dict, final_metrics: dict, his
     bars1 = ax1.bar(x - width/2, before_wr, width, label='调优前 (初始混战)', color='#bdc3c7', edgecolor='#7f8c8d', linewidth=1.2)
     bars2 = ax1.bar(x + width/2, after_wr, width, label='调优后 (最新平衡态)', color=['#ff4757', '#1e90ff', '#2ed573'], edgecolor='#2c3e50', linewidth=1.2)
 
-    ax1.axhline(50.0, color="#e74c3c", linestyle="--", linewidth=1.5, alpha=0.8, label="50% 黄金平衡线")
+    ax1.axhline(50.0, color="#e74c3c", linestyle="--", linewidth=1.5, alpha=0.8, label="50% 平衡基准线")
     ax1.set_ylim(0, 100)
     ax1.set_ylabel("阵营综合胜率 (%)", fontsize=11, fontweight="bold")
     ax1.set_title("三大阵营调优前后胜率对比", fontsize=13, pad=12, fontweight="bold")
@@ -298,12 +298,24 @@ def step3_generate_comparison_plot(initial_stats: dict, final_metrics: dict, his
 
 def main():
     print("=" * 70)
-    print(f"启动 TCG-AI 大卡组多阵营元平衡循环流水线")
+    print("启动 TCG-AI 多阵营自平衡调优流水线")
     print(f"设定: 单轮对决规模 {TOTAL_EPISODES} 局 | 终止条件: 三大阵营最大偏离度 <= 5.0% (平衡区间)")
     print("=" * 70)
 
-    # 记录初始未平衡状态 (Round 0)
-    initial_stats = {"Red": 56.66, "Blue": 46.48, "Green": 47.23}
+    # 记录初始状态 (优先从历史战报读取，若无则初始化为 50.0%)
+    initial_stats = {"Red": 50.0, "Blue": 50.0, "Green": 50.0}
+    if os.path.exists(METRICS_SAVE_PATH):
+        try:
+            with open(METRICS_SAVE_PATH, "r", encoding="utf-8") as f:
+                _old_m = json.load(f)
+                _fs = _old_m.get("faction_stats", {})
+                initial_stats = {
+                    "Red": _fs.get("Red", {}).get("winrate", 50.0),
+                    "Blue": _fs.get("Blue", {}).get("winrate", 50.0),
+                    "Green": _fs.get("Green", {}).get("winrate", 50.0)
+                }
+        except Exception:
+            pass
     history_wr = [initial_stats]
 
     final_metrics = None
