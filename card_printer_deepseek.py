@@ -188,6 +188,9 @@ def build_prompt(current_pool: dict, faction: str, count: int, theme: str) -> st
      b. 亏模随从（DP <= 费用）：必须携带足够强力或关键的战术词条（如 RUSH、FORTIFY、DEGRADE、BONUS_SCORE、DEATH_DRAW、SPAWN 等）作为亏模补偿。若 DP < 费用 - 1，其机制价值必须极其扎实，严禁低数值白板！
    - 法术数值模型基准：
      纯数值法术的总点数必须合理匹配费用（基础标准通常为 点数 >= 费用 * 1.5 到 2，如 1费直伤 2、2费直伤 3~4、3费护盾 5~6）。严禁出现 3 费仅提供 3 点护盾且无任何词条/跳费效果的极度亏模法术！
+7. **严禁重名（Unique-Naming Rule，绝对红线）**：
+   - 每张新卡的中文名称必须全环境独一无二！
+   - 严禁与已有卡池中任何卡牌重名，也严禁本次生成的卡牌之间重名！请起具有阵营特色的专属名字。
 
 ### 3. 当前参考卡池现状:
 {json.dumps(current_pool, indent=2, ensure_ascii=False)}
@@ -504,6 +507,8 @@ def main():
             if not cards_list and len(new_cards_dict) > 0:
                 cards_list = list(new_cards_dict.values())[0]
 
+            all_existing_names = {c["name"] for flist in expanded_pool.values() for c in flist if "name" in c}
+
             for c in cards_list:
                 allocated_id = get_next_id(expanded_pool[f_name], faction_id_starts.get(f_name, 500))
                 c["id"] = allocated_id
@@ -512,6 +517,25 @@ def main():
                 c["base_dp"] = max(0, int(c.get("base_dp", 0)))
                 c["atk_spell_val"] = max(0, int(c.get("atk_spell_val", 0)))
                 c["def_spell_val"] = max(0, int(c.get("def_spell_val", 0)))
+
+                # 防重名校验与自动去重修饰
+                orig_name = c.get("name", f"{f_name}新卡_{allocated_id}").strip()
+                final_name = orig_name
+                counter = 2
+                while final_name in all_existing_names:
+                    prefix = "精锐" if "RUSH" in c["tags"] else ("坚壁" if any(t.startswith("FORTIFY") for t in c["tags"]) else "进阶")
+                    candidate_name = f"{prefix}·{orig_name}"
+                    if candidate_name not in all_existing_names:
+                        final_name = candidate_name
+                    else:
+                        final_name = f"{orig_name}·{counter}型"
+                        counter += 1
+
+                if final_name != orig_name:
+                    print(f"   ⚠️ [防重名拦截] 检测到卡牌名称 [{orig_name}] 已存在，已自动重命名为 [{final_name}]")
+
+                c["name"] = final_name
+                all_existing_names.add(final_name)
 
                 expanded_pool[f_name].append(c)
                 all_printed_cards[f_name].append(c)

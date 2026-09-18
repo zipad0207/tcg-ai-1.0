@@ -99,7 +99,9 @@ def evaluate_card_neural_utility(model: CardNet, device: torch.device, candidate
         env.current_player = acting_p_id
         player = env.players[acting_p_id]
 
-        sim_mana = random.randint(1, 10)
+        # 采样费用：保证该卡至少有一半概率能被打出，避免高费卡因为低费回合太多而被系统性低估
+        min_fair_mana = max(1, card_obj.cost)
+        sim_mana = random.randint(min_fair_mana, max(min_fair_mana, 10))
         player.mana = sim_mana
         player.max_mana = sim_mana
 
@@ -139,12 +141,10 @@ def evaluate_card_neural_utility(model: CardNet, device: torch.device, candidate
     avg_play_prob = float(np.mean(play_probs)) if play_probs else 0.0
     avg_v_gain = float(np.mean(value_gains)) if value_gains else 0.0
 
-    cost_penalty = max(1, card_obj.cost)
-    # 修正：高费牌本身需要极高的收益才能弥补出场率的劣势。取消对价值收益的双重除法惩罚。
+    # 费用无关的公平评分：value_gain 和 play_prob 已在公平费用下采样，无需额外惩罚高费卡
     v_norm = (avg_v_gain + 0.05) * 300.0
     p_norm = avg_play_prob * 100.0 * 0.4
-    # 修正：高费牌在随机 1-10 费用测试中 playability 极低，予以平方根补偿以平衡 ppo_score
-    tempo_norm = playability_ratio * 20.0 * (cost_penalty ** 0.5)
+    tempo_norm = playability_ratio * 20.0
     ppo_score = round(max(20.0, min(98.0, 20.0 + v_norm + p_norm + tempo_norm)), 2)
 
     return {
@@ -202,11 +202,21 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
                 if cid in current_counts:
                     current_counts[cid] += 1
             if sum(current_counts.values()) >= 15:
-                has_existing = True
-                print(f"[*] 【{faction}】成功继承既有实战卡组 (有效卡牌 {sum(current_counts.values())} 张)，启动 PPO 自主胜率检验与变异搜索...")
+                # 费用健康度检查：继承的卡组是否全是低费卡
+                high_cost_count = sum(cnt for cid, cnt in current_counts.items() if cand_by_id.get(cid, {}).get("cost", 0) >= 5)
+                low_cost_count = sum(cnt for cid, cnt in current_counts.items() if cand_by_id.get(cid, {}).get("cost", 0) <= 2)
+                total_inherited = sum(current_counts.values())
+                avg_inherited = sum(cand_by_id.get(cid, {}).get("cost", 0) * cnt for cid, cnt in current_counts.items()) / max(1, total_inherited)
+
+                if high_cost_count >= 3 and low_cost_count <= total_inherited * 0.7:
+                    has_existing = True
+                    print(f"[*] 【{faction}】成功继承既有实战卡组 (有效卡牌 {total_inherited} 张，均费 {avg_inherited:.1f})，启动 PPO 自主胜率检验与变异搜索...")
+                else:
+                    print(f"[*] 【{faction}】既有卡组费用曲线失衡 (5+费仅 {high_cost_count} 张，均费 {avg_inherited:.1f})，丢弃并重新构筑...")
+                    current_counts = {cid: 0 for cid in candidate_ids}
 
     if not has_existing:
-        # 当没有前置实战卡组时，强制铺设合理法力曲线，防止因初始网络权重偏好导致全抓 1~2 费
+        # 按合理法力曲线初始化，保证高中低费段都有足够卡牌
         curve_targets = {(1, 2): 10, (3, 4): 10, (5, 10): 10}
         rem = DECK_SIZE
         for cost_range, target in curve_targets.items():
@@ -319,32 +329,67 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
 
     early_cards = sum(cnt for cid, cnt in best_counts.items() if cand_by_id[cid]["cost"] <= 2 and cand_by_id[cid]["card_type"] == "MINION")
     min_early = 4 if faction == "Green" else 6
-    if best_winrate < 30.0 or (best_winrate < 40.0 and early_cards < min_early):
-        print(f"   [警告] 卡组胜率极低 ({best_winrate:.1f}%) 或前期曲线崩坏 (1~2费随从仅 {early_cards} 张)！触发破产重组！")
-        current_counts = {cid: 0 for cid in candidate_ids}
-        # 破产重组：强制铺设合理法力曲线
-        curve_targets = {(1, 2): 10, (3, 4): 10, (5, 10): 10}
-        rem = DECK_SIZE
-        for cost_range, target in curve_targets.items():
-            bracket_cands = [x["id"] for x in sorted_by_ppo if cost_range[0] <= cand_by_id[x["id"]]["cost"] <= cost_range[1]]
-            bracket_rem = target
-            for cid in bracket_cands:
-                take = min(MAX_COPIES_PER_CARD, bracket_rem)
-                current_counts[cid] = current_counts.get(cid, 0) + take
-                bracket_rem -= take
-                rem -= take
-                if bracket_rem <= 0:
-                    break
-        for cid in priority_order:
-            if rem <= 0: break
-            if current_counts.get(cid, 0) < MAX_COPIES_PER_CARD:
-                take = min(MAX_COPIES_PER_CARD - current_counts.get(cid, 0), rem)
-                current_counts[cid] = current_counts.get(cid, 0) + take
-                rem -= take
+    if early_cards < min_early:
+        deficit = min_early - early_cards
+        print(f"   [*] 检测到前期抗压随从偏少 ({early_cards} < {min_early} 张)，启动曲线微创修补 (定向补齐 {deficit} 个卡位)...")
         
-        best_counts = normalize_deck_allocation(current_counts, candidate_ids, priority_order)
-        best_winrate, best_p_win, best_p_tot, best_idles, best_hands = evaluate_decklist_performance(best_counts, games_per_gen)
-        print(f"   [*] 破产重组完毕，健康卡组重测基准胜率: {best_winrate:.1f}%")
+        # 挑选可微调削减的卡牌：避开 1~2 费随从，避开底线高费大哥
+        cnt_high = sum(cnt for cid, cnt in best_counts.items() if cand_by_id[cid]["cost"] >= 5)
+        min_high = 5 if faction == "Green" else 3
+        
+        cut_candidates = []
+        for cid, cnt in best_counts.items():
+            if cnt <= 0: continue
+            cost = cand_by_id[cid]["cost"]
+            ctype = cand_by_id[cid]["card_type"]
+            if cost <= 2 and ctype == "MINION":
+                continue
+            if cost >= 5 and cnt_high <= min_high:
+                continue
+            prior = neural_dict.get(cid, {}).get("ppo_score", 50.0)
+            cut_candidates.append((cid, cost, cnt, prior))
+        
+        # 按 PPO 评分从低到高削减（优先调减相对低效的卡牌）
+        cut_candidates.sort(key=lambda x: x[3])
+        
+        patch_counts = dict(best_counts)
+        cut_done = 0
+        for cid, cost, cnt, _ in cut_candidates:
+            if cut_done >= deficit:
+                break
+            can_cut = min(cnt, deficit - cut_done)
+            patch_counts[cid] -= can_cut
+            cut_done += can_cut
+            if cost >= 5:
+                cnt_high -= can_cut
+
+        # 寻找该阵营最优秀的 1~2 费随从补入
+        add_candidates = [
+            cid for cid in priority_order 
+            if cand_by_id[cid]["cost"] <= 2 and cand_by_id[cid]["card_type"] == "MINION"
+        ]
+        
+        add_done = 0
+        for cid in add_candidates:
+            if add_done >= cut_done:
+                break
+            curr_cnt = patch_counts.get(cid, 0)
+            can_add = min(MAX_COPIES_PER_CARD - curr_cnt, cut_done - add_done)
+            if can_add > 0:
+                patch_counts[cid] = curr_cnt + can_add
+                add_done += can_add
+
+        cand_patch = normalize_deck_allocation(patch_counts, candidate_ids, priority_order)
+        patch_wr, p_p_win, p_p_tot, p_idles, p_hands = evaluate_decklist_performance(cand_patch, games_per_gen)
+        
+        if patch_wr >= best_winrate or (patch_wr >= best_winrate - 2.0 and best_winrate < 40.0):
+            delta = patch_wr - best_winrate
+            best_counts = cand_patch
+            best_winrate = patch_wr
+            best_p_win, best_p_tot, best_idles, best_hands = p_p_win, p_p_tot, p_idles, p_hands
+            print(f"   [*] 曲线微创修补成功采纳！基准胜率: {best_winrate:.1f}% ({delta:+.1f}%)，补足前期随从。")
+        else:
+            print(f"   [*] 曲线微创修补实测胜率 ({patch_wr:.1f}%) 未见明显改善，保留原构筑交由后续微调。")
 
     decision_logs = []
     introspections = []
@@ -366,12 +411,15 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
 
         cnt_1_cost = sum(cnt for cid, cnt in best_counts.items() if cand_by_id[cid]["cost"] == 1)
         cnt_2_cost = sum(cnt for cid, cnt in best_counts.items() if cand_by_id[cid]["cost"] == 2)
+        cnt_high_cost = sum(cnt for cid, cnt in best_counts.items() if cand_by_id[cid]["cost"] >= 5)
+        min_high = 5 if faction == "Green" else 3
         
         eligible_worst_cids = []
         for cid in deck_cids:
             cost = cand_by_id[cid]["cost"]
             if cost == 1 and cnt_1_cost <= 3: continue
             if cost == 2 and cnt_2_cost <= 5: continue
+            if cost >= 5 and cnt_high_cost <= min_high: continue
             eligible_worst_cids.append(cid)
             
         if not eligible_worst_cids:
@@ -383,9 +431,8 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
         for cid in candidate_ids:
             if best_counts.get(cid, 0) < MAX_COPIES_PER_CARD:
                 prior = neural_dict.get(cid, {}).get("ppo_score", 50.0)
-                cost = cand_by_id[cid]["cost"]
-                tempo_bonus = max(0, (5 - cost) * 2.5)
-                candidate_pool_sorted.append((cid, prior + tempo_bonus))
+                # 纯 PPO 评分排序，不再给低费卡额外加分
+                candidate_pool_sorted.append((cid, prior))
         candidate_pool_sorted.sort(key=lambda x: x[1], reverse=True)
 
         best_candidate = None
@@ -425,7 +472,13 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
 
         tolerance = -1.0 * (1.0 - (gen / generations))  # Much stricter tolerance, max -1.0 initially, approaching 0.0
 
-        if delta_wr >= tolerance:
+        can_accept = False
+        if best_winrate <= 0.0:
+            can_accept = (test_winrate > 0.0)
+        else:
+            can_accept = (delta_wr >= tolerance)
+
+        if can_accept:
             rejected_pairs.add((best_candidate, worst_candidate))
             thought_demote = f"[{c_name_worst}] 卡手率较高或收益偏弱，全数调减 {swap_cnt} 张。"
             thought_promote = f"[{c_name_best}] 具有极佳节奏收益，全数增补 {swap_cnt} 张。"

@@ -500,7 +500,7 @@
     },
     {
       "id": 134,
-      "name": "战地督军",
+      "name": "前线督战官",
       "card_type": "MINION",
       "cost": 4,
       "base_dp": 4,
@@ -612,7 +612,7 @@
     },
     {
       "id": 142,
-      "name": "赤焰突袭兵",
+      "name": "赤焰破甲兵",
       "card_type": "MINION",
       "cost": 3,
       "base_dp": 2,
@@ -627,7 +627,7 @@
     },
     {
       "id": 143,
-      "name": "赤红重装巨像",
+      "name": "赤红攻城巨像",
       "card_type": "MINION",
       "cost": 4,
       "base_dp": 5,
@@ -671,7 +671,7 @@
     },
     {
       "id": 146,
-      "name": "红莲爆裂",
+      "name": "炽火爆裂",
       "card_type": "SPELL",
       "cost": 2,
       "base_dp": 0,
@@ -1954,7 +1954,7 @@
     },
     {
       "id": 338,
-      "name": "自然平衡",
+      "name": "林地守护",
       "card_type": "SPELL",
       "cost": 2,
       "base_dp": 0,

@@ -243,6 +243,8 @@ class DuelEnv:
 
         self.last_bonus_score_pts = 0
         self.winner = None
+        self.lane_spell_atk = np.zeros((2, 2), dtype=np.int32)
+        self.lane_def_shield = np.zeros((2, 2), dtype=np.int32)
         return self.get_observation()
 
     def _draw_card(self, player: Player):
@@ -266,15 +268,6 @@ class DuelEnv:
         lane = self.lanes[lane_id]
         return any(u.owner == self.current_player for u in lane.attackers) or any(u.owner == self.current_player for u in lane.defenders)
 
-    def _is_offensive_spell(self, card: Card) -> bool:
-        if card.card_type != CardType.SPELL:
-            return False
-        if card.atk_spell_val > 0:
-            return True
-        if "SACRIFICE_1_KILL_1" in card.tags:
-            return True
-        return False
-
     def get_action_mask(self) -> np.ndarray:
         mask = np.zeros(self.action_space_size, dtype=np.float32)
         mask[-1] = 1.0
@@ -287,8 +280,9 @@ class DuelEnv:
                 base_idx = idx * 4
                 is_atk_only = "ATTACK_ONLY" in card.tags
                 is_spell = (card.card_type == CardType.SPELL and not any(t.startswith("SPAWN_") for t in card.tags))
-                is_off_spell = self._is_offensive_spell(card)
                 needs_sacrifice = "SACRIFICE_1_KILL_1" in card.tags
+                is_atk_spell = card.atk_spell_val > 0
+                is_def_spell = card.def_spell_val > 0
 
                 for lane_id in [0, 1]:
                     lane = self.lanes[lane_id]
@@ -296,23 +290,39 @@ class DuelEnv:
                     my_defs = sum(1 for u in lane.defenders if u.owner == curr.player_id)
                     atk_slot = base_idx + (0 if lane_id == 0 else 2)
                     def_slot = base_idx + (1 if lane_id == 0 else 3)
+                    
+                    has_enemy = self._lane_has_enemy(lane_id)
+                    has_my_atk = my_atks > 0
+                    has_my_def = my_defs > 0
+                    has_my = has_my_atk or has_my_def
 
-                    if is_off_spell:
-                        has_enemy = self._lane_has_enemy(lane_id)
-                        has_my = self._lane_has_my_unit(lane_id) if needs_sacrifice else True
-                        if has_enemy and has_my:
-                            mask[atk_slot] = 1.0
-                            if not is_atk_only:
-                                mask[def_slot] = 1.0
-                    elif is_spell:
-                        mask[atk_slot] = 1.0
-                        if not is_atk_only:
-                            mask[def_slot] = 1.0
+                    can_play_atk_slot = False
+                    can_play_def_slot = False
+
+                    if is_spell:
+                        if needs_sacrifice:
+                            if has_enemy and has_my:
+                                can_play_atk_slot = True
+                                can_play_def_slot = not is_atk_only
+                        else:
+                            if is_atk_spell or is_def_spell:
+                                if is_atk_spell and has_my_atk:
+                                    can_play_atk_slot = True
+                                if is_def_spell and has_my_def and not is_atk_only:
+                                    can_play_def_slot = True
+                            else:
+                                can_play_atk_slot = True
+                                can_play_def_slot = not is_atk_only
                     else:
                         if my_atks < self.MAX_LANE_UNITS:
-                            mask[atk_slot] = 1.0
+                            can_play_atk_slot = True
                         if not is_atk_only and my_defs < self.MAX_LANE_UNITS:
-                            mask[def_slot] = 1.0
+                            can_play_def_slot = True
+                            
+                    if can_play_atk_slot:
+                        mask[atk_slot] = 1.0
+                    if can_play_def_slot:
+                        mask[def_slot] = 1.0
 
         return mask
 
@@ -440,43 +450,10 @@ class DuelEnv:
                             player.graveyard.append(discarded)
 
             if card.atk_spell_val > 0:
-                opp_targets = [u for u in lane.defenders if u.owner == opp_id]
-                if not opp_targets:
-                    opp_targets = [u for u in lane.attackers if u.owner == opp_id]
-                if opp_targets:
-                    target = opp_targets[0]
-                    target.current_dp = max(0, target.current_dp - card.atk_spell_val)
-                    if target.current_dp == 0:
-                        if target in lane.defenders:
-                            lane.defenders.remove(target)
-                        elif target in lane.attackers:
-                            lane.attackers.remove(target)
-                        self.players[opp_id].graveyard.append(target.card)
-                        self._trigger_deathrattle(target)
+                self.lane_spell_atk[lane_id, player.player_id] += card.atk_spell_val
 
             if card.def_spell_val > 0:
-                my_defs = [u for u in lane.defenders if u.owner == player.player_id]
-                if my_defs:
-                    my_defs[0].current_dp += card.def_spell_val
-                elif len(my_defs) < self.MAX_LANE_UNITS:
-                    shield_card = Card(
-                        id=998,
-                        name=f"{card.name}壁垒",
-                        card_type=CardType.MINION,
-                        cost=0,
-                        base_dp=card.def_spell_val,
-                        atk_spell_val=0,
-                        def_spell_val=0,
-                        tags=[],
-                        factions=["System"],
-                        is_token=True
-                    )
-                    lane.defenders.append(MinionInstance(
-                        card=shield_card,
-                        current_dp=card.def_spell_val,
-                        owner=player.player_id,
-                        ready_to_attack=False
-                    ))
+                self.lane_def_shield[lane_id, player.player_id] += card.def_spell_val
 
     def _add_mana_overload(self, player: Player):
         overload_card = Card(
@@ -581,7 +558,8 @@ class DuelEnv:
                         if tag.startswith("SUPPORT_ATK_"):
                             support_bonus += int(tag.split("_")[2])
 
-            total_atk_dp = sum(u.current_dp for u in ready_attackers) + support_bonus
+            spell_atk = self.lane_spell_atk[lane_id, curr_p]
+            total_atk_dp = sum(u.current_dp for u in ready_attackers) + support_bonus + spell_atk
             total_degrade = 0
             bonus_score_pts = 0
 
@@ -594,11 +572,19 @@ class DuelEnv:
 
             total_award = min(2, 1 + bonus_score_pts)
             remaining_atk = total_atk_dp
+            breakthrough = True
+
+            shield = self.lane_def_shield[lane_id, opp_id]
+            if shield > 0:
+                absorbed = min(shield, remaining_atk)
+                remaining_atk -= absorbed
+                self.lane_def_shield[lane_id, opp_id] -= absorbed
+                if remaining_atk <= 0:
+                    breakthrough = False
 
             opp_defenders = [u for u in lane.defenders if u.owner == opp_id]
-            breakthrough = True 
-
-            if opp_defenders:
+            
+            if opp_defenders and remaining_atk > 0:
                 degrade_remaining = total_degrade
                 for def_unit in list(opp_defenders):
                     if degrade_remaining <= 0:
@@ -641,6 +627,10 @@ class DuelEnv:
             for atk in ready_attackers:
                 self.players[curr_p].graveyard.append(atk.card)
                 self._trigger_deathrattle(atk)
+
+        for lane_id in [0, 1]:
+            self.lane_spell_atk[lane_id, curr_p] = 0
+            self.lane_def_shield[lane_id, opp_id] = 0
 
         if any(p.score >= self.WIN_SCORE for p in self.players.values()):
             return True
@@ -708,5 +698,9 @@ class DuelEnv:
             opp_atks = [u for u in lane.attackers if u.owner == opp.player_id]
             for j, u in enumerate(opp_atks[:3]):
                 obs[2, slot_offset + j, 4] = u.current_dp / 10.0
+            
+            obs[2, slot_offset, 5] = self.lane_spell_atk[lane_idx, curr.player_id] / 10.0
+            obs[2, slot_offset, 6] = self.lane_def_shield[lane_idx, curr.player_id] / 10.0
+            obs[2, slot_offset, 7] = self.lane_def_shield[lane_idx, opp.player_id] / 10.0
 
         return obs
