@@ -34,6 +34,8 @@ def find_model_path(requested_path: str = None, stage: str = "tuned") -> str:
         candidates.append(requested_path)
     candidates.append(f"card_ppo_model_{stage}.pth")
     candidates.append(f"PythonApplication23/card_ppo_model_{stage}.pth")
+    candidates.append("card_ppo_model_brawl.pth")
+    candidates.append("PythonApplication23/card_ppo_model_brawl.pth")
     candidates.append("card_ppo_model.pth")
     candidates.append("PythonApplication23/card_ppo_model.pth")
     candidates.append("card_ppo_model_tuned.pth")
