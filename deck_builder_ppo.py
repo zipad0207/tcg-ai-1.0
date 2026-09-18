@@ -202,18 +202,78 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
                 if cid in current_counts:
                     current_counts[cid] += 1
             if sum(current_counts.values()) >= 15:
-                # 费用健康度检查：继承的卡组是否全是低费卡
+                # 费用健康度检查与平滑微创修剪
+                total_inherited = sum(current_counts.values())
+                min_high = 4 if faction == "Green" else 3
+                max_low = 18  # 1~2 费卡上限（60%）
+
                 high_cost_count = sum(cnt for cid, cnt in current_counts.items() if cand_by_id.get(cid, {}).get("cost", 0) >= 5)
                 low_cost_count = sum(cnt for cid, cnt in current_counts.items() if cand_by_id.get(cid, {}).get("cost", 0) <= 2)
+
+                # 1. 若高费不足，进行微创修剪补齐高费大哥
+                if high_cost_count < min_high:
+                    deficit = min_high - high_cost_count
+                    trim_cands = sorted(
+                        [cid for cid, cnt in current_counts.items() if cnt > 0 and cand_by_id.get(cid, {}).get("cost", 0) < 5],
+                        key=lambda cid: neural_dict.get(cid, {}).get("ppo_score", 50.0)
+                    )
+                    high_add_pool = [
+                        cid for cid in priority_order
+                        if cand_by_id.get(cid, {}).get("cost", 0) >= 5 and current_counts.get(cid, 0) < MAX_COPIES_PER_CARD
+                    ]
+                    cut_done = 0
+                    for cid in trim_cands:
+                        if cut_done >= deficit: break
+                        can_cut = min(current_counts[cid], deficit - cut_done)
+                        current_counts[cid] -= can_cut
+                        cut_done += can_cut
+                    
+                    add_done = 0
+                    for cid in high_add_pool:
+                        if add_done >= cut_done: break
+                        can_add = min(MAX_COPIES_PER_CARD - current_counts.get(cid, 0), cut_done - add_done)
+                        current_counts[cid] = current_counts.get(cid, 0) + can_add
+                        add_done += can_add
+                    
+                    if add_done > 0:
+                        print(f"[*] 【{faction}】既有卡组高费偏少 (5+费仅 {high_cost_count} 张)，已平滑补齐 {add_done} 张高费大哥。")
+
+                # 重新计算低费张数
+                low_cost_count = sum(cnt for cid, cnt in current_counts.items() if cand_by_id.get(cid, {}).get("cost", 0) <= 2)
+                # 2. 若低费超标，进行微创修剪替换为 3~4 费中费卡
+                if low_cost_count > max_low:
+                    excess = low_cost_count - max_low
+                    trim_low_cands = sorted(
+                        [cid for cid, cnt in current_counts.items() if cnt > 0 and cand_by_id.get(cid, {}).get("cost", 0) <= 2],
+                        key=lambda cid: neural_dict.get(cid, {}).get("ppo_score", 50.0)
+                    )
+                    mid_add_pool = [
+                        cid for cid in priority_order
+                        if 3 <= cand_by_id.get(cid, {}).get("cost", 0) <= 4 and current_counts.get(cid, 0) < MAX_COPIES_PER_CARD
+                    ]
+                    cut_done = 0
+                    for cid in trim_low_cands:
+                        if cut_done >= excess: break
+                        can_cut = min(current_counts[cid], excess - cut_done)
+                        current_counts[cid] -= can_cut
+                        cut_done += can_cut
+
+                    add_done = 0
+                    for cid in mid_add_pool:
+                        if add_done >= cut_done: break
+                        can_add = min(MAX_COPIES_PER_CARD - current_counts.get(cid, 0), cut_done - add_done)
+                        current_counts[cid] = current_counts.get(cid, 0) + can_add
+                        add_done += can_add
+                    
+                    if add_done > 0:
+                        print(f"[*] 【{faction}】既有卡组低费卡偏多 (1~2费 {low_cost_count} 张)，已平滑置换 {add_done} 张为优质中费卡。")
+
+                # 最终校验总数与均费
+                current_counts = normalize_deck_allocation(current_counts, candidate_ids, priority_order)
                 total_inherited = sum(current_counts.values())
                 avg_inherited = sum(cand_by_id.get(cid, {}).get("cost", 0) * cnt for cid, cnt in current_counts.items()) / max(1, total_inherited)
-
-                if high_cost_count >= 3 and low_cost_count <= total_inherited * 0.7:
-                    has_existing = True
-                    print(f"[*] 【{faction}】成功继承既有实战卡组 (有效卡牌 {total_inherited} 张，均费 {avg_inherited:.1f})，启动 PPO 自主胜率检验与变异搜索...")
-                else:
-                    print(f"[*] 【{faction}】既有卡组费用曲线失衡 (5+费仅 {high_cost_count} 张，均费 {avg_inherited:.1f})，丢弃并重新构筑...")
-                    current_counts = {cid: 0 for cid in candidate_ids}
+                has_existing = True
+                print(f"[*] 【{faction}】成功继承既有实战卡组 (有效卡牌 {total_inherited} 张，均费 {avg_inherited:.1f})，启动 PPO 自主胜率检验与变异搜索...")
 
     if not has_existing:
         # 按合理法力曲线初始化，保证高中低费段都有足够卡牌
@@ -439,13 +499,24 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
         worst_candidate = None
 
         for w_cid in sorted_worst:
+            w_cost = cand_by_id[w_cid]["cost"]
             for b_cid, _ in candidate_pool_sorted:
                 if w_cid == b_cid:
                     continue
-                if (b_cid, w_cid) not in rejected_pairs:
-                    worst_candidate = w_cid
-                    best_candidate = b_cid
-                    break
+                if (b_cid, w_cid) in rejected_pairs:
+                    continue
+
+                b_cost = cand_by_id[b_cid]["cost"]
+                # 费用健康度防护 1：若当前低费卡 (1~2费) 已达上限 (18 张 / 60%)，禁止用低费卡替换中高费卡
+                if b_cost <= 2 and w_cost > 2 and (cnt_1_cost + cnt_2_cost) >= 18:
+                    continue
+                # 费用健康度防护 2：若当前高费卡 (5+费) 已触底 (<= min_high)，禁止削减高费卡换入非高费卡
+                if w_cost >= 5 and b_cost < 5 and cnt_high_cost <= min_high:
+                    continue
+
+                worst_candidate = w_cid
+                best_candidate = b_cid
+                break
             if best_candidate is not None:
                 break
 
