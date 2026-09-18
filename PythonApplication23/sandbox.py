@@ -38,7 +38,7 @@ class MinionInstance:
     card: Card
     current_dp: int
     owner: int
-    ready_to_attack: bool = False  # 蓄势标记：为 True 时方可参与合击冲锋
+    ready_to_attack: bool = False
 
 
 @dataclass
@@ -66,8 +66,8 @@ class DuelEnv:
     MAX_HAND_SIZE = 7
     MAX_LANE_UNITS = 3
     MAX_TURNS = 100
-    MAX_COPIES_PER_CARD = 3  # 同名卡上限 3 张
-    DECK_SIZE = 30           # 卡组规模 30 张
+    MAX_COPIES_PER_CARD = 3
+    DECK_SIZE = 30
 
     def __init__(self, p0_faction: Faction = Faction.RED, p1_faction: Faction = Faction.BLUE, 
                  cards_path: str = "cards_config.json", p0_decklist=None, p1_decklist=None):
@@ -78,7 +78,6 @@ class DuelEnv:
         self.p0_decklist = p0_decklist
         self.p1_decklist = p1_decklist
 
-        # 动作空间：7张手牌 * 4种打出位置 + 1个结束回合动作 = 29
         self.action_space_size = self.MAX_HAND_SIZE * 4 + 1
         self.reset()
 
@@ -137,12 +136,10 @@ class DuelEnv:
 
     def _is_card_allowed_for_faction(self, c: Card, faction_code: int) -> bool:
         if c.is_token:
-            return False  # 系统衍生令牌绝不允许编入常规牌库
+            return False
         f_target = "Red" if faction_code == 1 else ("Blue" if faction_code == 2 else "Green")
-        # 1. 优先读取显式 factions 属性 (彻底解耦 ID 大小与数量上限，支持任意大 ID)
-        if c.factions:
-            return f_target in c.factions or "Neutral" in c.factions
-        # 2. 向下兼容旧 ID 前缀规则 (1xx:红, 2xx:蓝, 3xx:绿, 4xx:红蓝, 5xx:蓝绿, 6xx:红绿, 9xx:中立)
+        if c.factions and (f_target in c.factions or "Neutral" in c.factions):
+            return True
         c_f = c.id // 100
         if c_f == faction_code or c_f == 9:
             return True
@@ -155,43 +152,52 @@ class DuelEnv:
         return False
 
     def _build_deck(self, faction: Faction, custom_decklist: Optional[List[int]] = None) -> List[Card]:
-        """
-        构建对战牌库：
-        1. 若提供了 custom_decklist，直接装配；
-        2. 否则从可用卡池构建，每张同名卡最多 3 张。
-        """
         faction_code = 1 if faction == Faction.RED else 2 if faction == Faction.BLUE else 3
+        
         if custom_decklist:
             card_counts: Dict[int, int] = {}
             deck = []
             valid = True
+            invalid_reasons = []
+
             for cid in custom_decklist:
-                if cid in self.card_database:
-                    c = self.card_database[cid]
-                    if not self._is_card_allowed_for_faction(c, faction_code):
-                        valid = False
-                        break
-                    card_counts[cid] = card_counts.get(cid, 0) + 1
-                    if card_counts[cid] > self.MAX_COPIES_PER_CARD:
-                        valid = False
-                        break
-                    deck.append(self._clone_card(c))
-                else:
+                if cid not in self.card_database:
                     valid = False
+                    invalid_reasons.append(f"卡牌 ID {cid} 不在数据库中")
                     break
+                c = self.card_database[cid]
+                if not self._is_card_allowed_for_faction(c, faction_code):
+                    valid = False
+                    invalid_reasons.append(f"卡牌 [{c.name}](ID:{cid}) 不属于该阵营可用池")
+                    break
+                card_counts[cid] = card_counts.get(cid, 0) + 1
+                if card_counts[cid] > self.MAX_COPIES_PER_CARD:
+                    valid = False
+                    invalid_reasons.append(f"卡牌 [{c.name}] 超过同名卡上限")
+                    break
+                deck.append(self._clone_card(c))
+
             if valid and len(deck) == self.DECK_SIZE:
                 random.shuffle(deck)
                 return deck
+            else:
+                reason_str = " | ".join(invalid_reasons) if invalid_reasons else f"卡牌数量为 {len(deck)} 张"
+                warn_key = (faction.value, reason_str)
+                if not hasattr(self.__class__, '_warned_invalid_decks'):
+                    self.__class__._warned_invalid_decks = set()
+                if warn_key not in self.__class__._warned_invalid_decks:
+                    print(f"\n[致命警告] 阵营 {faction.value} 预构筑卡组校验失败: {reason_str}")
+                    print(f"[*] 系统正在执行随机兜底装配...")
+                    self.__class__._warned_invalid_decks.add(warn_key)
+
+        # 兜底装配：恢复纯随机抓取，不再按低费排序，防止造出极端快攻假想敌
         all_pool = [c for c in self.card_database.values() if self._is_card_allowed_for_faction(c, faction_code)]
-
-        if not all_pool:
-            return []
-
+        if not all_pool: return []
+        
         card_counts: Dict[int, int] = {}
         deck = []
-
-        # 候选池：仅保留未达到携带上限 (<= 3 张) 的卡牌，随机抽取装配
         pool_candidates = list(all_pool)
+        
         while len(deck) < self.DECK_SIZE and pool_candidates:
             picked = random.choice(pool_candidates)
             c_count = card_counts.get(picked.id, 0)
@@ -203,8 +209,8 @@ class DuelEnv:
             else:
                 if picked in pool_candidates:
                     pool_candidates.remove(picked)
-
-        # 安全垫底：如果可用卡池总卡牌数不足 30（如初期卡池过小），循环填满
+                    
+        # 安全垫底：如果可用卡池总卡牌数极少，循环填满
         while len(deck) < self.DECK_SIZE and all_pool:
             picked = random.choice(all_pool)
             deck.append(self._clone_card(picked))
@@ -217,7 +223,6 @@ class DuelEnv:
             0: Player(player_id=0, faction=self.p0_faction, deck=self._build_deck(self.p0_faction, self.p0_decklist)),
             1: Player(player_id=1, faction=self.p1_faction, deck=self._build_deck(self.p1_faction, self.p1_decklist))
         }
-        # 修正先后手初始法力：后手(P1)初始 max_mana 与 mana 设为 0，当第 1 回合结束轮换至 P1 时自然递增至 1 费，与先手第 1 回合保持对等法力
         self.players[1].max_mana = 0
         self.players[1].mana = 0
 
@@ -228,13 +233,11 @@ class DuelEnv:
         self.current_player = 0
         self.turn_count = 1
 
-        # 初始抽牌
         for _ in range(3):
             self._draw_card(self.players[0])
         for _ in range(4):
             self._draw_card(self.players[1])
 
-        # 后手幸运币补给 (标记为 is_token=True, 永久绝缘于构筑)
         coin = Card(id=996, name="幸运币", card_type=CardType.SPELL, cost=0, base_dp=0, atk_spell_val=0, def_spell_val=0, tags=["TEMP_MANA_1"], factions=["System"], is_token=True)
         if len(self.players[1].hand) < self.MAX_HAND_SIZE:
             self.players[1].hand.append(coin)
@@ -256,18 +259,15 @@ class DuelEnv:
             opp.score += 1
 
     def _lane_has_enemy(self, lane_id: int) -> bool:
-        """判断指定路线是否存在敌方单位（进攻区或防守区）"""
         opp_id = 1 - self.current_player
         lane = self.lanes[lane_id]
         return any(u.owner == opp_id for u in lane.attackers) or any(u.owner == opp_id for u in lane.defenders)
 
     def _lane_has_my_unit(self, lane_id: int) -> bool:
-        """判断指定路线是否存在己方单位（进攻区或防守区）"""
         lane = self.lanes[lane_id]
         return any(u.owner == self.current_player for u in lane.attackers) or any(u.owner == self.current_player for u in lane.defenders)
 
     def _is_offensive_spell(self, card: Card) -> bool:
-        """判断是否为需要敌方目标的攻击性法术"""
         if card.card_type != CardType.SPELL:
             return False
         if card.atk_spell_val > 0:
@@ -278,7 +278,7 @@ class DuelEnv:
 
     def get_action_mask(self) -> np.ndarray:
         mask = np.zeros(self.action_space_size, dtype=np.float32)
-        mask[-1] = 1.0  # PASS 动作永远合法
+        mask[-1] = 1.0
 
         curr = self.players[self.current_player]
         for idx, card in enumerate(curr.hand):
@@ -287,9 +287,7 @@ class DuelEnv:
             if card.cost <= curr.mana:
                 base_idx = idx * 4
                 is_atk_only = "ATTACK_ONLY" in card.tags
-                # 纯法术（非衍生召唤类）不占用随从格子空间
                 is_spell = (card.card_type == CardType.SPELL and not any(t.startswith("SPAWN_") for t in card.tags))
-                # 攻击性法术必须有合法目标才能施放
                 is_off_spell = self._is_offensive_spell(card)
                 needs_sacrifice = "SACRIFICE_1_KILL_1" in card.tags
 
@@ -297,25 +295,21 @@ class DuelEnv:
                     lane = self.lanes[lane_id]
                     my_atks = sum(1 for u in lane.attackers if u.owner == curr.player_id)
                     my_defs = sum(1 for u in lane.defenders if u.owner == curr.player_id)
-                    atk_slot = base_idx + (0 if lane_id == 0 else 2)  # 进攻位
-                    def_slot = base_idx + (1 if lane_id == 0 else 3)  # 防守位
+                    atk_slot = base_idx + (0 if lane_id == 0 else 2)
+                    def_slot = base_idx + (1 if lane_id == 0 else 3)
 
                     if is_off_spell:
-                        # 攻击法术：必须目标路线有敌方单位
                         has_enemy = self._lane_has_enemy(lane_id)
-                        # 自爆法术还需要己方有单位可以牺牲
                         has_my = self._lane_has_my_unit(lane_id) if needs_sacrifice else True
                         if has_enemy and has_my:
                             mask[atk_slot] = 1.0
                             if not is_atk_only:
                                 mask[def_slot] = 1.0
                     elif is_spell:
-                        # 辅助法术（抽牌/跳费/增益等）：总是可以使用
                         mask[atk_slot] = 1.0
                         if not is_atk_only:
                             mask[def_slot] = 1.0
                     else:
-                        # 随从牌：受场地容量限制
                         if my_atks < self.MAX_LANE_UNITS:
                             mask[atk_slot] = 1.0
                         if not is_atk_only and my_defs < self.MAX_LANE_UNITS:
@@ -326,18 +320,16 @@ class DuelEnv:
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, dict]:
         prev_p0_score = self.players[0].score
         prev_p1_score = self.players[1].score
-        acting_player = self.current_player  # 记录当前执行动作的玩家
+        acting_player = self.current_player
 
         self.last_bonus_score_pts = 0
         done = False
 
-        # 非法动作与越界动作防错保护：安全回退至 PASS
         mask = self.get_action_mask()
         if action < 0 or action >= self.action_space_size or mask[action] <= 0.0:
             action = self.action_space_size - 1
 
         if action == self.action_space_size - 1:
-            # 结束回合 -> 触发同路合击冲锋结算与轮换
             done = self._resolve_turn_end()
         else:
             hand_idx = action // 4
@@ -346,20 +338,17 @@ class DuelEnv:
             is_attack = pos_choice in (0, 2)
             self._play_card(hand_idx, lane_id, is_attack)
 
-        # 获胜检查
         if not done:
             if self.players[0].score >= self.WIN_SCORE or self.players[1].score >= self.WIN_SCORE:
                 done = True
             elif self.turn_count >= self.MAX_TURNS:
                 done = True
 
-        # 计算 P0 收益 (零和博弈)
         r0 = (self.players[0].score - prev_p0_score) - (self.players[1].score - prev_p1_score)
         if done:
             s0 = self.players[0].score
             s1 = self.players[1].score
             if s0 >= self.WIN_SCORE and s1 >= self.WIN_SCORE:
-                # 双方同回合达到 7 分平局：攻击方(acting_player)胜出
                 if s0 > s1:
                     self.winner = 0
                 elif s1 > s0:
@@ -376,7 +365,7 @@ class DuelEnv:
                 elif s1 > s0:
                     self.winner = 1
                 else:
-                    self.winner = acting_player  # 回合耗尽平局时同样由最后攻击方判定获胜
+                    self.winner = None  # 彻底消除平局偏心
             else:
                 self.winner = None
 
@@ -385,7 +374,6 @@ class DuelEnv:
             elif self.winner == 1:
                 r0 -= 10.0
 
-        # 准确根据行动方 acting_player 返回奖励，避免换边轮换后将正向收益逆转为负惩罚
         step_reward = r0 if acting_player == 0 else -r0
         return self.get_observation(), step_reward, done, {"bonus_score_pts": getattr(self, "last_bonus_score_pts", 0), "winner": self.winner}
 
@@ -396,7 +384,6 @@ class DuelEnv:
         lane = self.lanes[lane_id]
 
         if card.card_type == CardType.MINION:
-            # 拥有 RUSH 词条可当回合冲锋，否则需蓄势一轮
             can_rush = "RUSH" in card.tags
             instance = MinionInstance(
                 card=card,
@@ -453,7 +440,6 @@ class DuelEnv:
                             discarded = player.hand.pop(0)
                             player.graveyard.append(discarded)
 
-            # 直伤削弱法术（优先打击敌方防守随从；若防守区无随从，则拦截打击敌方攻击随从）
             if card.atk_spell_val > 0:
                 opp_targets = [u for u in lane.defenders if u.owner == opp_id]
                 if not opp_targets:
@@ -469,7 +455,6 @@ class DuelEnv:
                         self.players[opp_id].graveyard.append(target.card)
                         self._trigger_deathrattle(target)
 
-            # 防御增益/护盾壁垒法术（增益己方防守随从；若该路无防守随从，则生成对应防守值的自然守护壁垒）
             if card.def_spell_val > 0:
                 my_defs = [u for u in lane.defenders if u.owner == player.player_id]
                 if my_defs:
@@ -495,7 +480,6 @@ class DuelEnv:
                     ))
 
     def _add_mana_overload(self, player: Player):
-        """当法力上限已达10且发生跳费时，给予0费抽1的【法力过载】法术牌"""
         overload_card = Card(
             id=997,
             name="法力过载",
@@ -514,7 +498,6 @@ class DuelEnv:
             player.graveyard.append(overload_card)
 
     def _apply_ramp(self, player: Player, ramp_val: int):
-        """执行跳费机制：若超过或达到10费上限，生成【法力过载】补偿"""
         if player.max_mana >= 10:
             self._add_mana_overload(player)
         else:
@@ -538,7 +521,6 @@ class DuelEnv:
                         discarded = player.hand.pop(0)
                         player.graveyard.append(discarded)
             elif tag.startswith("SPAWN_"):
-                # 召唤衍生小兵（严格受限于 MAX_LANE_UNITS = 3 上限）
                 parts = tag.split("_")
                 spawn_dp = int(parts[1])
                 spawn_count = int(parts[2])
@@ -581,13 +563,11 @@ class DuelEnv:
                 self._apply_ramp(owner_p, int(tag.split("_")[2]))
 
     def _resolve_turn_end(self) -> bool:
-        """回合结束：同路已就绪单位发起合击冲锋，需逐个穿透所有防守怪方可得分"""
         curr_p = self.current_player
         opp_id = 1 - curr_p
         self.last_bonus_score_pts = 0
 
         for lane_id, lane in self.lanes.items():
-            # 筛选当前玩家中【已就绪】的冲锋单位
             ready_attackers = [u for u in lane.attackers if u.owner == curr_p and u.ready_to_attack]
             for u in ready_attackers:
                 lane.attackers.remove(u)
@@ -595,7 +575,6 @@ class DuelEnv:
             if not ready_attackers:
                 continue
 
-            # 统计己方防守区的 SUPPORT_ATK_X 增益
             support_bonus = 0
             for def_unit in lane.defenders:
                 if def_unit.owner == curr_p:
@@ -603,7 +582,6 @@ class DuelEnv:
                         if tag.startswith("SUPPORT_ATK_"):
                             support_bonus += int(tag.split("_")[2])
 
-            # 汇总总冲锋战力、削弱总值、加分总值
             total_atk_dp = sum(u.current_dp for u in ready_attackers) + support_bonus
             total_degrade = 0
             bonus_score_pts = 0
@@ -618,12 +596,10 @@ class DuelEnv:
             total_award = min(2, 1 + bonus_score_pts)
             remaining_atk = total_atk_dp
 
-            # 逐个穿透判定：必须打穿所有防守怪才能得分
             opp_defenders = [u for u in lane.defenders if u.owner == opp_id]
-            breakthrough = True  # 是否成功突破全部防线
+            breakthrough = True 
 
             if opp_defenders:
-                # 削弱词条先全局生效：平摊削弱到各防守单位（从前往后依次削弱）
                 degrade_remaining = total_degrade
                 for def_unit in list(opp_defenders):
                     if degrade_remaining <= 0:
@@ -636,7 +612,6 @@ class DuelEnv:
                         self.players[opp_id].graveyard.append(def_unit.card)
                         self._trigger_deathrattle(def_unit)
 
-                # 逐个对撞：攻击力依次穿透每个防守单位
                 remaining_defenders = [u for u in lane.defenders if u.owner == opp_id]
                 for def_unit in remaining_defenders:
                     if remaining_atk <= 0:
@@ -644,23 +619,19 @@ class DuelEnv:
                         break
 
                     if remaining_atk >= def_unit.current_dp:
-                        # 攻击力足够击穿此防守怪（同归于尽或击破后穿透）
                         remaining_atk -= def_unit.current_dp
                         lane.defenders.remove(def_unit)
                         self.players[opp_id].graveyard.append(def_unit.card)
                         self._trigger_deathrattle(def_unit)
                         if remaining_atk == 0:
-                            # 刚好同归于尽，无法继续击穿或突破得分
                             breakthrough = False
                             break
                     else:
-                        # 攻击力不够击穿，防守怪扣减 DP 后存活
                         def_unit.current_dp -= remaining_atk
                         remaining_atk = 0
                         breakthrough = False
                         break
 
-            # 只有穿透了所有防守怪（或空场）才得分
             if breakthrough and remaining_atk > 0:
                 self.players[curr_p].score += total_award
                 if bonus_score_pts > 0:
@@ -668,7 +639,6 @@ class DuelEnv:
                 if self.players[curr_p].score >= self.WIN_SCORE:
                     return True
 
-            # 冲锋完毕进墓地
             for atk in ready_attackers:
                 self.players[curr_p].graveyard.append(atk.card)
                 self._trigger_deathrattle(atk)
@@ -676,7 +646,6 @@ class DuelEnv:
         if any(p.score >= self.WIN_SCORE for p in self.players.values()):
             return True
 
-        # 换边轮换与补给
         self.current_player = 1 - self.current_player
         self.turn_count += 1
         active_p = self.players[self.current_player]
@@ -686,7 +655,6 @@ class DuelEnv:
         active_p.mana = active_p.max_mana
         self._draw_card(active_p)
 
-        # 唤醒当前行动方场上蓄势完毕的单位
         for lane in self.lanes.values():
             for u in lane.attackers:
                 if u.owner == self.current_player:
@@ -698,12 +666,11 @@ class DuelEnv:
         return False
 
     def get_observation(self) -> np.ndarray:
-        """状态特征张量输出: shape=(3, 13, 5)"""
-        obs = np.zeros((3, 13, 5), dtype=np.float32)
+        # 完全恢复了 obs[0] 玩家状态和 obs[2] 场面状态，并扩展了 obs[1] 的 8 维视野
+        obs = np.zeros((3, 13, 8), dtype=np.float32)
         curr = self.players[self.current_player]
         opp = self.players[1 - self.current_player]
 
-        # 玩家状态
         obs[0, 0, 0] = curr.mana / 10.0
         obs[0, 0, 1] = curr.max_mana / 10.0
         obs[0, 0, 2] = curr.score / 7.0
@@ -716,32 +683,29 @@ class DuelEnv:
         obs[0, 1, 3] = len(opp.hand) / 7.0
         obs[0, 1, 4] = len(opp.deck) / 30.0
 
-        # 手牌特征
         for i, card in enumerate(curr.hand[:7]):
             obs[1, i, 0] = card.cost / 10.0
             obs[1, i, 1] = card.base_dp / 10.0
             obs[1, i, 2] = 1.0 if card.card_type == CardType.MINION else 0.0
             obs[1, i, 3] = 1.0 if "RUSH" in card.tags else 0.0
             obs[1, i, 4] = 1.0 if any(t.startswith("DEGRADE") for t in card.tags) else 0.0
+            obs[1, i, 5] = 1.0 if any(t.startswith("FORTIFY") for t in card.tags) else 0.0
+            obs[1, i, 6] = 1.0 if any(t.startswith("RAMP") or t.startswith("TEMP_MANA") or t.startswith("DEATH_MANA") for t in card.tags) else 0.0
+            obs[1, i, 7] = 1.0 if any(t.startswith("DRAW") or t.startswith("DEATH_DRAW") for t in card.tags) else 0.0
 
-        # 场面驻守特征: 完整编码战场 4 个区域 (己方进攻、敌方防守、己方防守、敌方蓄势)
         for lane_idx, lane in self.lanes.items():
             slot_offset = lane_idx * 6
-            # 己方进攻区
             my_atks = [u for u in lane.attackers if u.owner == curr.player_id]
             for j, u in enumerate(my_atks[:3]):
                 obs[2, slot_offset + j, 0] = u.current_dp / 10.0
                 obs[2, slot_offset + j, 1] = 1.0 if u.ready_to_attack else 0.0
-            # 敌方防守区
             opp_defs = [u for u in lane.defenders if u.owner == opp.player_id]
             for j, u in enumerate(opp_defs[:3]):
                 obs[2, slot_offset + 3 + j, 0] = u.current_dp / 10.0
                 obs[2, slot_offset + 3 + j, 2] = 1.0
-            # 己方防守区 (补全: 通道3)
             my_defs = [u for u in lane.defenders if u.owner == curr.player_id]
             for j, u in enumerate(my_defs[:3]):
                 obs[2, slot_offset + j, 3] = u.current_dp / 10.0
-            # 敌方蓄势进攻区 (补全: 通道4)
             opp_atks = [u for u in lane.attackers if u.owner == opp.player_id]
             for j, u in enumerate(opp_atks[:3]):
                 obs[2, slot_offset + j, 4] = u.current_dp / 10.0

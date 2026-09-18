@@ -44,26 +44,37 @@ def clean_json_response(raw_text: str) -> str:
     return raw_text.strip()
 
 def get_faction_pool(card_database: dict, faction: str) -> List[dict]:
-    f_cards = card_database.get(faction, [])
-    n_cards = card_database.get("Neutral", [])
-    dual_cards = []
-    for k, card_list in card_database.items():
+    pool = []
+    seen_ids = set()
+    f_code = {"Red": 1, "Blue": 2, "Green": 3}.get(faction, 0)
+
+    for category, card_list in card_database.items():
         for c in card_list:
-            c_f = c.get("id", 0) // 100
+            cid = c.get("id", 0)
+            if cid in seen_ids:
+                continue
+
             facs = c.get("factions", [])
-            if faction in facs:
-                if c not in dual_cards and c not in f_cards and c not in n_cards:
-                    dual_cards.append(c)
+            c_f = cid // 100
+            allowed = False
+            if facs and (faction in facs or "Neutral" in facs):
+                allowed = True
+            elif category == faction or category == "Neutral":
+                allowed = True
+            elif c_f == f_code or c_f == 9:
+                allowed = True
             elif c_f == 4 and faction in ("Red", "Blue"):
-                if c not in dual_cards and c not in f_cards and c not in n_cards:
-                    dual_cards.append(c)
+                allowed = True
             elif c_f == 5 and faction in ("Blue", "Green"):
-                if c not in dual_cards and c not in f_cards and c not in n_cards:
-                    dual_cards.append(c)
+                allowed = True
             elif c_f == 6 and faction in ("Red", "Green"):
-                if c not in dual_cards and c not in f_cards and c not in n_cards:
-                    dual_cards.append(c)
-    return f_cards + n_cards + dual_cards
+                allowed = True
+
+            if allowed:
+                pool.append(c)
+                seen_ids.add(cid)
+
+    return pool
 
 
 def normalize_counts(counts: Dict[int, int], pool: List[dict]) -> Dict[int, int]:
@@ -74,9 +85,12 @@ def normalize_counts(counts: Dict[int, int], pool: List[dict]) -> Dict[int, int]
     
     total = sum(clean_counts.values())
     
-    # 若总数不足 30，按卡牌优先级依次补充至 3 张
+    # 若总数不足 30，随机打乱卡池并依次补充，防止固定按顺位死抓 1~2 费小牌
     if total < DECK_SIZE:
-        for cid in pool_ids:
+        import random
+        fill_pool = list(pool_ids)
+        random.shuffle(fill_pool)
+        for cid in fill_pool:
             while clean_counts[cid] < MAX_COPIES_PER_CARD and total < DECK_SIZE:
                 clean_counts[cid] += 1
                 total += 1
@@ -172,10 +186,13 @@ def call_deepseek_deckbuild(faction: str, pool: List[dict]) -> dict:
         parsed = json.loads(cleaned)
 
         raw_alloc = parsed.get("card_allocation", {})
+        pool_ids = {c["id"] for c in pool}
         int_alloc = {}
         for k, v in raw_alloc.items():
             try:
-                int_alloc[int(k)] = int(v)
+                cid = int(k)
+                if cid in pool_ids:
+                    int_alloc[cid] = int(v)
             except Exception:
                 pass
 

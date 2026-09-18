@@ -483,13 +483,25 @@ def main():
             else:
                 metrics["matchups"][m_key][f"{name1}_wins"] += 1
 
-        # 进度打印
-        if ep % 50 == 0 or ep == 1:
-            wr_r = (metrics["faction_stats"]["Red"]["wins"] / max(1, metrics["faction_stats"]["Red"]["matches"])) * 100
-            wr_b = (metrics["faction_stats"]["Blue"]["wins"] / max(1, metrics["faction_stats"]["Blue"]["matches"])) * 100
-            wr_g = (metrics["faction_stats"]["Green"]["wins"] / max(1, metrics["faction_stats"]["Green"]["matches"])) * 100
-
-            print(f"Episode {ep:04d}/{TOTAL_EPISODES} | 对局: [{name0} vs {name1}] | 胜者: {winner_faction} | 胜率: [Red {wr_r:.1f}% | Blue {wr_b:.1f}% | Green {wr_g:.1f}%]")
+        if ep % 50 == 0:
+            avg_w0 = metrics["faction_stats"]["Red"]["wins"] / max(1, metrics["faction_stats"]["Red"]["matches"])
+            avg_w1 = metrics["faction_stats"]["Blue"]["wins"] / max(1, metrics["faction_stats"]["Blue"]["matches"])
+            avg_w2 = metrics["faction_stats"]["Green"]["wins"] / max(1, metrics["faction_stats"]["Green"]["matches"])
+            
+            print(f"[Episode {ep:4d}] "
+                  f"Red Win: {avg_w0*100:5.1f}% | "
+                  f"Blue Win: {avg_w1*100:5.1f}% | "
+                  f"Green Win: {avg_w2*100:5.1f}% | "
+                  f"Avg Len: {np.mean(all_lengths[-50:]):.1f}")
+                  
+            # Early stop if heavily imbalanced after 300 episodes
+            if ep >= 300:
+                winrates = [avg_w0, avg_w1, avg_w2]
+                max_wr = max(winrates)
+                min_wr = min(winrates)
+                if max_wr > 0.75 or min_wr < 0.25:
+                    print(f"\n[提早终止] 发现极其失衡的胜率 (最高 {max_wr*100:.1f}%, 最低 {min_wr*100:.1f}%)，提早结束对战以节省算力！")
+                    break
 
         # 定期保存权重
         if ep % 200 == 0:

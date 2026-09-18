@@ -5,10 +5,10 @@ from torch.distributions.categorical import Categorical
 class CardNet(nn.Module):
     """
     TCG 智能体 Actor-Critic 策略与价值网络
-    输入尺寸: 3 * 13 * 5 = 195
+    输入尺寸: 3 * 13 * 8 = 312
     动作空间: 29 (7张手牌 * 4种打出位置 + 1个结束回合动作)
     """
-    def __init__(self, action_dim=29, obs_shape=(3, 13, 5)):
+    def __init__(self, action_dim=29, obs_shape=(3, 13, 8)):
         super(CardNet, self).__init__()
         input_dim = obs_shape[0] * obs_shape[1] * obs_shape[2]
         self.shared_fc = nn.Sequential(

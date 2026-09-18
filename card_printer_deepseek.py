@@ -48,7 +48,61 @@ LEGAL_TAG_PATTERNS = [
 ]
 
 def is_legal_tag(tag: str) -> bool:
-    return any(re.match(pattern, tag) for pattern in LEGAL_TAG_PATTERNS)
+    if not isinstance(tag, str):
+        return False
+    return any(re.match(pattern, tag.strip().upper()) for pattern in LEGAL_TAG_PATTERNS)
+
+def extract_valid_tags(c: dict) -> List[str]:
+    raw_tags = c.get("tags")
+    if raw_tags is None:
+        raw_tags = c.get("keywords") or c.get("tag") or []
+    if isinstance(raw_tags, str):
+        raw_tags = [raw_tags]
+    elif not isinstance(raw_tags, list):
+        raw_tags = []
+
+    kw_values = c.get("keyword_values", {})
+    valid_tags = []
+    default_sub_map = {
+        "FORTIFY_X": "FORTIFY_2",
+        "DEGRADE_X": "DEGRADE_1",
+        "SUPPORT_ATK_X": "SUPPORT_ATK_1",
+        "BONUS_SCORE_X": "BONUS_SCORE_1",
+        "SPAWN_X_Y": "SPAWN_1_1",
+        "DEATH_DRAW_X": "DEATH_DRAW_1",
+        "DEATH_MANA_X": "DEATH_MANA_1",
+        "DRAW_X": "DRAW_1",
+        "RAMP_X": "RAMP_1",
+        "TEMP_MANA_X": "TEMP_MANA_1",
+        "DISCARD_X": "DISCARD_1",
+    }
+
+    for t in raw_tags:
+        if not isinstance(t, str):
+            continue
+        t_clean = t.strip().upper()
+        if is_legal_tag(t_clean):
+            if t_clean not in valid_tags:
+                valid_tags.append(t_clean)
+            continue
+        if "_X" in t_clean or "_Y" in t_clean:
+            val = None
+            if isinstance(kw_values, dict):
+                for k, v in kw_values.items():
+                    if k.strip().upper() in t_clean or t_clean.startswith(k.strip().upper()):
+                        val = v
+                        break
+            if val is not None:
+                sub_tag = re.sub(r"_[XY]", f"_{val}", t_clean)
+                if is_legal_tag(sub_tag) and sub_tag not in valid_tags:
+                    valid_tags.append(sub_tag)
+                    continue
+            if t_clean in default_sub_map and is_legal_tag(default_sub_map[t_clean]):
+                cand = default_sub_map[t_clean]
+                if cand not in valid_tags:
+                    valid_tags.append(cand)
+
+    return valid_tags
 
 def load_json(filepath: str) -> dict:
     if not os.path.exists(filepath):
@@ -455,7 +509,7 @@ def main():
             for c in cards_list:
                 allocated_id = get_next_id(expanded_pool[f_name], faction_id_starts.get(f_name, 500))
                 c["id"] = allocated_id
-                c["tags"] = [t for t in c.get("tags", []) if is_legal_tag(t)]
+                c["tags"] = extract_valid_tags(c)
                 c["cost"] = max(0, int(c.get("cost", 1)))
                 c["base_dp"] = max(0, int(c.get("base_dp", 0)))
                 c["atk_spell_val"] = max(0, int(c.get("atk_spell_val", 0)))

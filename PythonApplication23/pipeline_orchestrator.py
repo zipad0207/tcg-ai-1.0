@@ -91,7 +91,63 @@ LEGAL_TAG_PATTERNS = [
 ]
 
 def is_legal_tag(tag: str) -> bool:
-    return any(re.match(p, tag) for p in LEGAL_TAG_PATTERNS)
+    if not isinstance(tag, str):
+        return False
+    return any(re.match(p, tag.strip().upper()) for p in LEGAL_TAG_PATTERNS)
+
+def extract_valid_tags(c: dict) -> List[str]:
+    """从大模型生成的卡牌对象中健壮提取合法词条，兼容多种键名、大小写及占位符"""
+    raw_tags = c.get("tags")
+    if raw_tags is None:
+        raw_tags = c.get("keywords") or c.get("tag") or []
+    if isinstance(raw_tags, str):
+        raw_tags = [raw_tags]
+    elif not isinstance(raw_tags, list):
+        raw_tags = []
+
+    kw_values = c.get("keyword_values", {})
+    valid_tags = []
+    default_sub_map = {
+        "FORTIFY_X": "FORTIFY_2",
+        "DEGRADE_X": "DEGRADE_1",
+        "SUPPORT_ATK_X": "SUPPORT_ATK_1",
+        "BONUS_SCORE_X": "BONUS_SCORE_1",
+        "SPAWN_X_Y": "SPAWN_1_1",
+        "DEATH_DRAW_X": "DEATH_DRAW_1",
+        "DEATH_MANA_X": "DEATH_MANA_1",
+        "DRAW_X": "DRAW_1",
+        "RAMP_X": "RAMP_1",
+        "TEMP_MANA_X": "TEMP_MANA_1",
+        "DISCARD_X": "DISCARD_1",
+    }
+
+    for t in raw_tags:
+        if not isinstance(t, str):
+            continue
+        t_clean = t.strip().upper()
+        if is_legal_tag(t_clean):
+            if t_clean not in valid_tags:
+                valid_tags.append(t_clean)
+            continue
+        # 占位符兼容处理
+        if "_X" in t_clean or "_Y" in t_clean:
+            val = None
+            if isinstance(kw_values, dict):
+                for k, v in kw_values.items():
+                    if k.strip().upper() in t_clean or t_clean.startswith(k.strip().upper()):
+                        val = v
+                        break
+            if val is not None:
+                sub_tag = re.sub(r"_[XY]", f"_{val}", t_clean)
+                if is_legal_tag(sub_tag) and sub_tag not in valid_tags:
+                    valid_tags.append(sub_tag)
+                    continue
+            if t_clean in default_sub_map and is_legal_tag(default_sub_map[t_clean]):
+                cand = default_sub_map[t_clean]
+                if cand not in valid_tags:
+                    valid_tags.append(cand)
+
+    return valid_tags
 
 def clean_json_response(raw_text: str) -> str:
     if not raw_text:
@@ -173,20 +229,36 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
    - 针对攻势单一或依赖极端打法的阵营，提供多元化战术、优质配合与中期突破点；
    - 针对跳费或成长阵营，补充平滑过渡的驻防随从或法力/抽牌润滑组件；
    - 双色卡（红蓝 4xx、蓝绿 5xx、红绿 6xx）互相融合两色机制，形成互补闭环。
-4. **合法词条自由组合**：
-   可以从下列底层引擎已支持的 14 个词条中【自由组合、混合搭配】（每张卡 0~2 个词条）：
-   `RUSH` (突袭), `FORTIFY_X` (坚守), `DEGRADE_X` (削弱), `SUPPORT_ATK_X` (光环), `BONUS_SCORE_X` (击穿得分),
-   `SPAWN_X_Y` (衍生随从), `DEATH_DRAW_X` (亡语抽牌), `DEATH_MANA_X` (亡语临时法力), `SACRIFICE_1_KILL_1` (献祭强解),
-   `ATTACK_ONLY` (限进攻区), `DRAW_X` (抽牌), `RAMP_X` (跳费水晶上限), `TEMP_MANA_X` (临时法力), `DISCARD_X` (弃牌)。
-5. **数值模型合理**：
+4. **机制牌与白板牌的黄金配比（重要核心法则）**：
+   - **不能张张都是词条怪，可以有白板傻大个，但绝不能全是白板！**
+   - **机制牌（带 1~2 个合法词条，填入 tags 数组）**：应占卡牌总数的大多数（约 60%~75%，全套 21 张中约 13~16 张），负责承载阵营特色、解场、突袭、过牌、亡语、跳费等核心战术；
+   - **纯数值/白板牌（无词条，tags 填空数组 []）**：应保留合理比例（约 25%~35%，全套 21 张中约 5~8 张），允许身材扎实的「白板傻大个随从」以及纯直伤/纯护盾法术；
+   - **白板随从身材补偿线**：白板随从没有任何词条机制，必须给足扎实身材（DP >= 费用 + 1，如 1费2DP、2费3DP、3费4DP、4费5DP、5费6DP 等）；带有强力机制的随从身材可适当让步（DP <= 费用）。
+5. **合法词条规则（仅限 14 个底层已支持词条，参数必须为具体整数，严禁带 X/Y 占位符）**：
+   - `RUSH` (突袭)
+   - `FORTIFY_1` ~ `FORTIFY_3` (坚守)
+   - `DEGRADE_1` ~ `DEGRADE_3` (削弱)
+   - `SUPPORT_ATK_1` ~ `SUPPORT_ATK_2` (友方攻击光环)
+   - `BONUS_SCORE_1` (击穿得分)
+   - `SPAWN_1_1` ~ `SPAWN_2_1` (召唤衍生随从)
+   - `DEATH_DRAW_1` (亡语抽牌)
+   - `DEATH_MANA_1` (亡语跳费)
+   - `SACRIFICE_1_KILL_1` (献祭强解)
+   - `ATTACK_ONLY` (限进攻区)
+   - `DRAW_1` ~ `DRAW_2` (抽牌)
+   - `RAMP_1` (永久法力水晶+1)
+   - `TEMP_MANA_1` ~ `TEMP_MANA_2` (临时法力)
+   - `DISCARD_1` (弃牌)
+   卡牌词条必须填入 `tags` 数组（例如 `["RUSH", "DEGRADE_1"]` 或纯白板 `[]`），严禁使用 `keywords` 键名！
+6. **数值模型合理**：
    - 随从费用 (cost) 1~8 费，基础战力 (base_dp) 1~8 点；法术 base_dp 必须为 0；
    - 法术若为直接伤害填入 atk_spell_val，若为护盾填入 def_spell_val；
    - 绝不允许捏造未列入上述清单的非法词条。
-6. **严禁恶性完爆（Anti-Strict-Outclassing Rule，绝对红线）**：
+7. **严禁恶性完爆（Anti-Strict-Outclassing Rule，绝对红线）**：
    - 严禁出现同阵营、同费用区间的绝对完爆（Strictly Worse / Outclassed）！
    - 绝不允许设计出一张新牌在费用相同的情况下，身材、词条以及机制全维度完全碾压现有卡牌（例如同为 3 费，一张 3 DP 生 1/1 且攻守兼备，另一张 1 DP 生 1/1 且仅能进攻，这属于绝对恶性完爆）；
    - 同费卡牌之间必须有明确的属性权衡或功能差异（如高攻脆皮 vs 稳健肉盾、即时冲锋 vs 亡语后劲、单点突破 vs 横向多体），确保每张卡具有不可替代的战术生态位。
-7. **严禁极度亏模废牌（Anti-Deficit Rule，全费用通用绝对红线）**：
+8. **严禁极度亏模废牌（Anti-Deficit Rule，全费用通用绝对红线）**：
    - 规则不限于高费，严禁在任何费用区间（无论是 1~4 费低中费，还是 5~8+ 费高费）设计或修改出「身材/数值极度亏模且缺乏强力词条机制补偿」的垃圾废牌！
    - 随从身材模型基准：
      a. 纯白板随从（无任何词条）：必须严格遵守超模身材补偿基准线，底线为 DP >= 费用 + 1（例如 1费白板 >= 2 DP，2费白板 >= 3 DP，3费白板 >= 4 DP，4费白板 >= 5 DP，5费白板 >= 6 DP，6费白板 >= 7~8 DP，7费白板 >= 8~9 DP，8费白板 >= 9~10 DP）。绝对严禁出现 1费1DP、2费2DP、3费3DP、4费4DP 甚至 7~8费5DP 这类没有任何词条还严重亏模的废卡！
@@ -197,18 +269,49 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
      在削弱胜率过高的卡牌时，若剥离了其突袭（RUSH）或核心词条，绝不能把数值留在残缺低位使其沦为亏模白板废卡！若去掉核心词条，必须同步补足基础身材；若压低身材，必须保留功能性机制或降费。
 
 ### 3. 输出格式要求：
-必须严格输出纯 JSON 对象，格式如下：
+必须严格输出纯 JSON 对象，字段名称必须统一使用 "tags"（数组），严禁使用 keywords！
+格式如下：
 {{
-  "diagnostic_rationale": "整体环境诊断说明（三大阵营与中立各缺啥，如何通过这 21 张新卡实现补强）",
+  "diagnostic_rationale": "整体环境诊断说明（三大阵营与中立各缺啥，如何通过这 21 张新卡实现补强，白板与机制牌配比规划）",
   "factions": {{
     "Red": [
-      ... (共 6 张: 4 单位 + 2 法术，含 1 张双色卡)
+      {{
+        "name": "赤焰突袭兵",
+        "card_type": "MINION",
+        "cost": 2,
+        "base_dp": 2,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": ["RUSH", "DEGRADE_1"],
+        "is_dual": false
+      }},
+      {{
+        "name": "赤红重装巨像",
+        "card_type": "MINION",
+        "cost": 4,
+        "base_dp": 5,
+        "atk_spell_val": 0,
+        "def_spell_val": 0,
+        "tags": [],
+        "is_dual": false
+      }},
+      {{
+        "name": "红莲爆裂",
+        "card_type": "SPELL",
+        "cost": 2,
+        "base_dp": 0,
+        "atk_spell_val": 4,
+        "def_spell_val": 0,
+        "tags": [],
+        "is_dual": false
+      }},
+      ... (共 6 张: 4 随从 + 2 法术，包含 1 张双色卡)
     ],
     "Blue": [
-      ... (共 6 张: 4 单位 + 2 法术，含 1 张双色卡)
+      ... (共 6 张: 4 随从 + 2 法术，包含 1 张双色卡)
     ],
     "Green": [
-      ... (共 6 张: 4 单位 + 2 法术，含 1 张双色卡)
+      ... (共 6 张: 4 随从 + 2 法术，包含 1 张双色卡)
     ],
     "Neutral": [
       ... (共 3 张中立通用卡: factions 为 [\"Neutral\"])
@@ -292,22 +395,33 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
             if not is_dual and f_name not in fac_list:
                 fac_list = [f_name]
 
-            # 确定 ID 前缀
+            # 确定 ID 前缀与双色阵营归属
             if is_dual:
                 fac_set = set(fac_list)
                 if fac_set == {"Red", "Blue"}:
                     pfx = 4
+                    fac_list = ["Red", "Blue"]
                 elif fac_set == {"Blue", "Green"}:
                     pfx = 5
+                    fac_list = ["Blue", "Green"]
                 elif fac_set == {"Red", "Green"}:
                     pfx = 6
+                    fac_list = ["Red", "Green"]
                 else:
-                    pfx = 4 if f_name == "Red" else (5 if f_name == "Blue" else 6)
+                    if f_name == "Red":
+                        pfx = 4
+                        fac_list = ["Red", "Blue"]
+                    elif f_name == "Blue":
+                        pfx = 5
+                        fac_list = ["Blue", "Green"]
+                    else:
+                        pfx = 6
+                        fac_list = ["Red", "Green"]
             else:
                 pfx = {"Red": 1, "Blue": 2, "Green": 3}.get(f_name, 9)
 
             cid = alloc_id(pfx)
-            valid_tags = [t for t in c.get("tags", []) if is_legal_tag(t)]
+            valid_tags = extract_valid_tags(c)
             cost_val = max(1, min(8, int(c.get("cost", 2))))
 
             if c_type == "MINION":
@@ -354,16 +468,19 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
     with open(cards_file, "w", encoding="utf-8") as f:
         json.dump(current_pool, f, indent=2, ensure_ascii=False)
 
-    # 终端打印表格
+    # 终端打印表格与配比统计
+    mechanic_cards = [c for c in final_pack if c.get("tags")]
+    vanilla_cards = [c for c in final_pack if not c.get("tags")]
     print("\n" + "═" * 105)
     print(f"【{pack_name}】全套共 {len(final_pack)} 张新卡详细属性一览 (每阵营 6 卡: 4单位+2法术，含1张双色卡)")
+    print(f"[*] 配比统计: 机制卡牌 {len(mechanic_cards)} 张 ({len(mechanic_cards)/max(1,len(final_pack))*100:.1f}%) | 纯数值/白板卡牌 {len(vanilla_cards)} 张 ({len(vanilla_cards)/max(1,len(final_pack))*100:.1f}%)")
     print("═" * 105)
     print(f"{'ID':<6}{'阵营':<14}{'卡牌名称':<16}{'类型':<8}{'费用':<6}{'身材/数值':<12}{'词条 (Tags)':<28}")
     print("─" * 105)
     for c in final_pack:
         fac_str = "/".join(c.get("factions", [])) if "factions" in c else ("双色" if c["id"]//100 in (4,5,6) else "常规")
         val_str = f"DP:{c['base_dp']}" if c["card_type"] == "MINION" else f"攻{c['atk_spell_val']}/防{c['def_spell_val']}"
-        tags_str = ",".join(c["tags"]) if c["tags"] else "无"
+        tags_str = ",".join(c["tags"]) if c["tags"] else "【白板/纯数值】"
         print(f"{c['id']:<6}{fac_str:<14}{c['name']:<16}{c['card_type']:<8}{c['cost']:<6}{val_str:<12}{tags_str:<28}")
     print("═" * 105 + "\n")
 
@@ -391,7 +508,7 @@ def step2_generate_prebuild_decks(cards_file: str, decks_file: str):
 # ==============================================================================
 # Phase 3: PPO 智能体卡组微调
 # ==============================================================================
-def step3_ppo_deck_evolution(cards_file: str, decks_file: str, generations: int = 5, games_per_gen: int = 50, samples: int = 15):
+def step3_ppo_deck_evolution(cards_file: str, decks_file: str, generations: int = 20, games_per_gen: int = 50, samples: int = 15):
     print("\n" + "═" * 80)
     print(f"【阶段三】PPO 策略卡组自适应微调 | 代数: {generations} 代 | 采样: {samples} 次")
     print("═" * 80)
@@ -445,7 +562,7 @@ def step4_run_brawl_audit(cards_file: str, decks_file: str, metrics_file: str, e
 # ==============================================================================
 # Phase 5: 胜率偏离度判定与数值微调
 # ==============================================================================
-def check_balance_status(metrics: dict, target_tolerance: float = 2.8) -> Tuple[bool, float, float]:
+def check_balance_status(metrics: dict, target_tolerance: float = 5.0) -> Tuple[bool, float, float]:
     f_stats = metrics.get("faction_stats", {})
     deviations = {f: abs(f_stats.get(f, {}).get("winrate", 50.0) - 50.0) for f in ["Red", "Blue", "Green"]}
     winrates = [f_stats.get(f, {}).get("winrate", 50.0) for f in ["Red", "Blue", "Green"]]
@@ -609,10 +726,10 @@ def main():
     parser.add_argument("--pack-name", type=str, default="破晓对决补充包", help="扩展包名称")
     parser.add_argument("--theme", type=str, default="环境数据驱动缺啥补啥与双色协同", help="设计主题")
     parser.add_argument("--episodes", type=int, default=3000, help="每轮自博弈混战对局规模 (默认 3000 局，保证学术统计置信度)")
-    parser.add_argument("--target-balance", type=float, default=2.8, help="目标平衡偏离容差 (默认 2.8 百分点)")
+    parser.add_argument("--target-balance", type=float, default=5.0, help="目标平衡偏离容差 (默认 5.0 百分点，即 45%%~55%% 黄金区间)")
     parser.add_argument("--max-deck-attempts", type=int, default=2, help="同一卡池下 PPO 自主微调构筑的尝试次数 (默认 2 次，兼顾智能体构筑优化与流水线效率)")
-    parser.add_argument("--severe-imbalance-threshold", type=float, default=6.0, help="阵营胜率严重失衡偏离度阈值 (当最大偏离度 >= 该值时，判定为单卡数值硬伤，卡组微调无法弥补，跳过剩余卡组微调直接进入 DeepSeek 数值调整，默认 6.0%%)")
-    parser.add_argument("--severe-spread-threshold", type=float, default=10.0, help="阵营胜率极差严重失衡阈值 (当最高与最低胜率阵营之差 >= 该值时，直接触发 DeepSeek 数值微调，默认 10.0%%)")
+    parser.add_argument("--severe-imbalance-threshold", type=float, default=10.0, help="阵营胜率严重失衡偏离度阈值 (默认 10.0%%)")
+    parser.add_argument("--severe-spread-threshold", type=float, default=15.0, help="阵营胜率极差严重失衡阈值 (默认 15.0%%)")
     parser.add_argument("--max-outer-iterations", type=int, default=10, help="最大 DeepSeek 外环数值微调迭代轮次 (默认 10 轮)")
     parser.add_argument("--max-iterations", type=int, default=None, help="(兼容旧参数) 等价于 --max-outer-iterations")
     parser.add_argument("--skip-print", action="store_true", help="跳过印卡阶段，直接基于现有卡池开始闭环调优")
@@ -626,7 +743,7 @@ def main():
     metrics_file = resolve_path("training_metrics_brawl.json")
 
     brawl_episodes = 60 if args.dry_run else args.episodes
-    ppo_gens = 2 if args.dry_run else 5
+    ppo_gens = 2 if args.dry_run else 20
     ppo_games = 15 if args.dry_run else 50
     ppo_samples = 4 if args.dry_run else 15
     deck_attempts = 1 if args.dry_run else args.max_deck_attempts

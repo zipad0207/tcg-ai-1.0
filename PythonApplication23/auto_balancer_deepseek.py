@@ -19,13 +19,12 @@ def get_api_key() -> str:
     return key
 
 DEEPSEEK_API_KEY = get_api_key()
-
 MODEL_NAME = "deepseek-flash"
 
 CONFIG_FILE = "cards_config_baseline.json" if os.path.exists("cards_config_baseline.json") else "cards_config.json"
 METRICS_FILE = "training_metrics_baseline.json" if os.path.exists("training_metrics_baseline.json") else "training_metrics.json"
 OUTPUT_TUNED_FILE = "cards_config_tuned.json"
-EXPANDED_FILE = "cards_config.json"  # 同步更新卡池
+EXPANDED_FILE = "cards_config.json"
 
 import argparse
 
@@ -36,7 +35,6 @@ def load_json(filepath: str) -> dict:
         return json.load(f)
 
 def clean_json_response(raw_text: str) -> str:
-    """提取 Markdown 代码块中的纯 JSON 内容"""
     if not raw_text:
         return "{}"
     match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw_text, re.DOTALL)
@@ -99,7 +97,6 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
 {json.dumps(history_metrics.get("faction_stats", history_metrics), ensure_ascii=False, indent=2)}
 """
 
-    # 动态分析各阵营真实强弱格局
     overperforming = []
     underperforming = []
     balanced = []
@@ -120,7 +117,7 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
     * 【适度削弱超标阵营 —— {f} (当前胜率 {wr:.1f}%，超出 55% 健康上限 +{wr - 55.0:.1f}%)】：
       - 阶梯式平衡逻辑（避免死砍身材）：
         1. 常规调整：优先通过适度提高费用 (+1 费) 或小幅下调身材 (-1~2 DP) 进行平滑抑制；
-        2. 转向词条平衡：若发现削弱身材收效甚微（例如带有 RUSH 突袭或 BONUS_SCORE 破阵得分的终结怪，即便面板被砍依然能凭借机制强行偷鸡斩杀），或者身材已达到该费用的合理底线（6费 >= 4 DP, 7~8费 >= 5 DP, 9费 >= 6 DP），说明问题根源在于机制而非白值，此时应果断转向削弱或剥离过于强势的词条（如剥离 BONUS_SCORE_1、将 RUSH 突袭改为蓄势、将双抽/双跳下调为单抽/单跳）；
+        2. 转向词条平衡：若发现削弱身材收效甚微，或者身材已达到该费用的合理底线（6费 >= 4 DP, 7~8费 >= 5 DP, 9费 >= 6 DP），说明问题根源在于机制而非白值，此时应果断转向削弱或剥离过于强势的词条（如剥离 BONUS_SCORE_1、将 RUSH 突袭改为蓄势、将双抽/双跳下调为单抽/单跳）；
         3. 坚决杜绝畸形面板：绝对禁止在保留霸道词条的同时，盲目把高费随从一路砍到 1~2 DP！""")
 
     under_instructions = []
@@ -258,7 +255,6 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
     return response.choices[0].message.content
 
 def extract_card_list(data) -> list:
-    """提取任何嵌套格式下的卡牌对象列表"""
     cards = []
     if isinstance(data, list):
         for item in data:
@@ -287,24 +283,17 @@ def resolve_path(p):
 
 def main():
     parser = argparse.ArgumentParser(description="TCG 卡牌数值自动平衡调优工具")
-    parser.add_argument("--cards", type=str, default="cards_config.json", 
-                        help="输入的卡池 JSON 文件")
-    parser.add_argument("--metrics", type=str, default="training_metrics_brawl.json", 
-                        help="输入的训练战报 JSON 文件")
-    parser.add_argument("--output", type=str, default="cards_config_tuned.json", 
-                        help="输出调优卡池文件路径")
-    parser.add_argument("--history", type=str, default=None, 
-                        help="基准/历史战报文件路径")
+    parser.add_argument("--cards", type=str, default="cards_config.json", help="输入的卡池 JSON 文件")
+    parser.add_argument("--metrics", type=str, default="training_metrics_brawl.json", help="输入的训练战报 JSON 文件")
+    parser.add_argument("--output", type=str, default="cards_config_tuned.json", help="输出调优卡池文件路径")
+    parser.add_argument("--history", type=str, default=None, help="基准/历史战报文件路径")
     args = parser.parse_args()
 
     if not DEEPSEEK_API_KEY:
         print("未找到有效 API Key，请配置 DEEPSEEK_API_KEY 环境变量。")
         return
 
-    client = OpenAI(
-        api_key=DEEPSEEK_API_KEY,
-        base_url="https://api.deepseek.com"
-    )
+    client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
 
     cards_file = resolve_path(args.cards)
     metrics_file = resolve_path(args.metrics)
@@ -323,7 +312,6 @@ def main():
     if history_file:
         print(f"参考战报: {history_file}")
 
-    # 提交请求
     raw_output = run_deepseek_balance_and_expand(metrics_data, current_cards, client, history_metrics=history_data)
     cleaned_json = clean_json_response(raw_output)
 
@@ -332,7 +320,6 @@ def main():
         new_card_pool = json.loads(cleaned_json)
     except json.JSONDecodeError as e:
         print(f"[*] 遇到 JSON 局部格式异常 ({e})，启动自适应单卡特征正则修复提取...")
-        # 正则兜底提取：即使外层缺少括号或逗号，只要单卡对象结构存在即可挽救
         cand_matches = re.findall(r'\{[^{}]*"id"\s*:\s*\d+[^}]*\}', raw_output)
         if cand_matches:
             recovered_cards = []
@@ -352,18 +339,15 @@ def main():
         print(f"[警告] 本轮未能解析出有效的数值微调指令 (片段: {preview})，保持现有卡池进入下阶段。")
         return
 
-    # 稳健合并逻辑：以原卡池为基准进行靶向覆盖，确保卡牌 ID、阵营与名称永不遗失
     updated_pool = {}
     for f, card_list in current_cards.items():
         updated_pool[f] = [dict(c) for c in card_list]
 
-    # 建立 id -> (faction, index) 索引
     id_index = {}
     for f, card_list in updated_pool.items():
         for idx, c in enumerate(card_list):
             id_index[c["id"]] = (f, idx)
 
-    # 进行靶向更新与合规校验
     updated_count = 0
     cand_cards = extract_card_list(new_card_pool)
     print(f"[*] 成功提取 {len(cand_cards)} 张调整卡牌，正在校验合规性...")
@@ -372,7 +356,6 @@ def main():
         if cid in id_index:
             orig_f, orig_idx = id_index[cid]
             orig_card = updated_pool[orig_f][orig_idx]
-            # 仅更新允许修改的数值与词条字段
             for field in ["cost", "base_dp", "atk_spell_val", "def_spell_val", "tags"]:
                 if field in new_c:
                     new_val = new_c[field]
@@ -386,15 +369,10 @@ def main():
                             val = int(new_val)
                             cost = orig_card.get("cost", 1)
                             if orig_card.get("card_type") == "MINION":
-                                # 防御机制：高费随从身材保底，防止大模型将高费怪削弱为畸形 1/1
-                                if cost >= 8:
-                                    val = max(5, val)
-                                elif cost >= 6:
-                                    val = max(3, val)
-                                elif cost >= 4:
-                                    val = max(2, val)
-                                else:
-                                    val = max(1, val)
+                                if cost >= 8: val = max(5, val)
+                                elif cost >= 6: val = max(3, val)
+                                elif cost >= 4: val = max(2, val)
+                                else: val = max(1, val)
                             new_val = min(15, val)
                         except Exception:
                             continue
@@ -410,7 +388,21 @@ def main():
                             continue
 
                     if new_val != orig_card.get(field):
-                        print(f"  [数值调整] ID {cid} {orig_card['name']}: {field} 从 {orig_card.get(field)} -> {new_val}")
+                        if field != "tags":
+                            orig_val = orig_card.get(field)
+                            if orig_val is None:
+                                orig_val = 0
+                            try:
+                                n_val = int(new_val)
+                                o_val = int(orig_val)
+                                if abs(n_val - o_val) > 1:
+                                    new_val = o_val + (1 if n_val > o_val else -1)
+                            except Exception:
+                                pass
+                            print(f"  [数值调整] ID {cid} {orig_card['name']}: {field} 从 {orig_val} -> {new_val}")
+                        else:
+                            print(f"  [词条调整] ID {cid} {orig_card['name']}: {field} 从 {orig_card.get(field)} -> {new_val}")
+                        
                         orig_card[field] = new_val
                         updated_count += 1
 

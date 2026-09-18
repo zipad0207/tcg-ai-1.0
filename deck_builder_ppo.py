@@ -7,6 +7,7 @@ import torch
 import numpy as np
 from typing import Dict, List, Tuple
 from collections import Counter
+from torch.distributions.categorical import Categorical
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -39,12 +40,9 @@ def load_card_pool(cards_path: str = "cards_config.json") -> dict:
         return json.load(f)
 
 def get_faction_candidates(pool_data: dict, faction: str) -> List[dict]:
-    """
-    根据卡牌 factions 归属列表搜寻目标阵营的所有可用候选卡牌 (支持单阵营 >100 张卡及任意编号区间)
-    包含：本阵营纯色卡、中立卡 (Neutral)、以及包含本阵营的双色卡 (Dual)
-    """
     candidates = []
     seen_ids = set()
+    f_code = {"Red": 1, "Blue": 2, "Green": 3}.get(faction, 0)
 
     for category, card_list in pool_data.items():
         for c in card_list:
@@ -53,25 +51,22 @@ def get_faction_candidates(pool_data: dict, faction: str) -> List[dict]:
                 continue
 
             facs = c.get("factions", [])
-            # 1. 优先依据 factions 属性判定
-            if facs:
-                if faction in facs or "Neutral" in facs:
-                    candidates.append(c)
-                    seen_ids.add(cid)
-                    continue
-
-            # 2. 向下兼容旧分类 key 与前缀
             c_f = cid // 100
-            if category == faction or category == "Neutral":
-                candidates.append(c)
-                seen_ids.add(cid)
+            allowed = False
+            if facs and (faction in facs or "Neutral" in facs):
+                allowed = True
+            elif category == faction or category == "Neutral":
+                allowed = True
+            elif c_f == f_code or c_f == 9:
+                allowed = True
             elif c_f == 4 and faction in ("Red", "Blue"):
-                candidates.append(c)
-                seen_ids.add(cid)
+                allowed = True
             elif c_f == 5 and faction in ("Blue", "Green"):
-                candidates.append(c)
-                seen_ids.add(cid)
+                allowed = True
             elif c_f == 6 and faction in ("Red", "Green"):
+                allowed = True
+
+            if allowed:
                 candidates.append(c)
                 seen_ids.add(cid)
 
@@ -79,10 +74,6 @@ def get_faction_candidates(pool_data: dict, faction: str) -> List[dict]:
 
 def evaluate_card_neural_utility(model: CardNet, device: torch.device, candidate: dict, 
                                  faction: Faction, cards_path: str, samples: int = 15) -> dict:
-    """
-    单卡效用评估:
-    在多种模拟环境下测量 Actor 出牌偏好概率与 Critic 状态价值增益 (ΔV)
-    """
     card_obj = Card(
         id=candidate["id"],
         name=candidate["name"],
@@ -99,7 +90,6 @@ def evaluate_card_neural_utility(model: CardNet, device: torch.device, candidate
     is_playable_count = 0
 
     for _ in range(samples):
-        # 随机初始化对局环境 (针对多阵营生态进行候选卡压测)
         opp_pool = [f for f in [Faction.RED, Faction.BLUE, Faction.GREEN] if f != faction]
         opp_f = random.choice(opp_pool)
         env = DuelEnv(p0_faction=faction, p1_faction=opp_f, cards_path=cards_path)
@@ -109,21 +99,17 @@ def evaluate_card_neural_utility(model: CardNet, device: torch.device, candidate
         env.current_player = acting_p_id
         player = env.players[acting_p_id]
 
-        # 模拟真实对局阶段 (1~10 费自然分布，真实检验节奏与卡手风险)
         sim_mana = random.randint(1, 10)
         player.mana = sim_mana
         player.max_mana = sim_mana
 
-        # 注入候选卡至手牌第 0 位
         player.hand = [card_obj] + player.hand[:3]
 
         mask = env.get_action_mask()
-        # 检查候选卡对应的 4 个动作槽位中是否有合法动作
-        card_action_indices = [0, 1, 2, 3] # slot 0 的 4 种打出目标
+        card_action_indices = [0, 1, 2, 3] 
         legal_card_actions = [idx for idx in card_action_indices if mask[idx] > 0.5]
 
         if not legal_card_actions:
-            # 当前法力不足以打出该卡，记录不可用并继续测试
             continue
 
         is_playable_count += 1
@@ -135,11 +121,9 @@ def evaluate_card_neural_utility(model: CardNet, device: torch.device, candidate
             logits, v_before = model(state_t, mask_t)
             probs = torch.softmax(logits, dim=-1).squeeze(0).cpu().numpy()
 
-        # 计算 PPO 选中该卡牌的总意图概率
         p_card_play = float(sum(probs[idx] for idx in legal_card_actions))
         play_probs.append(p_card_play)
 
-        # 模拟执行 PPO 最偏好的动作，测量 Critic 估值增益 ΔV
         best_card_act = max(legal_card_actions, key=lambda idx: probs[idx])
         obs_next, reward, done, _ = env.step(best_card_act)
 
@@ -155,12 +139,12 @@ def evaluate_card_neural_utility(model: CardNet, device: torch.device, candidate
     avg_play_prob = float(np.mean(play_probs)) if play_probs else 0.0
     avg_v_gain = float(np.mean(value_gains)) if value_gains else 0.0
 
-    # 综合 PPO 神经效用评分 (0 ~ 100 分):
-    # 结合打出时收益、单费性价比与自然回合可打出率，杜绝高费突袭虚高满分偏差
     cost_penalty = max(1, card_obj.cost)
-    v_norm = (avg_v_gain + 0.05) * 300.0 / (cost_penalty ** 0.5)
+    # 修正：高费牌本身需要极高的收益才能弥补出场率的劣势。取消对价值收益的双重除法惩罚。
+    v_norm = (avg_v_gain + 0.05) * 300.0
     p_norm = avg_play_prob * 100.0 * 0.4
-    tempo_norm = playability_ratio * 20.0
+    # 修正：高费牌在随机 1-10 费用测试中 playability 极低，予以平方根补偿以平衡 ppo_score
+    tempo_norm = playability_ratio * 20.0 * (cost_penalty ** 0.5)
     ppo_score = round(max(20.0, min(98.0, 20.0 + v_norm + p_norm + tempo_norm)), 2)
 
     return {
@@ -176,11 +160,9 @@ def evaluate_card_neural_utility(model: CardNet, device: torch.device, candidate
     }
 
 def normalize_deck_allocation(counts: Dict[int, int], candidate_ids: List[int], priority_order: List[int]) -> Dict[int, int]:
-    """保证牌库恰好 30 张，且单卡在 0~3 张之间"""
     clean_counts = {cid: min(MAX_COPIES_PER_CARD, max(0, counts.get(cid, 0))) for cid in candidate_ids}
     total = sum(clean_counts.values())
 
-    # 若不足 30 张，按 PPO 效用最高优先级依次补充至 3 张
     if total < DECK_SIZE:
         for cid in priority_order:
             while clean_counts[cid] < MAX_COPIES_PER_CARD and total < DECK_SIZE:
@@ -189,7 +171,6 @@ def normalize_deck_allocation(counts: Dict[int, int], candidate_ids: List[int], 
             if total >= DECK_SIZE:
                 break
 
-    # 若超过 30 张，按 PPO 效用最低优先级依次扣减
     if total > DECK_SIZE:
         rev_priority = list(reversed(priority_order))
         for cid in rev_priority:
@@ -203,13 +184,8 @@ def normalize_deck_allocation(counts: Dict[int, int], candidate_ids: List[int], 
 
 def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats: List[dict],
                               model: CardNet, device: torch.device, cards_path: str,
-                              generations: int = 5, games_per_gen: int = 50,
+                              generations: int = 20, games_per_gen: int = 50,
                               existing_decks: dict = None) -> Tuple[Dict[int, int], List[str], List[dict]]:
-    """
-    PPO 端到端自主进化构筑引擎 (Autonomous PPO Self-Play Deck Engine):
-    废除任何人工硬编码配额，完全依靠强化学习实战对局胜率检验 (Accept/Reject/Rollback)
-    与手牌卡手率惩罚 (Dead Card Idle Penalty)，让智能体在自博弈中自主顿悟出最佳构筑思路与法力曲线。
-    """
     candidate_ids = [c["id"] for c in candidates]
     cand_by_id = {c["id"]: c for c in candidates}
     sorted_by_ppo = sorted(neural_stats, key=lambda x: x["ppo_score"], reverse=True)
@@ -218,26 +194,37 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
 
     current_counts: Dict[int, int] = {cid: 0 for cid in candidate_ids}
 
-    # 1. 初始化卡组：若存在上一轮卡组则继承并评估其真实胜率；否则基于 PPO 综合评分贪心组装初始卡组
     has_existing = False
     if existing_decks and faction in existing_decks and "decklist" in existing_decks[faction]:
         existing_list = existing_decks[faction]["decklist"]
-        if len(existing_list) == DECK_SIZE:
+        if len(existing_list) > 0:
             for cid in existing_list:
                 if cid in current_counts:
                     current_counts[cid] += 1
-            if sum(current_counts.values()) == DECK_SIZE:
+            if sum(current_counts.values()) >= 15:
                 has_existing = True
-                print(f"[*] 【{faction}】成功继承既有实战卡组，启动 PPO 自主胜率检验与变异搜索...")
+                print(f"[*] 【{faction}】成功继承既有实战卡组 (有效卡牌 {sum(current_counts.values())} 张)，启动 PPO 自主胜率检验与变异搜索...")
 
     if not has_existing:
+        # 当没有前置实战卡组时，强制铺设合理法力曲线，防止因初始网络权重偏好导致全抓 1~2 费
+        curve_targets = {(1, 2): 10, (3, 4): 10, (5, 10): 10}
         rem = DECK_SIZE
+        for cost_range, target in curve_targets.items():
+            bracket_cands = [x["id"] for x in sorted_by_ppo if cost_range[0] <= cand_by_id[x["id"]]["cost"] <= cost_range[1]]
+            bracket_rem = target
+            for cid in bracket_cands:
+                take = min(MAX_COPIES_PER_CARD, bracket_rem)
+                current_counts[cid] = current_counts.get(cid, 0) + take
+                bracket_rem -= take
+                rem -= take
+                if bracket_rem <= 0:
+                    break
         for cid in priority_order:
-            take = min(MAX_COPIES_PER_CARD, rem)
-            current_counts[cid] = take
-            rem -= take
-            if rem <= 0:
-                break
+            if rem <= 0: break
+            if current_counts.get(cid, 0) < MAX_COPIES_PER_CARD:
+                take = min(MAX_COPIES_PER_CARD - current_counts.get(cid, 0), rem)
+                current_counts[cid] = current_counts.get(cid, 0) + take
+                rem -= take
 
     current_counts = normalize_deck_allocation(current_counts, candidate_ids, priority_order)
 
@@ -246,7 +233,6 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
     my_faction = faction_map.get(faction, Faction.RED)
     opp_factions = [f for f in [Faction.RED, Faction.BLUE, Faction.GREEN] if f != my_faction]
 
-    # 实战对抗评估函数：同时统计胜率、卡牌出场表现、以及手牌卡手不可用回合数
     def evaluate_decklist_performance(deck_allocation: Dict[int, int], num_games: int):
         test_decklist = []
         for cid, count in deck_allocation.items():
@@ -265,39 +251,57 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
             if existing_decks and opp_name in existing_decks and "decklist" in existing_decks[opp_name]:
                 opp_deck = existing_decks[opp_name]["decklist"]
 
-            env = DuelEnv(p0_faction=my_faction, p1_faction=opp_f, cards_path=cards_path,
-                          p0_decklist=test_decklist, p1_decklist=opp_deck)
+            # 随机决定测试卡组是先手还是后手，消除绝对先手带来的“伪平衡”
+            is_p0 = random.choice([True, False])
+            
+            p0_f = my_faction if is_p0 else opp_f
+            p1_f = opp_f if is_p0 else my_faction
+            p0_deck = test_decklist if is_p0 else opp_deck
+            p1_deck = opp_deck if is_p0 else test_decklist
+
+            env = DuelEnv(p0_faction=p0_f, p1_faction=p1_f, cards_path=cards_path,
+                          p0_decklist=p0_deck, p1_decklist=p1_deck)
             obs = env.reset()
             done = False
             played_this_game = set()
 
             while not done:
                 curr_p = env.current_player
+                is_my_turn = (curr_p == 0 and is_p0) or (curr_p == 1 and not is_p0)
+                
                 mask = env.get_action_mask()
                 state_t = torch.FloatTensor(obs).unsqueeze(0).to(device)
                 mask_t = torch.FloatTensor(mask).unsqueeze(0).to(device)
 
                 with torch.no_grad():
                     logits, _ = model(state_t, mask_t)
-                    act = torch.argmax(logits, dim=-1).item()
+                    dist = Categorical(logits=logits)
+                    act = dist.sample().item()
 
-                if curr_p == 0:
-                    p0 = env.players[0]
-                    for card in p0.hand:
+                if is_my_turn:
+                    my_player = env.players[curr_p]
+                    for card in my_player.hand:
                         card_hand_turns[card.id] += 1
-                        if card.cost > p0.mana:
+                        if card.cost > my_player.mana:
                             card_idle_turns[card.id] += 1
 
                     if act != env.action_space_size - 1:
                         h_idx = act // 4
-                        if h_idx < len(p0.hand):
-                            c = p0.hand[h_idx]
+                        if h_idx < len(my_player.hand):
+                            c = my_player.hand[h_idx]
                             card_played_total[c.id] += 1
                             played_this_game.add(c.id)
 
                 obs, _, done, _ = env.step(act)
 
-            is_win = (env.winner == 0) if env.winner is not None else (env.players[0].score >= env.WIN_SCORE)
+            is_win = False
+            if env.winner is not None:
+                is_win = (env.winner == 0 and is_p0) or (env.winner == 1 and not is_p0)
+            else:
+                s0 = env.players[0].score
+                s1 = env.players[1].score
+                is_win = (s0 > s1 and is_p0) or (s1 > s0 and not is_p0)
+
             if is_win:
                 wins += 1
                 for cid in played_this_game:
@@ -308,20 +312,47 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
 
     print(f"\n启动 PPO 自主学习卡组搜索 (共 {generations} 轮，每轮 {games_per_gen} 局实测)...")
     
-    # 首先测试基准卡组实战表现
     print(f"[*] 正在实测【{faction}】基准卡组性能...")
     best_winrate, best_p_win, best_p_tot, best_idles, best_hands = evaluate_decklist_performance(current_counts, games_per_gen)
     best_counts = dict(current_counts)
     print(f"[*] 【{faction}】初始基准实战胜率: {best_winrate:.1f}%")
 
+    early_cards = sum(cnt for cid, cnt in best_counts.items() if cand_by_id[cid]["cost"] <= 2 and cand_by_id[cid]["card_type"] == "MINION")
+    min_early = 4 if faction == "Green" else 6
+    if best_winrate < 30.0 or (best_winrate < 40.0 and early_cards < min_early):
+        print(f"   [警告] 卡组胜率极低 ({best_winrate:.1f}%) 或前期曲线崩坏 (1~2费随从仅 {early_cards} 张)！触发破产重组！")
+        current_counts = {cid: 0 for cid in candidate_ids}
+        # 破产重组：强制铺设合理法力曲线
+        curve_targets = {(1, 2): 10, (3, 4): 10, (5, 10): 10}
+        rem = DECK_SIZE
+        for cost_range, target in curve_targets.items():
+            bracket_cands = [x["id"] for x in sorted_by_ppo if cost_range[0] <= cand_by_id[x["id"]]["cost"] <= cost_range[1]]
+            bracket_rem = target
+            for cid in bracket_cands:
+                take = min(MAX_COPIES_PER_CARD, bracket_rem)
+                current_counts[cid] = current_counts.get(cid, 0) + take
+                bracket_rem -= take
+                rem -= take
+                if bracket_rem <= 0:
+                    break
+        for cid in priority_order:
+            if rem <= 0: break
+            if current_counts.get(cid, 0) < MAX_COPIES_PER_CARD:
+                take = min(MAX_COPIES_PER_CARD - current_counts.get(cid, 0), rem)
+                current_counts[cid] = current_counts.get(cid, 0) + take
+                rem -= take
+        
+        best_counts = normalize_deck_allocation(current_counts, candidate_ids, priority_order)
+        best_winrate, best_p_win, best_p_tot, best_idles, best_hands = evaluate_decklist_performance(best_counts, games_per_gen)
+        print(f"   [*] 破产重组完毕，健康卡组重测基准胜率: {best_winrate:.1f}%")
+
     decision_logs = []
     introspections = []
+    rejected_pairs = set()
 
     for gen in range(1, generations + 1):
         prev_winrate = best_winrate
 
-        # 1. 计算卡组内各单卡的综合实战适应度 (Fitness)
-        # 核心：以真实胜率为纲，以 PPO 神经估值为辅，重罚“卡在手里无法打出”的虚胖大怪
         deck_cids = [cid for cid, cnt in best_counts.items() if cnt > 0]
         fitness_map = {}
         for cid in deck_cids:
@@ -333,67 +364,88 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
             fit = (win_r * 0.6 + prior * 0.4) * (1.0 - 0.75 * idle_r)
             fitness_map[cid] = fit
 
-        # 淘汰候选：卡组内适应度最低的卡牌 (经常卡手或胜率低下)
-        worst_candidate = min(deck_cids, key=lambda cid: fitness_map[cid])
+        cnt_1_cost = sum(cnt for cid, cnt in best_counts.items() if cand_by_id[cid]["cost"] == 1)
+        cnt_2_cost = sum(cnt for cid, cnt in best_counts.items() if cand_by_id[cid]["cost"] == 2)
+        
+        eligible_worst_cids = []
+        for cid in deck_cids:
+            cost = cand_by_id[cid]["cost"]
+            if cost == 1 and cnt_1_cost <= 3: continue
+            if cost == 2 and cnt_2_cost <= 5: continue
+            eligible_worst_cids.append(cid)
+            
+        if not eligible_worst_cids:
+            eligible_worst_cids = deck_cids
 
-        # 增补候选：在牌池候补中搜寻兼具高 PPO 潜力与节奏润滑价值的卡牌
-        potentials = {}
+        sorted_worst = sorted(eligible_worst_cids, key=lambda cid: fitness_map[cid])
+
+        candidate_pool_sorted = []
         for cid in candidate_ids:
-            if best_counts.get(cid, 0) < MAX_COPIES_PER_CARD and cid != worst_candidate:
+            if best_counts.get(cid, 0) < MAX_COPIES_PER_CARD:
                 prior = neural_dict.get(cid, {}).get("ppo_score", 50.0)
                 cost = cand_by_id[cid]["cost"]
-                # 节奏探索补偿：低费卡牌具有天然的法力曲线平滑与抗卡手价值
                 tempo_bonus = max(0, (5 - cost) * 2.5)
-                potentials[cid] = prior + tempo_bonus
+                candidate_pool_sorted.append((cid, prior + tempo_bonus))
+        candidate_pool_sorted.sort(key=lambda x: x[1], reverse=True)
 
-        best_candidate = max(potentials.keys(), key=lambda cid: potentials[cid])
+        best_candidate = None
+        worst_candidate = None
+
+        for w_cid in sorted_worst:
+            for b_cid, _ in candidate_pool_sorted:
+                if w_cid == b_cid:
+                    continue
+                if (b_cid, w_cid) not in rejected_pairs:
+                    worst_candidate = w_cid
+                    best_candidate = b_cid
+                    break
+            if best_candidate is not None:
+                break
+
+        if best_candidate is None or worst_candidate is None:
+            print(f"   [代数 {gen}/{generations}] 所有组合已被探索或已达局部最优，停止变异。")
+            break
 
         c_name_worst = cand_by_id[worst_candidate]["name"]
         c_name_best = cand_by_id[best_candidate]["name"]
 
-        # 2. 生成变异候选卡组
+        swap_cnt = best_counts[worst_candidate]  
         candidate_counts = dict(best_counts)
-        candidate_counts[worst_candidate] -= 1
-        candidate_counts[best_candidate] += 1
+        candidate_counts[worst_candidate] = 0
+        candidate_counts[best_candidate] = min(MAX_COPIES_PER_CARD, candidate_counts.get(best_candidate, 0) + swap_cnt)
         candidate_counts = normalize_deck_allocation(candidate_counts, candidate_ids, priority_order)
 
-        # 3. 运行实机对抗检验变异效果
         test_winrate, t_p_win, t_p_tot, t_idles, t_hands = evaluate_decklist_performance(candidate_counts, games_per_gen)
         delta_wr = test_winrate - best_winrate
+        
         gen_reflection = {
-            "generation": gen,
-            "winrate": test_winrate,
-            "prev_winrate": prev_winrate,
-            "promoted": None,
-            "demoted": None,
-            "monologue": ""
+            "generation": gen, "winrate": test_winrate, "prev_winrate": prev_winrate,
+            "promoted": None, "demoted": None, "monologue": ""
         }
 
-        # 4. 关键：强化学习 Accept / Reject 严格检验！
-        # 若胜率提升或在合理蒙特卡洛抽样容差内保持稳健（45%~55%健康带），则采纳；若胜率发生明显滑坡，坚决拒绝并回滚！
-        if delta_wr >= -3.5:
-            thought_demote = f"[{c_name_worst}] 卡手率较高或场面收益偏弱，调减 1 张至 {candidate_counts[worst_candidate]} 张。"
-            thought_promote = f"[{c_name_best}] 带来显著节奏优势或胜率提振，增补 1 张至 {candidate_counts[best_candidate]} 张。"
-            log_entry = f"第 {gen} 代微调 (胜率 {best_winrate:.1f}% -> {test_winrate:.1f}%, {delta_wr:+.1f}%): 采纳变异，增选 [{c_name_best}]，淘汰 [{c_name_worst}]"
+        tolerance = -1.0 * (1.0 - (gen / generations))  # Much stricter tolerance, max -1.0 initially, approaching 0.0
 
-            print(f"   [代数 {gen}/{generations}] 采纳新构筑！实战胜率: {test_winrate:5.1f}% ({delta_wr:+5.1f}%) | +[{c_name_best}] / -[{c_name_worst}]")
+        if delta_wr >= tolerance:
+            rejected_pairs.add((best_candidate, worst_candidate))
+            thought_demote = f"[{c_name_worst}] 卡手率较高或收益偏弱，全数调减 {swap_cnt} 张。"
+            thought_promote = f"[{c_name_best}] 具有极佳节奏收益，全数增补 {swap_cnt} 张。"
+            log_entry = f"第 {gen} 代微调 (胜率 {best_winrate:.1f}% -> {test_winrate:.1f}%, {delta_wr:+.1f}%): 采纳大步长变异，+{swap_cnt}[{c_name_best}] / -{swap_cnt}[{c_name_worst}]"
+
+            print(f"   [代数 {gen}/{generations}] 采纳新构筑！实战胜率: {test_winrate:5.1f}% ({delta_wr:+5.1f}%) | +{swap_cnt}[{c_name_best}] / -{swap_cnt}[{c_name_worst}]")
             best_counts = candidate_counts
             best_winrate = test_winrate
             best_p_win, best_p_tot, best_idles, best_hands = t_p_win, t_p_tot, t_idles, t_hands
         else:
-            thought_demote = f"[{c_name_best}] 实测导致构筑节奏恶化或胜率大幅下滑 ({test_winrate:.1f}%)，触发强化学习保护，坚决回滚至上一代构筑！"
+            rejected_pairs.add((best_candidate, worst_candidate))
+            thought_demote = f"[{c_name_best}] 导致构筑节奏崩坏 ({test_winrate:.1f}%)，触发保护回滚！"
             thought_promote = f"维持原构筑，保留 [{c_name_worst}] 的卡位。"
-            log_entry = f"第 {gen} 代微调 (实测胜率 {test_winrate:.1f}%, 下跌 {abs(delta_wr):.1f}%): 拒绝该变异，回滚保留原有构筑。"
+            log_entry = f"第 {gen} 代微调 (实测胜率 {test_winrate:.1f}%, 下跌 {abs(delta_wr):.1f}%): 拒绝该变异并列入禁忌表，回滚保留原有构筑。"
 
-            print(f"   [代数 {gen}/{generations}] 拒绝变异并回滚！实测胜率暴跌至: {test_winrate:5.1f}% ({delta_wr:+5.1f}%) | 维持原构筑稳定")
+            print(f"   [代数 {gen}/{generations}] 拒绝变异并列入禁忌表！实测胜率暴跌: {test_winrate:5.1f}% ({delta_wr:+5.1f}%) | 转向探索其他卡位")
             gen_reflection["winrate"] = best_winrate
 
-        gen_reflection["promoted"] = {
-            "id": best_candidate, "name": c_name_best, "thought": thought_promote
-        }
-        gen_reflection["demoted"] = {
-            "id": worst_candidate, "name": c_name_worst, "thought": thought_demote
-        }
+        gen_reflection["promoted"] = {"id": best_candidate, "name": c_name_best, "thought": thought_promote}
+        gen_reflection["demoted"] = {"id": worst_candidate, "name": c_name_worst, "thought": thought_demote}
         gen_reflection["monologue"] = f"{thought_demote}\n      {thought_promote}"
 
         decision_logs.append(log_entry)
@@ -507,7 +559,6 @@ def print_ppo_deck_report(faction: str, deck_pkg: dict, neural_stats: List[dict]
     print("─" * 70)
 
 def export_introspection_report(decks_result: dict, output_path: str = "ppo_introspection_report.md"):
-    """导出 PPO 选卡与微调记录报告"""
     lines = []
     lines.append("# PPO 自博弈选卡与调整记录报告\n")
     lines.append("> 本报告记录了 PPO 智能体在自博弈对战中逐步迭代、微调卡组构筑的过程。\n")
@@ -570,28 +621,29 @@ def main():
     parser.add_argument("--output", type=str, default="decks_config.json", help="输出卡组保存文件")
     parser.add_argument("--report", type=str, default="ppo_introspection_report.md", help="输出卡组微调记录Markdown文件名")
     parser.add_argument("--factions", type=str, default="Red,Blue,Green", help="目标自主选卡阵营 (默认 Red,Blue,Green)")
-    parser.add_argument("--generations", type=int, default=5, help="自博弈进化代数 (默认 5)")
+    parser.add_argument("--generations", type=int, default=20, help="自博弈进化代数 (默认 20)")
     parser.add_argument("--games-per-gen", type=int, default=60, help="每代自博弈实机局数 (默认 60)")
     parser.add_argument("--samples", type=int, default=8, help="候选卡神经网络采样次数 (默认 8，速度提升 2.5x)")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
     model_path = find_model_path(args.model, args.stage)
-    if not model_path:
-        print("未检测到可用的 PPO 权重模型，请确认模型文件存在。")
-        return
-
     print("=" * 85)
     print("PPO 自博弈选卡工具启动")
-    print(f"模型权重: {model_path} | 设备: {device}")
+    print(f"预期模型: {model_path} | 设备: {device}")
     print("=" * 85)
 
     cards_db = load_card_pool(args.cards)
-    
-    # 载入 PPO 模型
     model = CardNet().to(device)
-    state_dict = torch.load(model_path, map_location=device, weights_only=True)
-    model.load_state_dict(state_dict)
+    
+    if model_path and os.path.exists(model_path):
+        state_dict = torch.load(model_path, map_location=device, weights_only=True)
+        model.load_state_dict(state_dict)
+        print(f"[*] 成功加载 PPO 模型权重: {model_path}")
+    else:
+        print("[WARN] 未找到可用权重，已随机初始化神经网络进行冷启动探索！")
+        
     model.eval()
 
     factions_to_build = [f.strip() for f in args.factions.split(",") if f.strip()]
@@ -636,7 +688,6 @@ def main():
     abs_out = os.path.abspath(args.output)
     print(f"PPO 选卡结果已保存至: {abs_out}")
 
-    # 导出卡组调整报告
     if args.report:
         export_introspection_report(decks_result, args.report)
 
