@@ -8,8 +8,53 @@ if hasattr(sys.stdout, "reconfigure"):
 
 from sandbox import DuelEnv, Faction
 from agent import CardNet
-from visualizer import format_terminal_board, export_html_replay
+def get_faction_meta(faction_val, player_id):
+    f_str = str(faction_val).lower()
+    if "green" in f_str or "绿" in f_str:
+        return {"name": f"🟢 翠绿 (P{player_id} 林野跳费流)", "short": "🟢 绿方", "def_label": "🛡️ 绿防", "atk_label": "⚔️ 绿冲", "team_class": "green", "color": "#2ed573"}
+    elif "blue" in f_str or "蓝" in f_str:
+        return {"name": f"🔵 蔚蓝 (P{player_id} 守卫控制流)", "short": "🔵 蓝方", "def_label": "🛡️ 蓝防", "atk_label": "⚔️ 蓝冲", "team_class": "blue", "color": "#1e90ff"}
+    else:
+        return {"name": f"🔴 赤红 (P{player_id} 快攻突破流)", "short": "🔴 红方", "def_label": "🛡️ 红防", "atk_label": "⚔️ 红冲", "team_class": "red", "color": "#ff4757"}
 
+def format_terminal_board(turn_count, acting_player, p0, p1, lanes, action_desc, result_log=None):
+    lines = []
+    w = 78
+    m0 = get_faction_meta(p0.get("faction", "Red"), 0)
+    m1 = get_faction_meta(p1.get("faction", "Blue"), 1)
+    
+    p0_score_bar = "■" * p0["score"] + "□" * (7 - p0["score"])
+    p1_score_bar = "■" * p1["score"] + "□" * (7 - p1["score"])
+    
+    lines.append("╔" + "═" * (w - 2) + "╗")
+    p1_header = f" {m1['name']}  得分: [{p1_score_bar}] {p1['score']}/7  法力: 💎 {p1['mana']}/{p1['max_mana']}  手牌: {len(p1['hand'])}张"
+    lines.append(f"║{p1_header:<{w-2}}║")
+    lines.append("╠" + "═" * 38 + "╦" + "═" * 37 + "╣")
+    lines.append("║                【左路战场】          ║               【右路战场】          ║")
+    
+    def fmt_units(units, is_atk=False):
+        if not units: return "空"
+        res = []
+        for u in units:
+            if is_atk: res.append(f"{u['name']}({u['dp']})[{'⚡就绪' if u.get('ready', False) else '⏳蓄势'}]")
+            else: res.append(f"{u['name']}(DP:{u['dp']})")
+        return "、".join(res)
+
+    lines.append(f"║ {m1['def_label']}: {fmt_units(lanes[0]['p1_defenders']):<27} ║ {m1['def_label']}: {fmt_units(lanes[1]['p1_defenders']):<26} ║")
+    lines.append(f"║ {m1['atk_label']}: {fmt_units(lanes[0]['p1_attackers'], True):<27} ║ {m1['atk_label']}: {fmt_units(lanes[1]['p1_attackers'], True):<26} ║")
+    lines.append("║ ┄┄┄┄┄┄┄┄ ⚡ 攻防对撞线 ┄┄┄┄┄┄┄┄ ╫ ┄┄┄┄┄┄┄┄ ⚡ 攻防对撞线 ┄┄┄┄┄┄┄┄ ║")
+    lines.append(f"║ {m0['atk_label']}: {fmt_units(lanes[0]['p0_attackers'], True):<27} ║ {m0['atk_label']}: {fmt_units(lanes[1]['p0_attackers'], True):<26} ║")
+    lines.append(f"║ {m0['def_label']}: {fmt_units(lanes[0]['p0_defenders']):<27} ║ {m0['def_label']}: {fmt_units(lanes[1]['p0_defenders']):<26} ║")
+    
+    lines.append("╠" + "═" * 38 + "╩" + "═" * 37 + "╣")
+    p0_header = f" {m0['name']}  得分: [{p0_score_bar}] {p0['score']}/7  法力: 💎 {p0['mana']}/{p0['max_mana']}  手牌: {len(p0['hand'])}张"
+    lines.append(f"║{p0_header:<{w-2}}║")
+    lines.append("╚" + "═" * (w - 2) + "╝")
+    
+    act_p_str = m0['short'] if acting_player == 0 else m1['short']
+    lines.append(f"👉 [第 {turn_count:02d} 回合] {act_p_str} 决策: {action_desc}")
+    if result_log: lines.append(f"💥 {result_log}")
+    return "\n".join(lines)
 def format_action_desc(env, action_id):
     if action_id == env.action_space_size - 1:
         return "结束回合 (PASS - 触发冲锋交战)"
@@ -48,37 +93,6 @@ def find_model_path(requested_path: str = None, stage: str = "tuned") -> str:
             return p
     return None
 
-def pack_snapshot(env, turn_count, acting_player, action_desc, result_log=None):
-    def pack_p(p):
-        return {
-            "score": p.score,
-            "mana": p.mana,
-            "max_mana": p.max_mana,
-            "faction": p.faction.value,
-            "hand": [{"name": c.name, "cost": c.cost, "dp": c.base_dp, "tags": c.tags} for c in p.hand]
-        }
-    def pack_l(lanes):
-        res = []
-        for l_id in [0, 1]:
-            lane = lanes[l_id]
-            res.append({
-                "lane_id": l_id,
-                "p0_attackers": [{"name": u.card.name, "dp": u.current_dp, "ready": u.ready_to_attack} for u in lane.attackers if u.owner == 0],
-                "p1_attackers": [{"name": u.card.name, "dp": u.current_dp, "ready": u.ready_to_attack} for u in lane.attackers if u.owner == 1],
-                "p0_defenders": [{"name": u.card.name, "dp": u.current_dp} for u in lane.defenders if u.owner == 0],
-                "p1_defenders": [{"name": u.card.name, "dp": u.current_dp} for u in lane.defenders if u.owner == 1]
-            })
-        return res
-
-    return {
-        "turn": turn_count,
-        "acting_player": acting_player,
-        "action_desc": action_desc,
-        "result_log": result_log,
-        "p0": pack_p(env.players[0]),
-        "p1": pack_p(env.players[1]),
-        "lanes": pack_l(env.lanes)
-    }
 
 def evaluate():
     parser = argparse.ArgumentParser(description="TCG 对局回放与评估")
@@ -244,10 +258,6 @@ def evaluate():
         else:
             print(f"👉 [第 {acting_turn:02d} 回合] {f_name} 动作: {action_desc} (余法力: {p_obj.mana}/{p_obj.max_mana})")
 
-        # 记录每一步的快照用于生成交互式 HTML
-        snap = pack_snapshot(env, acting_turn, curr_p, action_desc, result_log)
-        snapshots.append(snap)
-
     winner_idx = env.winner if env.winner is not None else (0 if env.players[0].score >= env.WIN_SCORE else 1)
     winner = f"{p0_tag} ({p0_style})" if winner_idx == 0 else f"{p1_tag} ({p1_style})"
     print("\n" + "="*80)
@@ -255,11 +265,6 @@ def evaluate():
     print(f"最终比分: {p0_tag} {env.players[0].score} : {env.players[1].score} {p1_tag} (总回合数: {env.turn_count} 轮)")
     print("="*80)
 
-    # 导出 HTML 回放文件
-    html_file = export_html_replay(snapshots, winner, output_path=args.html)
-    abs_html = os.path.abspath(html_file)
-    print(f"\n对战回放网页已生成: file:///{abs_html.replace(os.sep, '/')}")
-    print("可在浏览器中打开该文件进行可视化复盘。")
 
 if __name__ == "__main__":
     evaluate()

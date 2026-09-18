@@ -270,12 +270,6 @@ python pipeline_orchestrator.py --dry-run --skip-print
   python eval_play.py --p0 Green --p1 Red --decks decks_config.json
   ```
 
-- **交互式 Web 回放与对局复盘**：
-  直接在浏览器中打开 `battle_replay.html`，可进行分步回放、拖动进度条、调整播放速度等操作。
-
-- **Web 竞技场战力辅助大屏与天梯榜查看**：
-  直接在浏览器中打开 `hearthstone_assistant.html`，或查看 `card_tier_table.md`（包含 S/A/B/C/D 五级分级、卡牌战力得分贡献及构筑推荐）。
-
 - **独立 PPO 强化学习训练 (1,000 局)**：
   ```bash
   python train.py --stage baseline --episodes 1000
@@ -309,12 +303,8 @@ python pipeline_orchestrator.py --dry-run --skip-print
 ├── deck_builder_ppo.py                  # 基于 Critic Value Head 与蒙特卡洛采样的智能卡组构筑器
 ├── auto_balancer_deepseek.py            # 基于对战遥测数据的 LLM 数值针对性微调工具
 ├── card_printer_deepseek.py             # 基于环境战报定向生成新卡工具
-├── generate_hearthstone_tier_table.py   # 单卡胜率与得分贡献统计及天梯榜生成器
-├── card_tier_table.md                   # 炉石风格卡牌战力天梯榜 (S/A/B/C/D 分级与构筑指南)
-├── hearthstone_assistant.html           # Web 交互式竞技场单卡抓位与套牌构建辅助大屏
-├── battle_replay.html                   # Web 端交互式对战动态复盘播放器
-├── eval_play.py                         # 对战演示与 Replay 轨迹数据导出
-├── visualizer.py                        # 终端 ASCII 棋盘与 HTML 回放生成器
+├── export_ui_data.py                    # 导出数据给前端 UI 客户端使用的统一接口
+├── eval_play.py                         # 终端实机对战演示与模型观测工具
 ├── test_deck_matchup.py                 # 多阵营 AI 卡组实机对抗批处理评测工具
 ├── cards_config.json                    # 全量生态卡池配置 (含单色阵营专属、中立与双色卡)
 ├── decks_config.json                    # 各阵营 PPO 自主演化迭代的 30 张实战卡组

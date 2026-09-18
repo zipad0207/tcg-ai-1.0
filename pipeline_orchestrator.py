@@ -606,14 +606,14 @@ def step6_export_reports_and_charts(cards_file: str, metrics_file: str, history_
     print("【阶段六】导出分析数据与可视化对比图表")
     print("═" * 80)
 
-    # 1. 导出单卡胜率贡献榜
-    tier_script = resolve_path("generate_hearthstone_tier_table.py")
-    if os.path.exists(tier_script):
+    # 1. 导出供客户端 UI 使用的统一 JSON 数据
+    ui_export_script = resolve_path("export_ui_data.py")
+    if os.path.exists(ui_export_script):
         try:
-            print("  [1/3] 正在导出单卡胜率与评估数据 (card_tier_table.md)...")
-            subprocess.run([sys.executable, tier_script], check=True, env=get_subprocess_env())
+            print("  [1/3] 正在导出前端 UI 接口数据 (ui_export_data.json)...")
+            subprocess.run([sys.executable, ui_export_script], check=True, env=get_subprocess_env())
         except Exception as e:
-            print(f"  [警告] 梯队榜生成异常: {e}")
+            print(f"  [警告] UI 数据导出异常: {e}")
 
     # 2. 生成前后对比大屏图表
     try:
@@ -702,10 +702,9 @@ def step6_export_reports_and_charts(cards_file: str, metrics_file: str, history_
         root_dir = os.path.dirname(SCRIPT_DIR)
         sync_files = [
             "figure_brawl.png", "figure_brawl_comparison.png", "training_metrics_brawl.json",
-            "cards_config.json", "decks_config.json", "card_tier_table.md", "ppo_introspection_report.md",
-            "hearthstone_assistant.html", "generate_hearthstone_tier_table.py",
-            "pipeline_orchestrator.py", "deck_builder_ppo.py", "auto_balancer_deepseek.py", "sandbox.py",
-            "agent.py", "eval_play.py", "train.py", "visualizer.py", "card_printer_deepseek.py",
+            "cards_config.json", "decks_config.json", "ui_export_data.json", "ppo_introspection_report.md",
+            "export_ui_data.py", "pipeline_orchestrator.py", "deck_builder_ppo.py", "auto_balancer_deepseek.py", "sandbox.py",
+            "agent.py", "eval_play.py", "train.py", "card_printer_deepseek.py",
             "deck_builder_deepseek.py", "plot_experiments.py", "test_deck_matchup.py",
             "cards_config_baseline.json", "cards_config_tuned.json"
         ]
