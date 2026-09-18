@@ -271,32 +271,59 @@ def evaluate_faction_pool(target_faction: str, candidates: list, model: CardNet,
             win_impact = round(base_delta * 0.7, 1)
         item["win_impact"] = win_impact
 
-        # 梯队划分与客观建议 (基于卡牌真实综合战力评级，绝不因未入套而盲目打入冷宫)
-        if score >= 90.0:
-            tier = "S+" if score >= 94.0 else "S"
-            tier_name = "核心主轴"
-            rec_count = f"3 张 ({'核心满编' if copies >= 2 else '强烈推荐调入'})"
-            tier_class = "tier-s"
-        elif score >= 80.0:
-            tier = "A"
-            tier_name = "主力组件"
-            rec_count = f"{max(2, copies)} 张 ({'主力配置' if copies >= 1 else '高潜推荐'})"
-            tier_class = "tier-a"
-        elif score >= 70.0:
-            tier = "B"
-            tier_name = "优质拼图"
-            rec_count = f"{max(1, copies)} 张 (按需携带)"
-            tier_class = "tier-b"
-        elif score >= 55.0:
-            tier = "C"
-            tier_name = "环境对策"
-            rec_count = "0~1 张 (可选备编)"
-            tier_class = "tier-c"
+        # 梯队划分与客观建议 (兼顾当前卡组实装现状与单卡客观战力评级)
+        if copies > 0:
+            if score >= 90.0:
+                tier = "S+" if score >= 94.0 else "S"
+                tier_name = "核心主轴"
+                rec_count = f"实装 {copies}张 ({'核心满编' if copies >= 3 else '建议满入'})"
+                tier_class = "tier-s"
+            elif score >= 80.0:
+                tier = "A"
+                tier_name = "主力组件"
+                rec_count = f"实装 {copies}张 (主力配置)"
+                tier_class = "tier-a"
+            elif score >= 70.0:
+                tier = "B"
+                tier_name = "优质拼图"
+                rec_count = f"实装 {copies}张 (按需轮换)"
+                tier_class = "tier-b"
+            elif score >= 55.0:
+                tier = "C"
+                tier_name = "环境对策"
+                rec_count = f"实装 {copies}张 (建议削减至0~1张)"
+                tier_class = "tier-c"
+            else:
+                tier = "D"
+                tier_name = "低效备选"
+                rec_count = f"实装 {copies}张 (建议优化移出)"
+                tier_class = "tier-d"
         else:
-            tier = "D"
-            tier_name = "低效备选"
-            rec_count = "0 张 (建议剔除)"
-            tier_class = "tier-d"
+            if score >= 90.0:
+                tier = "S+" if score >= 94.0 else "S"
+                tier_name = "核心主轴"
+                rec_count = "未入构筑 (S级高潜·强推调入)"
+                tier_class = "tier-s"
+            elif score >= 80.0:
+                tier = "A"
+                tier_name = "主力组件"
+                rec_count = "未入构筑 (A级高潜·优选备换)"
+                tier_class = "tier-a"
+            elif score >= 70.0:
+                tier = "B"
+                tier_name = "优质拼图"
+                rec_count = "未入构筑 (环境对策备选)"
+                tier_class = "tier-b"
+            elif score >= 55.0:
+                tier = "C"
+                tier_name = "环境对策"
+                rec_count = "未入构筑 (常规候选)"
+                tier_class = "tier-c"
+            else:
+                tier = "D"
+                tier_name = "低效备选"
+                rec_count = "未入构筑 (暂不考虑)"
+                tier_class = "tier-d"
 
         item["tier"] = tier
         item["tier_name"] = tier_name
@@ -414,7 +441,7 @@ def generate_partitioned_markdown(data: dict):
         dual = sum(1 for c in cards if "双色" in c["origin_type"])
         neut = sum(1 for c in cards if c["is_neutral"])
 
-        md.append("| 排名 | 卡牌名称 | 归属 | 费用 | 类型 | 属性/数值 | 战术词条 | **综合评分** | 梯队 | **携带率** | **胜率贡献 (ΔWR)** | 推荐配置 |\n")
+        md.append("| 排名 | 卡牌名称 | 归属 | 费用 | 类型 | 属性/数值 | 战术词条 | **综合评分** | 梯队 | **携带率** | **胜率贡献 (ΔWR)** | 实装现状 / 推荐配置 |\n")
         md.append("| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |\n")
 
         for idx, c in enumerate(cards, 1):
@@ -1211,8 +1238,8 @@ def generate_partitioned_html(data: dict):
       const deckName = meta.deck_name || `${{currentDeck}}·主力竞技卡组`;
       const archetype = meta.archetype || '综合战术';
       const avgCost = meta.avg_cost || '3.50';
-      const minionCount = meta.minion_count || 28;
-      const spellCount = meta.spell_count || 2;
+      const minionCount = (meta.minion_count !== undefined && meta.minion_count !== null) ? meta.minion_count : 28;
+      const spellCount = (meta.spell_count !== undefined && meta.spell_count !== null) ? meta.spell_count : 0;
       const manaCurve = meta.mana_curve || {{}};
 
       const maxCount = Math.max(...Object.values(manaCurve), 1);
@@ -1391,7 +1418,7 @@ def generate_partitioned_html(data: dict):
                 <th>携带率</th>
                 <th>胜率贡献 (ΔWR)</th>
                 <th>PPO出牌意愿/增益</th>
-                <th>推荐配置</th>
+                <th>实装现状 / AI 建议</th>
               </tr>
             </thead>
             <tbody>
