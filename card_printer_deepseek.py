@@ -392,7 +392,7 @@ def run_post_print_benchmark(cards_path: str, all_printed_cards: Dict[str, List[
         print("总体评估: 新卡表现平稳，环境处于正常区间。")
     else:
         print("总体评估: 部分新卡实测胜率偏高，建议后续微调。")
-        print("提示: 可运行 python auto_balancer_deepseek.py 进行数值微调。")
+        print("提示: 可运行 py auto_balancer_deepseek.py 进行数值微调。")
 
     print("═" * 85)
 

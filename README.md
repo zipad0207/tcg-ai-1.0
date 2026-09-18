@@ -241,10 +241,10 @@ $env:DEEPSEEK_API_KEY="your-deepseek-api-key"
 
 ```bash
 # 全自动完整运行 (每轮 3,000 局混战测试)
-python pipeline_orchestrator.py --pack-name "新补充包" --theme "根据环境数据调试"
+py pipeline_orchestrator.py --pack-name "新补充包" --theme "根据环境数据调试"
 
 # 快速测试模式 (小规模局数快速跑通流程)
-python pipeline_orchestrator.py --dry-run --skip-print
+py pipeline_orchestrator.py --dry-run --skip-print
 ```
 
 **核心命令行参数说明**：
@@ -265,25 +265,30 @@ python pipeline_orchestrator.py --dry-run --skip-print
 
 - **终端对局演示**：
   ```bash
-  python eval_play.py --stage tuned
+  py eval_play.py --stage tuned
   # 绿方 vs 红方 对战演示
-  python eval_play.py --p0 Green --p1 Red --decks decks_config.json
+  py eval_play.py --p0 Green --p1 Red --decks decks_config.json
   ```
 
 - **独立 PPO 训练 (1,000 局)**：
   ```bash
-  python train.py --stage baseline --episodes 1000
-  python train.py --stage tuned --episodes 1000
+  py train.py --stage baseline --episodes 1000
+  py train.py --stage tuned --episodes 1000
   ```
 
 - **独立多阵营混战测试**：
   ```bash
-  python train_brawl.py --episodes 3000
+  py train_brawl.py --episodes 3000
   ```
 
 - **PPO 卡组微调测试**：
   ```bash
-  python deck_builder_ppo.py --factions Red,Blue,Green --generations 20 --games-per-gen 60 --samples 8
+  py deck_builder_ppo.py --factions Red,Blue,Green --generations 20 --games-per-gen 60 --samples 8
+  ```
+
+- **导出前端 UI 数据接口**：
+  ```bash
+  py export_ui_data.py
   ```
 
 ---
