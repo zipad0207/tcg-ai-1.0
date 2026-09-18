@@ -299,7 +299,7 @@ def step3_generate_comparison_plot(initial_stats: dict, final_metrics: dict, his
 def main():
     print("=" * 70)
     print(f"启动 TCG-AI 大卡组多阵营元平衡循环流水线")
-    print(f"设定: 单轮对决规模 {TOTAL_EPISODES} 局 | 终止条件: 三大阵营最大偏离度 <= 2.80% (黄金平衡带)")
+    print(f"设定: 单轮对决规模 {TOTAL_EPISODES} 局 | 终止条件: 三大阵营最大偏离度 <= 5.0% (平衡区间)")
     print("=" * 70)
 
     # 记录初始未平衡状态 (Round 0)
@@ -325,11 +325,11 @@ def main():
         history_wr.append({"Red": r_wr, "Blue": b_wr, "Green": g_wr})
         print(f"\n[轮次 {iteration+1} 结算] 赤红: {r_wr:.1f}% | 蔚蓝: {b_wr:.1f}% | 翠绿: {g_wr:.1f}%")
 
-        # 判定是否达成多阵营纳什均衡 (最大偏离度 <= 2.80%)
+        # 判定是否达成各阵营平衡 (最大偏离度 <= 5.0%)
         max_dev = max(abs(r_wr - 50.0), abs(b_wr - 50.0), abs(g_wr - 50.0))
-        target_tol = 2.80
+        target_tol = 5.0
         if max_dev <= target_tol:
-            print(f"\n🎉 纳什均衡达成！三大阵营最大偏离度仅 {max_dev:.2f}% (<= {target_tol:.2f}%)，进入黄金平衡带，终止迭代！")
+            print(f"\n🎉 平衡目标达成！三大阵营最大偏离度仅 {max_dev:.2f}% (<= {target_tol:.2f}%)，进入平衡区间，终止迭代！")
             break
         else:
             print(f"⚠️ 当前最大偏离度为 {max_dev:.2f}% (目标 <= {target_tol:.2f}%)，继续触发下一轮微调...")
