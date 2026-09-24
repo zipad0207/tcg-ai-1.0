@@ -863,8 +863,13 @@ def main():
     parser.add_argument("--eval-only", action="store_true", help="纯评估模式 (跳过 PPO 模型梯度更新)")
     parser.add_argument("--dry-run", action="store_true", help="快速测试模式 (小规模局数快速跑通流程)")
     parser.add_argument("--skip-final-audit", action="store_true", help="跳过达成平衡后的 3000 局终验对局 (用于高频压测加速)")
-    parser.add_argument("--skip-ppo-decks", action="store_true", help="跳过高耗能 PPO 卡组演化，严格保留 DeepSeek 定向痛点换卡/成熟构筑")
+    parser.add_argument("--skip-ppo-decks", action="store_true", default=True, help="跳过高耗能 PPO 卡组演化 (默认开启，严格保留 DeepSeek 定向痛点换卡)")
+    parser.add_argument("--enable-ppo-decks", action="store_true", help="启用耗时 PPO 暴力演化变异卡组")
+    parser.add_argument("--train-ppo-model", action="store_true", help="启用耗时 PPO 梯度反向传播训练 (默认仅做快速对战胜率遥测)")
     args = parser.parse_args()
+
+    # 默认跳过暴力的 PPO 遗传换卡，保留 DeepSeek 定向痛点构筑
+    skip_ppo_decks = not args.enable_ppo_decks
 
     max_outer = args.max_iterations if args.max_iterations is not None else args.max_outer_iterations
     cards_file = resolve_path("cards_config.json")
@@ -875,14 +880,15 @@ def main():
     ppo_gens = 2 if args.dry_run else 20
     ppo_games = 15 if args.dry_run else 50
     ppo_samples = 4 if args.dry_run else 15
-    deck_attempts = 1 if (args.dry_run or args.skip_ppo_decks) else args.max_deck_attempts
+    deck_attempts = 1 if (args.dry_run or skip_ppo_decks) else args.max_deck_attempts
+    eval_only_mode = args.eval_only or (not args.train_ppo_model)
 
     print("=" * 85)
     print(" TCG-AI 多阵营扩展包生成与平衡调度流水线启动")
     print(f" 模式: {'[快速演练]' if args.dry_run else '[全量执行]'}")
-    print(f" 混战规模: {brawl_episodes} 局/轮 (PPO 强化学习: {'纯评估' if args.eval_only else '真自博弈训练'}) | 目标平衡偏离度: <= {args.target_balance:.1f}%")
+    print(f" 混战规模: {brawl_episodes} 局/轮 (PPO 遥测: {'极速纯评估 (秒级)' if eval_only_mode else '真自博弈反向传播训练'}) | 目标平衡偏离度: <= {args.target_balance:.1f}%")
     print(f" 迭代配置: 卡组微调尝试 {deck_attempts} 次 | 数值微调上限 {max_outer} 轮")
-    print(f" 构筑策略: {'[痛点定向保留] 严格沿用 DeepSeek 痛点增量换卡/成熟套牌' if args.skip_ppo_decks else '[PPO演化微调] 允许 PPO 随机变异微调构筑'}")
+    print(f" 构筑策略: {'[痛点定向保留] 严格沿用 DeepSeek 痛点增量换卡/成熟套牌' if skip_ppo_decks else '[PPO演化微调] 允许 PPO 随机变异微调构筑'}")
     print(f" 熔断机制: 最大偏离度 >= {args.severe_imbalance_threshold:.1f}% 或 胜率极差 >= {args.severe_spread_threshold:.1f}% 自动快转至 DeepSeek 数值微调")
     print("=" * 85)
 
@@ -941,14 +947,14 @@ def main():
         for attempt in range(1, deck_attempts + 1):
             print("\n" + "─" * 70)
             # 3A: PPO 智能体调构筑 (增量演化)
-            if not args.skip_ppo_decks:
+            if not skip_ppo_decks:
                 step3_ppo_deck_evolution(cards_file, decks_file, generations=ppo_gens, games_per_gen=ppo_games, samples=ppo_samples)
             else:
                 print("  [*] [构筑保持] 严格保持现有成熟/DeepSeek痛点定向卡组，跳过高耗能 PPO 暴力演化。")
 
             # 3B: 实机混战对抗遥测兼 PPO 强化学习演化 (按设定规模全量采样，保证统计置信度)
             current_brawl_episodes = 60 if args.dry_run else args.episodes
-            metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=current_brawl_episodes, eval_only=args.eval_only)
+            metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=current_brawl_episodes, eval_only=eval_only_mode)
             latest_metrics = metrics
 
             curr_stats = {f: metrics.get("faction_stats", {}).get(f, {}).get("winrate", 50.0) for f in (list(metrics.get("faction_stats", {}).keys()) if metrics.get("faction_stats") else ["Red", "Blue", "Green"])}
