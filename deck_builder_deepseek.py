@@ -12,14 +12,14 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 def get_api_key() -> str:
-    key = os.environ.get("DEEPSEEK_API_KEY", "")
+    key = os.environ.get("DEEPSEEK_API_KEY", "") or os.environ.get("SILICONFLOW_API_KEY", "")
     if not key:
         cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_config.json")
         if os.path.exists(cfg_path):
             try:
                 with open(cfg_path, "r", encoding="utf-8") as f:
                     cfg = json.load(f)
-                    key = cfg.get("api_key", "")
+                    key = cfg.get("deepseek_api_key") or cfg.get("api_key", "")
             except Exception:
                 pass
     if not key and sys.platform == "win32":
@@ -31,8 +31,36 @@ def get_api_key() -> str:
             pass
     return key
 
+def get_base_url() -> str:
+    url = os.environ.get("DEEPSEEK_BASE_URL", "")
+    if not url:
+        cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_config.json")
+        if os.path.exists(cfg_path):
+            try:
+                with open(cfg_path, "r", encoding="utf-8") as f:
+                    cfg = json.load(f)
+                    url = cfg.get("base_url", "")
+            except Exception:
+                pass
+    return url or "https://api.deepseek.com"
+
+def get_model_name() -> str:
+    model = os.environ.get("DEEPSEEK_MODEL", "")
+    if not model:
+        cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_config.json")
+        if os.path.exists(cfg_path):
+            try:
+                with open(cfg_path, "r", encoding="utf-8") as f:
+                    cfg = json.load(f)
+                    model = cfg.get("model", "")
+            except Exception:
+                pass
+    if not model:
+        base_url = get_base_url()
+        model = "deepseek-ai/DeepSeek-V3" if "siliconflow" in base_url.lower() else "deepseek-chat"
+    return model
+
 DEEPSEEK_API_KEY = get_api_key()
-MODEL_NAME = "deepseek-flash"
 
 MAX_COPIES_PER_CARD = 3
 DECK_SIZE = 30
@@ -176,13 +204,14 @@ def call_deepseek_deckbuild(faction: str, pool: List[dict]) -> dict:
     print(f"调用 DeepSeek 生成 {faction} 阵营卡组...")
     client = OpenAI(
         api_key=DEEPSEEK_API_KEY,
-        base_url="https://api.deepseek.com"
+        base_url=get_base_url()
     )
     prompt = build_prompt_for_deck(faction, pool)
+    extra = {"thinking": {"type": "disabled"}} if "deepseek.com" in get_base_url() else {}
 
     try:
         response = client.chat.completions.create(
-            model=MODEL_NAME,
+            model=get_model_name(),
             messages=[
                 {"role": "system", "content": "你是一名 TCG 构筑分析工程师，负责卡组配置与法力曲线优化，请严格输出合法 JSON。"},
                 {"role": "user", "content": prompt}
@@ -190,7 +219,7 @@ def call_deepseek_deckbuild(faction: str, pool: List[dict]) -> dict:
             temperature=0.3,
             max_tokens=4000,
             response_format={"type": "json_object"},
-            extra_body={"thinking": {"type": "disabled"}}
+            extra_body=extra if extra else None
         )
         content = response.choices[0].message.content
         cleaned = clean_json_response(content)

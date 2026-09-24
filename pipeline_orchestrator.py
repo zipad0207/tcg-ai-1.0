@@ -60,14 +60,14 @@ def get_subprocess_env() -> dict:
     return env
 
 def get_api_key() -> str:
-    key = os.environ.get("DEEPSEEK_API_KEY", "")
+    key = os.environ.get("DEEPSEEK_API_KEY", "") or os.environ.get("SILICONFLOW_API_KEY", "")
     if not key:
-        cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_config.json")
+        cfg_path = os.path.join(SCRIPT_DIR, "llm_config.json")
         if os.path.exists(cfg_path):
             try:
                 with open(cfg_path, "r", encoding="utf-8") as f:
                     cfg = json.load(f)
-                    key = cfg.get("api_key", "")
+                    key = cfg.get("deepseek_api_key") or cfg.get("api_key", "")
             except Exception:
                 pass
     if not key and sys.platform == "win32":
@@ -78,6 +78,35 @@ def get_api_key() -> str:
         except Exception:
             pass
     return key
+
+def get_base_url() -> str:
+    url = os.environ.get("DEEPSEEK_BASE_URL", "")
+    if not url:
+        cfg_path = os.path.join(SCRIPT_DIR, "llm_config.json")
+        if os.path.exists(cfg_path):
+            try:
+                with open(cfg_path, "r", encoding="utf-8") as f:
+                    cfg = json.load(f)
+                    url = cfg.get("base_url", "")
+            except Exception:
+                pass
+    return url or "https://api.deepseek.com"
+
+def get_model_name() -> str:
+    model = os.environ.get("DEEPSEEK_MODEL", "")
+    if not model:
+        cfg_path = os.path.join(SCRIPT_DIR, "llm_config.json")
+        if os.path.exists(cfg_path):
+            try:
+                with open(cfg_path, "r", encoding="utf-8") as f:
+                    cfg = json.load(f)
+                    model = cfg.get("model", "")
+            except Exception:
+                pass
+    if not model:
+        base_url = get_base_url()
+        model = "deepseek-ai/DeepSeek-V3" if "siliconflow" in base_url.lower() else "deepseek-chat"
+    return model
 
 # 支持的核心合法词条
 LEGAL_TAG_PATTERNS = [
@@ -179,7 +208,7 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
     if not api_key:
         raise RuntimeError("未检测到 DEEPSEEK_API_KEY 环境变量，请配置 API 密钥后再运行。")
 
-    client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
+    client = OpenAI(api_key=api_key, base_url=get_base_url())
 
     with open(cards_file, "r", encoding="utf-8") as f:
         current_pool = json.load(f)
@@ -334,13 +363,14 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
 """
 
     print("  [模型调用] 正在生成扩展包卡牌数据...")
+    extra = {"thinking": {"type": "disabled"}} if "deepseek.com" in get_base_url() else {}
     response = client.chat.completions.create(
-        model="deepseek-flash",
+        model=get_model_name(),
         messages=[{"role": "user", "content": prompt}],
         temperature=0.7,
         max_tokens=8192,
         response_format={"type": "json_object"},
-        extra_body={"thinking": {"type": "disabled"}}
+        extra_body=extra if extra else None
     )
 
     raw_text = response.choices[0].message.content or ""
@@ -507,14 +537,14 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
         print(f"{c['id']:<6}{fac_str:<14}{c['name']:<16}{c['card_type']:<8}{c['cost']:<6}{val_str:<12}{tags_str:<28}")
     print("═" * 105 + "\n")
 
-    # 异步触发后台卡图自动排队生成（非阻塞独立子线程，与后续预构筑与强化学习 PPO 自博弈并行）
+    # 异步触发后台卡图生成
     if auto_art and final_pack:
         try:
             from web_app.services.image_gen import art_queue
             art_queue.enqueue(final_pack)
-            print(f"[后台生图队列] 🚀 已将本次印制的全部 {len(final_pack)} 张新卡加入后台自动排队出图队列 (与对战调优完全并行，无需等待)。\n")
+            print(f"[后台生图队列] 已将本次印制的全部 {len(final_pack)} 张新卡加入后台排队出图队列。\n")
         except Exception as img_err:
-            print(f"[后台生图队列] ⚠️ 触发后台出图提示: {img_err}\n")
+            print(f"[后台生图队列] 提示: {img_err}\n")
 
     return current_pool, final_pack
 

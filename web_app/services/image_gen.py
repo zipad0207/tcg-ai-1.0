@@ -4,6 +4,9 @@ import json
 import requests
 import uuid
 from typing import List, Optional, Dict, Set
+import threading
+import queue
+import time
 import dashscope
 from dotenv import load_dotenv
 
@@ -311,17 +314,8 @@ class ZImageTurboGenerator:
         }
 
 
-import threading
-import queue
-
 class BackgroundArtQueue:
-    """
-    Background worker that sequentially generates card art in a dedicated daemon thread.
-    - Thread-safe, non-blocking: allows training and pipeline to run parallelly
-    - Paces requests to prevent SiliconFlow 429 RPM/IPM limits
-    - Writes progress to batch_progress.json, cards_config.json, and syncs UI export data
-    - Live console logs seamlessly broadcast to Web UI and CLI
-    """
+    """后台卡图排队生成队列，使用独立线程异步执行。"""
     def __init__(self, generator: Optional['ZImageTurboGenerator'] = None):
         self.generator = generator or ZImageTurboGenerator()
         self.queue = queue.Queue()
@@ -397,8 +391,7 @@ class BackgroundArtQueue:
         }
 
     def _worker_loop(self):
-        print(f"\n[后台生图队列] 🚀 自动排队出图已启动！待生成卡图: {self.queue.qsize()} 张 (与对战调优完全并行，无需等待)...", flush=True)
-        import time
+        print(f"\n[后台生图] 队列已启动，待处理卡图: {self.queue.qsize()} 张", flush=True)
         while not self.queue.empty():
             try:
                 card = self.queue.get_nowait()
@@ -416,23 +409,22 @@ class BackgroundArtQueue:
             c_dp = card.get("base_dp", 0)
 
             self._write_progress(status="generating", done=False, card_name=c_name, card_id=c_id)
-            print(f"[后台生图队列] 🎨 [{self.current_index}/{self.total_count}] 正在为 #{c_id} 【{c_name}】({c_faction}) 绘制插图...", flush=True)
+            print(f"[后台生图] [{self.current_index}/{self.total_count}] 正在生成: #{c_id} {c_name} ({c_faction})", flush=True)
 
             try:
                 res = self.generator.generate_image(c_id, c_name, c_faction, c_tags, c_dp)
                 with self.lock:
                     self.success_count += 1
-                print(f"[后台生图队列] ✅ #{c_id} 【{c_name}】绘制成功: {res['url']}", flush=True)
+                print(f"[后台生图] #{c_id} {c_name} 生成成功: {res['url']}", flush=True)
             except Exception as e:
                 err_msg = str(e)
                 with self.lock:
                     self.failed_count += 1
                     self.last_error = err_msg
-                print(f"[后台生图队列] ❌ #{c_id} 【{c_name}】绘制失败: {err_msg}", flush=True)
+                print(f"[后台生图] #{c_id} {c_name} 生成失败: {err_msg}", flush=True)
 
             self.queue.task_done()
             self._write_progress(status="generating", done=False, card_name=c_name, card_id=c_id)
-            # Pacing between generations to avoid SiliconFlow rate limit spikes
             time.sleep(2.0)
 
         with self.lock:
@@ -441,7 +433,7 @@ class BackgroundArtQueue:
             self._write_progress(status="finished", done=True)
             self.queued_ids.clear()
 
-        print(f"\n[后台生图队列] 🎉 全部新卡卡图绘制完毕！成功: {self.success_count} 张, 失败: {self.failed_count} 张。\n", flush=True)
+        print(f"\n[后台生图] 全部卡图生成完成 (成功: {self.success_count}, 失败: {self.failed_count})\n", flush=True)
 
     def get_status(self) -> dict:
         with self.lock:
