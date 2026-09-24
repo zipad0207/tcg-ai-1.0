@@ -263,6 +263,144 @@ def call_deepseek_deckbuild(faction: str, pool: List[dict]) -> dict:
             "card_allocation": fallback_alloc
         }
 
+def build_prompt_for_incremental_deck(faction: str, existing_deck: dict, new_cards: List[dict], full_pool: List[dict]) -> str:
+    pool_dict = {c["id"]: c for c in full_pool}
+    existing_cards_desc = []
+    alloc = existing_deck.get("card_allocation", {})
+    if not alloc and "decklist" in existing_deck:
+        from collections import Counter
+        alloc = dict(Counter(existing_deck["decklist"]))
+
+    for cid_str, cnt in sorted(alloc.items(), key=lambda x: (pool_dict.get(int(x[0]), {}).get("cost", 0), int(x[0]))):
+        cid = int(cid_str)
+        if cid in pool_dict and cnt > 0:
+            c = pool_dict[cid]
+            ctype = c["card_type"]
+            dp_str = f"DP:{c.get('base_dp', 0)}" if ctype == "MINION" else f"攻{c.get('atk_spell_val', 0)}/防{c.get('def_spell_val', 0)}"
+            tags_str = ",".join(c.get("tags", [])) if c.get("tags") else "无词条"
+            existing_cards_desc.append(f"- ID:{cid} | [{c['name']}] | 费用:{c['cost']} | 类型:{ctype} | 数值:{dp_str} | 词条:{tags_str} | 当前携带: {cnt} 张")
+
+    existing_text = "\n".join(existing_cards_desc)
+
+    new_cards_desc = []
+    for c in new_cards:
+        ctype = c["card_type"]
+        dp_str = f"DP:{c.get('base_dp', 0)}" if ctype == "MINION" else f"攻{c.get('atk_spell_val', 0)}/防{c.get('def_spell_val', 0)}"
+        tags_str = ",".join(c.get("tags", [])) if c.get("tags") else "无词条"
+        new_cards_desc.append(f"- ID:{c['id']} | 【本次新卡】[{c['name']}] | 费用:{c['cost']} | 类型:{ctype} | 数值:{dp_str} | 词条:{tags_str}")
+
+    new_cards_text = "\n".join(new_cards_desc)
+
+    faction_pain_points = {
+        "Red": "赤红痛点：快攻易在 4~6 回合手牌耗尽或被重甲随从阻挡而哑火，急需高效过牌、穿透突破（DEGRADE/直伤）或中后期收割手段。",
+        "Blue": "蔚蓝痛点：面对前期多体快攻铺场容易在 1~3 回合被抢血突破，急需低费防守阻挡单位（FORTIFY）、低费解场法术与返场手段。",
+        "Green": "翠绿痛点：前期跳费（RAMP）时场面空虚容易被直接斩杀，急需兼具阻挡能力的过渡随从或护航机制。"
+    }.get(faction, "针对阵营战术短板与对局劣势进行补强")
+
+    return f"""你是一名负责 TCG 卡牌扩展包上线评估与卡组构筑进化的数值策划。
+环境刚推出了最新扩展包，现需要对【{faction}】阵营的成熟卡组进行【痛点针对型增量换牌升级】。
+
+### 核心设计原则（严禁推翻重来）：
+1. **继承成熟骨架**：现有的 30 张卡组是经过大量对战验证的核心构筑。必须保留其核心战术主轴与大部分骨干牌（保留约 24~26 张），严禁全盘推倒盲目重选！
+2. **强制纳入新卡（实装测试）**：本次扩展包新卡专为弥补阵营痛点而设计。你必须从【本次扩展包新卡】中挑选 2~4 种关键新卡换入卡组（每种携带 1~3 张，总计换入 3~6 张新卡），确保新卡在接下来的实机对战中得到充分测试与样本遥测。
+3. **下位淘汰与痛点替换**：从【现有成熟卡组】中挑出 3~6 张功能下位、与新卡定位重叠、或性价比偏低的老牌移除（调低或清零其张数）。
+4. **硬性规则红线**：
+   - 卡组总张数【必须严格恰好等于 30 张】！
+   - 单卡携带上限严格为 0~3 张。
+
+### 本阵营定位与痛点诊断：
+- 阵营：【{faction}】
+- 痛点与补强方向：{faction_pain_points}
+
+### 1. 现有成熟卡组构筑（当前 30 张）：
+《{existing_deck.get("deck_name", faction + "主力卡组")}》 (类型: {existing_deck.get("archetype", "Standard")})
+当前核心思路: {existing_deck.get("tactical_concept", "稳健攻防体系")}
+已有卡牌清单与配置：
+{existing_text}
+
+### 2. 本次扩展包印制的专属/可用新卡（待换入候选）：
+{new_cards_text}
+
+---
+### 输出格式规范（必须是严格合法纯 JSON，严禁多余 markdown 说明）：
+{{
+  "deck_name": "升级后的卡组名称",
+  "archetype": "流派类型",
+  "tactical_concept": "说明本次换入新卡如何精准补足了阵营痛点（100字以内）",
+  "replacements_summary": [
+    "移出 [旧卡名] xN，换入 [新卡名] xN (简述弥补了什么痛点)"
+  ],
+  "key_combos": [
+    "新卡带来的核心联动或战术连招"
+  ],
+  "card_allocation": {{
+    "卡牌ID": 张数
+  }}
+}}
+注意：card_allocation 中所有选定卡牌的张数之和必须严格等于 30！"""
+
+def call_deepseek_incremental_deckbuild(faction: str, existing_deck: dict, new_cards: List[dict], pool: List[dict]) -> dict:
+    if not DEEPSEEK_API_KEY:
+        raise ValueError(f"未检测到 DEEPSEEK_API_KEY，无法升级 {faction} 卡组。请先配置环境变量。")
+
+    print(f"调用 DeepSeek 基于现有构筑进行【{faction}】痛点增量换卡 (纳入 {len(new_cards)} 张扩展新卡)...")
+    client = OpenAI(
+        api_key=DEEPSEEK_API_KEY,
+        base_url=get_base_url()
+    )
+    prompt = build_prompt_for_incremental_deck(faction, existing_deck, new_cards, pool)
+    extra = {"thinking": {"type": "disabled"}} if "deepseek.com" in get_base_url() else {}
+
+    try:
+        response = client.chat.completions.create(
+            model=get_model_name(),
+            messages=[
+                {"role": "system", "content": "你是一名 TCG 构筑分析工程师，负责卡组配置与法力曲线优化，请严格输出合法 JSON。"},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            max_tokens=4000,
+            response_format={"type": "json_object"},
+            extra_body=extra if extra else None
+        )
+        content = response.choices[0].message.content
+        cleaned = clean_json_response(content)
+        parsed = json.loads(cleaned)
+
+        raw_alloc = parsed.get("card_allocation", {})
+        pool_ids = {c["id"] for c in pool}
+        int_alloc = {}
+        for k, v in raw_alloc.items():
+            try:
+                cid = int(k)
+                if cid in pool_ids:
+                    int_alloc[cid] = int(v)
+            except (ValueError, TypeError):
+                continue
+
+        clean_alloc = normalize_counts(int_alloc, pool)
+        parsed["card_allocation"] = clean_alloc
+        return parsed
+
+    except Exception as e:
+        print(f"[WARN] DeepSeek 增量换卡异常 ({e})，启用就近微调换入...")
+        alloc = dict(existing_deck.get("card_allocation", {}))
+        int_alloc = {int(k): v for k, v in alloc.items()}
+        pool_ids = {c["id"] for c in pool}
+        for nc in new_cards[:2]:
+            nc_id = nc["id"]
+            if nc_id in pool_ids:
+                int_alloc[nc_id] = 2
+        clean_alloc = normalize_counts(int_alloc, pool)
+        return {
+            "deck_name": existing_deck.get("deck_name", f"{faction}·进阶构筑"),
+            "archetype": existing_deck.get("archetype", "Balanced"),
+            "tactical_concept": "融合扩展包新卡的痛点增强型构筑。",
+            "replacements_summary": [f"换入新卡 [{nc['name']}] x2" for nc in new_cards[:2]],
+            "key_combos": existing_deck.get("key_combos", ["攻防协同"]),
+            "card_allocation": clean_alloc
+        }
+
 def generate_deck_details(deck_data: dict, pool: List[dict]) -> dict:
     pool_dict = {c["id"]: c for c in pool}
     alloc: Dict[int, int] = deck_data["card_allocation"]
@@ -306,6 +444,7 @@ def generate_deck_details(deck_data: dict, pool: List[dict]) -> dict:
         "deck_name": deck_data.get("deck_name", "AI 自选卡组"),
         "archetype": deck_data.get("archetype", "Custom"),
         "tactical_concept": deck_data.get("tactical_concept", ""),
+        "replacements_summary": deck_data.get("replacements_summary", []),
         "key_combos": deck_data.get("key_combos", []),
         "total_cards": len(decklist),
         "minion_count": minion_count,
@@ -324,6 +463,10 @@ def print_deck_profile(faction: str, deck_info: dict):
     print("─" * 80)
     print("构筑说明:")
     print(f"   {deck_info['tactical_concept']}")
+    if deck_info.get("replacements_summary"):
+        print("痛点定向换卡记录:")
+        for r in deck_info["replacements_summary"]:
+            print(f"   * {r}")
     if deck_info.get("key_combos"):
         print("主要配合:")
         for idx, cb in enumerate(deck_info["key_combos"], 1):
@@ -357,6 +500,8 @@ def main():
                         help="输出卡组保存文件 (默认 decks_config.json)")
     parser.add_argument("--factions", type=str, default="Red,Blue",
                         help="目标构建阵营 (默认 Red,Blue，支持 Red,Blue,Green)")
+    parser.add_argument("--new-cards", type=str, default=None,
+                        help="本次扩展包新印卡牌 JSON 文件路径或 JSON 字符串 (触发痛点增量换卡)")
 
     args = parser.parse_args()
 
@@ -372,8 +517,27 @@ def main():
     if os.path.exists(args.output):
         decks_result = load_json(args.output)
 
+    # 加载本次扩展包新卡
+    new_cards_list = []
+    if args.new_cards:
+        if os.path.exists(args.new_cards):
+            new_cards_list = load_json(args.new_cards)
+        else:
+            try:
+                new_cards_list = json.loads(args.new_cards)
+            except Exception:
+                pass
+        if isinstance(new_cards_list, dict):
+            flat = []
+            for v in new_cards_list.values():
+                if isinstance(v, list):
+                    flat.extend(v)
+            new_cards_list = flat
+
     print("\n" + "═" * 50)
     print("TCG 卡组构筑工具启动")
+    if new_cards_list:
+        print(f"模式: 痛点定向增量升级 (检测到扩展包新卡 {len(new_cards_list)} 张)")
     print("═" * 50)
 
     for faction in factions_to_build:
@@ -382,7 +546,16 @@ def main():
             print(f"未找到阵营 {faction} 的可用卡池。")
             continue
 
-        raw_deck = call_deepseek_deckbuild(faction, pool)
+        pool_ids = {c["id"] for c in pool}
+        faction_new_cards = [c for c in new_cards_list if c.get("id") in pool_ids] if new_cards_list else []
+        existing_deck = decks_result.get(faction)
+
+        # 若已有成熟卡组 且 本次提供了扩展新卡 -> 触发针对性增量换卡
+        if existing_deck and faction_new_cards and len(existing_deck.get("decklist", [])) == 30:
+            print(f"\n[*] 检测到【{faction}】已有成熟卡组与 {len(faction_new_cards)} 张扩展新卡，启动【痛点定向换卡升级】模式...")
+            raw_deck = call_deepseek_incremental_deckbuild(faction, existing_deck, faction_new_cards, pool)
+        else:
+            raw_deck = call_deepseek_deckbuild(faction, pool)
 
         deck_info = generate_deck_details(raw_deck, pool)
         print_deck_profile(faction, deck_info)

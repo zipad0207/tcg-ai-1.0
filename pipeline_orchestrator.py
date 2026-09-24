@@ -23,7 +23,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 from openai import OpenAI
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -565,9 +565,12 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
 # ==============================================================================
 # Phase 2: 初始 30 张预构筑
 # ==============================================================================
-def step2_generate_prebuild_decks(cards_file: str, decks_file: str):
+def step2_generate_prebuild_decks(cards_file: str, decks_file: str, new_cards: Optional[list] = None):
     print("\n" + "═" * 80)
-    print("【阶段二】生成各阵营 30 张初始套牌构筑")
+    if new_cards and os.path.exists(decks_file):
+        print("【阶段二】基于成熟基底与阵营痛点，执行新卡定向增量换入 (Pain-Point Incremental Substitution)")
+    else:
+        print("【阶段二】生成各阵营 30 张初始套牌构筑")
     print("═" * 80)
 
     deck_builder_script = resolve_path("deck_builder_deepseek.py")
@@ -577,9 +580,18 @@ def step2_generate_prebuild_decks(cards_file: str, decks_file: str):
         "--output", decks_file,
         "--factions", "Red,Blue,Green"
     ]
+    if new_cards:
+        new_cards_path = resolve_path("last_expansion_pack.json")
+        try:
+            with open(new_cards_path, "w", encoding="utf-8") as f:
+                json.dump(new_cards, f, indent=2, ensure_ascii=False)
+            cmd.extend(["--new-cards", new_cards_path])
+        except Exception as e:
+            print(f"  [提示] 保存扩展包新卡临时文件异常: {e}")
+
     print(f"  [执行指令] {' '.join(cmd)}")
     subprocess.run(cmd, check=True, env=get_subprocess_env())
-    print("  [完成] 初始套牌构筑已生成并更新至 decks_config.json")
+    print("  [完成] 套牌构筑已更新至 decks_config.json")
 
 # ==============================================================================
 # Phase 3: PPO 智能体卡组微调
@@ -883,14 +895,15 @@ def main():
         sys.exit(1)
 
     # 1. 阶段一：卡牌扩展设计
+    final_pack = []
     if not args.skip_print:
-        step1_print_expansion_pack(cards_file, metrics_file, args.pack_name, args.theme, auto_art=not args.skip_art)
+        _, final_pack = step1_print_expansion_pack(cards_file, metrics_file, args.pack_name, args.theme, auto_art=not args.skip_art)
     else:
         print("\n[*] 跳过印卡阶段，沿用当前卡池。")
 
-    # 2. 阶段二：初始预构筑 (若印制了新扩展包，必须重新生成包含新卡的各阵营初始推荐套牌)
+    # 2. 阶段二：初始预构筑 (若印制了新扩展包，进行痛点增量换卡升级)
     if not args.skip_print:
-        step2_generate_prebuild_decks(cards_file, decks_file)
+        step2_generate_prebuild_decks(cards_file, decks_file, new_cards=final_pack)
     else:
         if not os.path.exists(decks_file):
             step2_generate_prebuild_decks(cards_file, decks_file)
