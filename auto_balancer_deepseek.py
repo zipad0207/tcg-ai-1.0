@@ -10,21 +10,27 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 def get_api_key() -> str:
-    key = os.environ.get("DEEPSEEK_API_KEY", "") or os.environ.get("SILICONFLOW_API_KEY", "")
-    if not key:
+    key = (os.environ.get("DEEPSEEK_API_KEY", "") or os.environ.get("SILICONFLOW_API_KEY", "")).strip()
+    if not key or "••••" in key or key.startswith("sk-•••"):
+        key = ""
         cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_config.json")
         if os.path.exists(cfg_path):
             try:
                 with open(cfg_path, "r", encoding="utf-8") as f:
                     cfg = json.load(f)
-                    key = cfg.get("deepseek_api_key") or cfg.get("api_key", "")
+                    raw_k = (cfg.get("deepseek_api_key") or cfg.get("api_key", "")).strip()
+                    if raw_k and "••••" not in raw_k and not raw_k.startswith("sk-•••"):
+                        key = raw_k
             except Exception:
                 pass
     if not key and sys.platform == "win32":
         try:
             import winreg
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment") as env_key:
-                key, _ = winreg.QueryValueEx(env_key, "DEEPSEEK_API_KEY")
+                raw_k, _ = winreg.QueryValueEx(env_key, "DEEPSEEK_API_KEY")
+                raw_k = (raw_k or "").strip()
+                if raw_k and "••••" not in raw_k and not raw_k.startswith("sk-•••"):
+                    key = raw_k
         except Exception:
             pass
     return key
@@ -50,10 +56,13 @@ def get_model_name() -> str:
             try:
                 with open(cfg_path, "r", encoding="utf-8") as f:
                     cfg = json.load(f)
-                    model = cfg.get("model", "")
+                    model = cfg.get("model") or cfg.get("deepseek_model", "")
             except Exception:
                 pass
-    return model or "deepseek-flash"
+    if not model:
+        base_url = get_base_url()
+        model = "deepseek-ai/DeepSeek-V3" if "siliconflow" in base_url.lower() else "deepseek-flash"
+    return model
 
 MODEL_NAME = get_model_name()
 
@@ -103,7 +112,9 @@ LEGAL_TAG_PATTERNS = [
 def is_legal_tag(tag: str) -> bool:
     return any(re.match(p, tag) for p in LEGAL_TAG_PATTERNS)
 
-def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client: OpenAI, history_metrics: dict = None, target_tolerance: float = 5.0, target_pairwise_tolerance: float = 5.0, severe_threshold: float = 10.0) -> str:
+def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client: OpenAI, history_metrics: dict = None, target_tolerance: float = 5.0, target_pairwise_tolerance: float = 8.0, target_pairwise_balance: float = None, severe_threshold: float = 10.0, tabu_list: dict = None, weak_factions: list = None) -> str:
+    if target_pairwise_balance is not None:
+        target_pairwise_tolerance = target_pairwise_balance
     total = max(1, metrics_data.get("total_episodes", 1000))
     
     max_dev = 0.0
@@ -273,6 +284,13 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
 **本轮原则上无需对数值进行大规模修改，保护当前稳定的全量牌池生态！**
 """
 
+    tabu_ids = list(tabu_list.keys()) if tabu_list else []
+    tabu_str = f"4. **Tabu记忆冻结**：以下卡牌刚在近期被调整过，本轮强制冷却，绝对禁止任何改动: {tabu_ids}" if tabu_ids else ""
+    weak_str = f"5. **弱势阵营绝对保护**：禁止削弱综合胜率最低的弱势阵营（{weak_factions}）。对这些阵营的卡牌，强制只能加数值或降费，严禁增加 cost 或降低 base_dp/atk_spell_val/def_spell_val！" if weak_factions else ""
+
+    balance_instructions += f"\n### 特殊硬性约束：\n{tabu_str}\n{weak_str}\n"
+
+
 
     prompt = f"""
 你是一名经验丰富的 TCG 卡牌设计师兼数值策划。
@@ -403,13 +421,15 @@ def main():
     parser.add_argument("--output", type=str, default="cards_config_tuned.json", help="输出调优卡池文件路径")
     parser.add_argument("--history", type=str, default=None, help="基准/历史战报文件路径")
     parser.add_argument("--target-balance", type=float, default=5.0, help="阵营总胜率平衡容差 (默认 5.0%%)")
-    parser.add_argument("--target-pairwise-balance", type=float, default=5.0, help="两两对抗平衡容差 (默认 5.0%%)")
+    parser.add_argument("--target-pairwise-balance", type=float, default=8.0, help="两两对抗平衡容差 (默认 8.0%%)")
     parser.add_argument("--severe-threshold", "--severe-imbalance-threshold", type=float, default=10.0, help="严重失衡触发大改的偏离阈值 (默认 10.0%%)")
     args = parser.parse_args()
 
     if not DEEPSEEK_API_KEY:
-        print("未找到有效 API Key，请配置 DEEPSEEK_API_KEY 环境变量。")
-        return
+        print("\n" + "!" * 70)
+        print("[致命错误] 未找到有效 DEEPSEEK_API_KEY，无法调用大模型执行数值调优！")
+        print("!" * 70)
+        sys.exit(1)
 
     client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=get_base_url())
 
@@ -430,13 +450,33 @@ def main():
     if history_file:
         print(f"参考战报: {history_file}")
 
-    raw_output = run_deepseek_balance_and_expand(
-        metrics_data, current_cards, client,
-        history_metrics=history_data,
-        target_tolerance=args.target_balance,
-        target_pairwise_tolerance=args.target_pairwise_balance,
-        severe_threshold=args.severe_threshold
-    )
+    tabu_file = "balancer_tabu_list.json"
+    tabu_list = load_json(tabu_file) if os.path.exists(tabu_file) else {}
+    new_tabu = {}
+    for cid, wait in tabu_list.items():
+        if wait > 1:
+            new_tabu[cid] = wait - 1
+    tabu_list = new_tabu
+
+    weak_factions = []
+    if "faction_stats" in metrics_data:
+        for f, s in metrics_data["faction_stats"].items():
+            if s.get("winrate", 50.0) < 45.0:
+                weak_factions.append(f)
+
+    try:
+        raw_output = run_deepseek_balance_and_expand(
+            metrics_data, current_cards, client,
+            history_metrics=history_data,
+            target_tolerance=args.target_balance,
+            target_pairwise_balance=args.target_pairwise_balance,
+            severe_threshold=args.severe_threshold,
+            tabu_list=tabu_list,
+            weak_factions=weak_factions
+        )
+    except Exception as e:
+        print(f"\n[警告] DeepSeek 模型调用异常 ({e})！保持当前卡池不变，平滑进入下一阶段。")
+        return
     cleaned_json = clean_json_response(raw_output)
 
     new_card_pool = None
@@ -477,9 +517,26 @@ def main():
     print(f"[*] 成功提取 {len(cand_cards)} 张调整卡牌，正在校验合规性...")
     for new_c in cand_cards:
         cid = new_c.get("id")
+        
+        if str(cid) in tabu_list or cid in tabu_list:
+            print(f"  [保护] ID {cid} 处于 Tabu 冷却期，跳过调整。")
+            continue
+            
         if cid in id_index:
             orig_f, orig_idx = id_index[cid]
             orig_card = updated_pool[orig_f][orig_idx]
+            
+            if orig_f in weak_factions:
+                is_nerf = False
+                if "cost" in new_c and int(new_c["cost"]) > orig_card.get("cost", 1): is_nerf = True
+                if "base_dp" in new_c and int(new_c["base_dp"]) < orig_card.get("base_dp", 0): is_nerf = True
+                if "atk_spell_val" in new_c and int(new_c["atk_spell_val"]) < orig_card.get("atk_spell_val", 0): is_nerf = True
+                if "def_spell_val" in new_c and int(new_c["def_spell_val"]) < orig_card.get("def_spell_val", 0): is_nerf = True
+                if is_nerf:
+                    print(f"  [保护] ID {cid} 属于弱势阵营 {orig_f}，拦截任何形式的削弱（数值或费用）。")
+                    continue
+            
+            card_modified = False
             for field in ["cost", "base_dp", "atk_spell_val", "def_spell_val", "tags"]:
                 if field in new_c:
                     new_val = new_c[field]
@@ -528,6 +585,7 @@ def main():
                             print(f"  [词条调整] ID {cid} {orig_card['name']}: {field} 从 {orig_card.get(field)} -> {new_val}")
                         
                         orig_card[field] = new_val
+                        card_modified = True
                         updated_count += 1
 
             # 临时法力倒亏安全拦截与修复
@@ -538,9 +596,30 @@ def main():
                 if t_val > 0 and not has_other and orig_card.get("cost", 0) >= t_val:
                     print(f"  [安全兜底] 拦截到纯临时法力倒亏法术 ID {cid} {orig_card['name']} (cost={orig_card.get('cost')} >= 临时法力 {t_val})，自动修正为 0 费！")
                     orig_card["cost"] = 0
+                    card_modified = True
 
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(updated_pool, f, indent=2, ensure_ascii=False)
+            if card_modified:
+                tabu_list[str(cid)] = 2
+                
+    try:
+        with open(tabu_file, "w", encoding="utf-8") as f:
+            json.dump(tabu_list, f, indent=2)
+    except Exception:
+        pass
+
+    tmp_out = output_file + ".tmp"
+    try:
+        with open(tmp_out, "w", encoding="utf-8") as f:
+            json.dump(updated_pool, f, indent=2, ensure_ascii=False)
+        os.replace(tmp_out, output_file)
+    except Exception:
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(updated_pool, f, indent=2, ensure_ascii=False)
+        if os.path.exists(tmp_out):
+            try:
+                os.remove(tmp_out)
+            except OSError:
+                pass
         
     print(f"已完成卡池数值调优 (共更新 {updated_count} 处属性/词条)，已保存至: {output_file}")
 

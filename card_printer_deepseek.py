@@ -58,10 +58,13 @@ def get_model_name() -> str:
             try:
                 with open(cfg_path, "r", encoding="utf-8") as f:
                     cfg = json.load(f)
-                    model = cfg.get("model", "")
+                    model = cfg.get("model") or cfg.get("deepseek_model", "")
             except Exception:
                 pass
-    return model or "deepseek-flash"
+    if not model:
+        base_url = get_base_url()
+        model = "deepseek-ai/DeepSeek-V3" if "siliconflow" in base_url.lower() else "deepseek-flash"
+    return model
 
 MODEL_NAME = get_model_name()
 

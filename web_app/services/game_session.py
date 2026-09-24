@@ -10,7 +10,7 @@ from agent import CardNet
 
 class GameSession:
     def __init__(self, p0_faction="Red", p1_faction="Blue", p0_decklist=None, p1_decklist=None, mode="pve", started=True):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
         
         f_map = {"Red": Faction.RED, "Blue": Faction.BLUE, "Green": Faction.GREEN}
         self.p0_faction = f_map.get(p0_faction, Faction.RED)

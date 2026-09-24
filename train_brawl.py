@@ -42,8 +42,8 @@ parser.add_argument("--load-model", type=str, default=None,
 parser.add_argument("--lr", type=float, default=3e-4, help="学习率")
 parser.add_argument("--eval-only", action="store_true",
                     help="纯对战评估模式 (跳过梯度更新与反向传播，仅做对战胜率遥测，速度提升 4x)")
-parser.add_argument("--device", type=str, default="auto", choices=["auto", "cuda", "cpu"],
-                    help="运算设备 (默认 auto: 检测到 cuda 则用 gpu，无 cuda 则自动回退 cpu)")
+parser.add_argument("--device", type=str, default="cpu", choices=["auto", "cuda", "cpu"],
+                    help="运算设备 (默认 cpu: 针对小规模网络自博弈进行极速运算优化并限制2线程；如需GPU可传 cuda)")
 args = parser.parse_args()
 
 def resolve_path(p):
@@ -80,6 +80,27 @@ else:
     else:
         DEVICE = torch.device("cpu")
         print("[运算设备] 未检测到可用 CUDA GPU，自动采用 CPU 模式运行。")
+
+if sys.platform == "win32":
+    try:
+        import ctypes
+        from ctypes import wintypes
+        k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        k32.GetCurrentProcess.restype = wintypes.HANDLE
+        k32.SetPriorityClass.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        k32.SetPriorityClass.restype = wintypes.BOOL
+        k32.SetPriorityClass(k32.GetCurrentProcess(), 0x00004000)  # BELOW_NORMAL_PRIORITY_CLASS
+    except Exception:
+        pass
+
+if DEVICE.type == "cpu":
+    torch.set_num_threads(2)
+    if hasattr(torch, "set_num_interop_threads"):
+        try:
+            torch.set_num_interop_threads(1)
+        except RuntimeError:
+            pass
+    print("[算力控制] 已启用后台静默优先级 (Below-Normal) 并严格限制 2 线程，绝不抢占前台与桌面资源。")
 
 # PPO 超参数
 LR = args.lr

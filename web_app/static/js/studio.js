@@ -136,7 +136,7 @@ function renderCardsGrid(cards) {
         }
         
         const isSpell = card.card_type === 'SPELL';
-        const typeStr = isSpell ? '🪄 法术' : '🛡️ 随从';
+        const typeStr = isSpell ? '法术' : '随从';
         const tagsStr = (card.tags || []).map(window.translateTag).join(' · ');
 
         // Clicking anywhere on card opens the Lightbox Viewer
@@ -149,15 +149,15 @@ function renderCardsGrid(cards) {
             <div class="card-cost">${cost}</div>
             <button class="card-add-to-deck-btn" title="添加到自构筑卡组" onclick="event.stopPropagation(); addCardToDeck(${card.id})">+</button>
             <div class="card-img-placeholder">
-                ${imgUrl ? '' : '🎨 暂无原画<br>(点击生成)'}
+                ${imgUrl ? '' : '<span class="empty-art-title">未绘制原画</span><span class="empty-art-sub">点击生成</span>'}
             </div>
-            <div class="card-view-hint"><span>🔍 点击查看大图/详情</span></div>
+            <div class="card-view-hint"><span>检视卡牌详情</span></div>
             <div class="card-stats">
-                <span>${isSpell ? '✨ 效果卡' : '⚔️ ' + dp + ' 战力'}</span>
-                <span>${typeStr}</span>
+                <span class="card-stat-main">${isSpell ? '法术牌' : dp + ' 战力'}</span>
+                <span class="card-stat-type ${isSpell ? 'spell' : 'minion'}">${typeStr}</span>
             </div>
             <div class="card-name">${card.name}</div>
-            <div class="card-tags">${tagsStr || '普通兵种'}</div>
+            <div class="card-tags">${tagsStr || '标准兵种'}</div>
         `;
         cardsGrid.appendChild(cardEl);
     });
@@ -723,10 +723,10 @@ window.openCardViewer = function(cardId) {
     const imgUrl = card.image_url || (card.raw_data && card.raw_data.image_url ? card.raw_data.image_url : null);
 
     nameEl.innerText = card.name;
-    const fNames = { "Red": "🔴 赤红", "Blue": "🔵 蔚蓝", "Green": "🟢 翠绿", "Neutral": "⚪ 中立", "Dual": "🟣 混合" };
+    const fNames = { "Red": "赤红派系", "Blue": "蔚蓝派系", "Green": "翠绿派系", "Neutral": "中立阵营", "Dual": "混合双系" };
     fBadge.innerText = fNames[faction] || faction;
     fBadge.className = `badge ${faction}`;
-    tBadge.innerText = isSpell ? "🪄 法术卡" : "🛡️ 随从卡";
+    tBadge.innerText = isSpell ? "法术卡" : "随从卡";
     tBadge.className = `badge ${isSpell ? 'cyan' : 'gold'}`;
 
     costEl.innerText = card.cost || 0;

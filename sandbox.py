@@ -61,6 +61,9 @@ class Player:
     fatigue: int = 0
 
 
+_CARD_DB_CACHE: Dict[str, Tuple[float, Dict[int, Card]]] = {}
+
+
 class DuelEnv:
     WIN_SCORE = 7
     MAX_HAND_SIZE = 7
@@ -95,8 +98,33 @@ class DuelEnv:
                     break
             if not found:
                 raise FileNotFoundError(f"未找到配置文件: {self.cards_path}")
-        with open(self.cards_path, "r", encoding="utf-8") as f:
-            raw_data = json.load(f)
+
+        abs_path = os.path.abspath(self.cards_path)
+        try:
+            mtime = os.path.getmtime(abs_path)
+        except OSError:
+            mtime = 0.0
+
+        global _CARD_DB_CACHE
+        if abs_path in _CARD_DB_CACHE:
+            cached_mtime, cached_db = _CARD_DB_CACHE[abs_path]
+            if cached_mtime == mtime:
+                return cached_db
+
+        # 加载与解析（包含重试机制，防止并发写入时读取到空文件或锁冲突）
+        raw_data = None
+        import time
+        for attempt in range(5):
+            try:
+                with open(abs_path, "r", encoding="utf-8") as f:
+                    raw_data = json.load(f)
+                break
+            except (json.JSONDecodeError, PermissionError, OSError):
+                if attempt == 4:
+                    if abs_path in _CARD_DB_CACHE:
+                        return _CARD_DB_CACHE[abs_path][1]
+                    raise
+                time.sleep(0.05 * (attempt + 1))
 
         db = {}
         for faction_key, card_list in raw_data.items():
@@ -117,6 +145,8 @@ class DuelEnv:
                     is_token=c.get("is_token", False)
                 )
                 db[card.id] = card
+
+        _CARD_DB_CACHE[abs_path] = (mtime, db)
         return db
 
     def _clone_card(self, c: Card) -> Card:

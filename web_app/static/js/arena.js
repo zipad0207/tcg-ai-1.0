@@ -832,7 +832,7 @@ function renderArena(state) {
             <div class="mini-card" style="${bg}" title="${u.name} (战力:${u.dp})">
                 <div class="mini-card-overlay">
                     <span class="mini-card-name">${u.name}</span>
-                    <span class="mini-card-dp">⚔️ ${u.dp}</span>
+                    <span class="mini-card-dp"><span class="dp-tag">战力</span> ${u.dp}</span>
                     ${readyBadge}
                 </div>
             </div>
@@ -917,20 +917,21 @@ function renderArena(state) {
         }
         
         const isSpell = card.type === 'SPELL';
-        const typeIcon = isSpell ? '🪄' : '🛡️';
         const tagsTranslated = (card.tags || []).slice(0, 2).map(window.translateTag).join(' · ');
         
         const spellBonusText = isSpell 
             ? ((card.atk_spell_val ? `+${card.atk_spell_val}攻 ` : '') + (card.def_spell_val ? `+${card.def_spell_val}盾` : '战术效果'))
-            : `⚔️ ${card.dp} 战力`;
+            : `${card.dp} 战力`;
 
         cardEl.innerHTML = `
             <div class="hand-card-cost" title="${card.cost} 费">${card.cost}</div>
-            <div class="hand-card-type" title="${isSpell ? '法术牌' : '随从牌'}">${typeIcon}</div>
+            <div class="hand-card-type ${isSpell ? 'spell' : 'minion'}">${isSpell ? '法术' : '随从'}</div>
             <div class="hand-card-info">
                 <div class="hand-card-title">${card.name}</div>
-                <div class="hand-card-dp">${spellBonusText}</div>
-                <div class="hand-card-tags">${tagsTranslated || (isSpell ? '法术' : '随从')}</div>
+                <div class="hand-card-meta">
+                    ${isSpell ? `<span class="hand-card-spell-chip">${spellBonusText}</span>` : `<span class="hand-card-atk-badge"><span class="atk-sub">攻</span>${card.dp}</span>`}
+                    <span class="hand-card-tags">${tagsTranslated || (isSpell ? '法术' : '普通随从')}</span>
+                </div>
             </div>
         `;
         

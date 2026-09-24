@@ -487,6 +487,27 @@ function clearPipelineConsole() {
 
 // Start Pipeline Execution
 async function startPipeline() {
+    // 1. 启动前严格检查 DeepSeek API Key 是否已配置
+    try {
+        const cfgRes = await fetch('/api/config/llm');
+        if (cfgRes.ok) {
+            const cfg = await cfgRes.json();
+            if (!cfg.has_deepseek_key) {
+                const dsInput = document.getElementById('cfg-deepseek-key');
+                if (dsInput) {
+                    dsInput.focus();
+                    dsInput.style.outline = '2px solid #ff7675';
+                    setTimeout(() => { dsInput.style.outline = ''; }, 4000);
+                }
+                alert('【未配置 DeepSeek Key 密钥】\n\n无论选择哪种调优模式，AI 平衡调优流水线的核心均需要调用 DeepSeek 大模型对失衡卡牌进行诊断、身材重构与参数微调。\n\n请先在左侧【AI 服务配置】面板中填入您的 DeepSeek API Key (sk-...) 并点击【保存配置】后再启动！');
+                appendConsoleLine('❌ [Console] 启动被拦截：未检测到有效 DeepSeek Key。请在左侧面板配置后重试。', 'error');
+                return;
+            }
+        }
+    } catch (e) {
+        console.warn('API config check warning:', e);
+    }
+
     const modeEl = document.getElementById('pipe-mode');
     const epEl = document.getElementById('pipe-episodes');
     const targetEl = document.getElementById('pipe-target');
@@ -526,6 +547,7 @@ async function startPipeline() {
             appendConsoleLine(`[Console] ✅ 流水线启动成功！已启动后台自博弈进程。`, 'success');
             pollPipelineStatus();
         } else {
+            alert(`【流水线启动失败】\n\n${data.message}`);
             appendConsoleLine(`[Console] ❌ 启动失败: ${data.message}`, 'error');
             if (btnStart) btnStart.disabled = false;
             if (btnStop) btnStop.disabled = true;

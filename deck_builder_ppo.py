@@ -549,13 +549,18 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
         valid_pairs.sort(key=lambda x: x["pair_score"], reverse=True)
 
         # 机制一：温度退火 Softmax 概率采样（代数越小温度越高，探索范围越广）
-        top_k = min(len(valid_pairs), 6)
+        top_k = min(len(valid_pairs), 12 if faction == "Red" else 8)
         top_pairs = valid_pairs[:top_k]
-        temp = max(0.15, 1.0 * (1.0 - (gen - 1) / max(1, generations)))
+        temp = max(0.4, 2.0 * (1.0 - (gen - 1) / max(1, generations))) if faction == "Red" else max(0.2, 1.2 * (1.0 - (gen - 1) / max(1, generations)))
 
         scores_arr = np.array([p["pair_score"] for p in top_pairs], dtype=np.float64)
         exp_scores = np.exp((scores_arr - np.max(scores_arr)) / temp)
-        probs = exp_scores / np.sum(exp_scores)
+        sum_exp = np.sum(exp_scores)
+        if sum_exp > 1e-12:
+            probs = exp_scores / sum_exp
+            probs = probs / np.sum(probs)  # 二次归一化保证浮点求和严格等于 1.0
+        else:
+            probs = np.ones(len(top_pairs), dtype=np.float64) / len(top_pairs)
         chosen_idx = int(np.random.choice(len(top_pairs), p=probs))
         chosen_pair = top_pairs[chosen_idx]
 
@@ -802,7 +807,7 @@ def main():
     parser.add_argument("--generations", type=int, default=20, help="自博弈进化代数 (默认 20)")
     parser.add_argument("--games-per-gen", type=int, default=60, help="每代自博弈实机局数 (默认 60)")
     parser.add_argument("--samples", type=int, default=8, help="候选卡神经网络采样次数 (默认 8，速度提升 2.5x)")
-    parser.add_argument("--device", type=str, default="auto", choices=["auto", "cuda", "cpu"], help="运算设备 (默认 auto: 检测到 cuda 则用 gpu，无 cuda 则自动回退 cpu)")
+    parser.add_argument("--device", type=str, default="cpu", choices=["auto", "cuda", "cpu"], help="运算设备 (默认 cpu: 限制2线程且无GPU调度延迟；如需GPU可传 cuda)")
     args = parser.parse_args()
 
     req_dev = (args.device or "auto").strip().lower()
@@ -824,6 +829,27 @@ def main():
             device = torch.device("cpu")
             print("[运算设备] 未检测到可用 CUDA GPU，自动采用 CPU 模式运行。")
     
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            from ctypes import wintypes
+            k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            k32.GetCurrentProcess.restype = wintypes.HANDLE
+            k32.SetPriorityClass.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+            k32.SetPriorityClass.restype = wintypes.BOOL
+            k32.SetPriorityClass(k32.GetCurrentProcess(), 0x00004000)  # BELOW_NORMAL_PRIORITY_CLASS
+        except Exception:
+            pass
+
+    if device.type == "cpu":
+        torch.set_num_threads(2)
+        if hasattr(torch, "set_num_interop_threads"):
+            try:
+                torch.set_num_interop_threads(1)
+            except RuntimeError:
+                pass
+        print("[算力控制] 已启用后台静默优先级 (Below-Normal) 并严格限制 2 线程，绝不抢占前台与桌面资源。")
+
     model_path = find_model_path(args.model, args.stage)
     print("=" * 85)
     print("PPO 自博弈选卡工具启动")

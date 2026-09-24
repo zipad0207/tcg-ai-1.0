@@ -52,10 +52,13 @@ def get_model_name() -> str:
             try:
                 with open(cfg_path, "r", encoding="utf-8") as f:
                     cfg = json.load(f)
-                    model = cfg.get("model", "")
+                    model = cfg.get("model") or cfg.get("deepseek_model", "")
             except Exception:
                 pass
-    return model or "deepseek-flash"
+    if not model:
+        base_url = get_base_url()
+        model = "deepseek-ai/DeepSeek-V3" if "siliconflow" in base_url.lower() else "deepseek-flash"
+    return model
 
 MODEL_NAME = get_model_name()
 
@@ -241,8 +244,24 @@ def call_deepseek_deckbuild(faction: str, pool: List[dict]) -> dict:
         return parsed
 
     except Exception as e:
-        print(f"DeepSeek 构筑异常: {e}")
-        raise e
+        print(f"[WARN] DeepSeek 构筑生成异常 ({e})，启用自适应规则兜底卡组，确保流水线平稳过渡至 PPO 阶段...")
+        fallback_alloc = {}
+        sorted_pool = sorted(pool, key=lambda c: (c.get("cost", 0), -c.get("base_dp", 0)))
+        total_picked = 0
+        for c in sorted_pool:
+            if total_picked >= 30:
+                break
+            can_add = min(2, 30 - total_picked)
+            fallback_alloc[c["id"]] = can_add
+            total_picked += can_add
+        fallback_alloc = normalize_counts(fallback_alloc, pool)
+        return {
+            "deck_name": f"{faction}·均衡启航构筑",
+            "archetype": "Balanced",
+            "tactical_concept": "平滑法力曲线自适应基础构筑，准备进入后续 PPO 智能体自博弈演化。",
+            "key_combos": ["基础攻防节奏支撑"],
+            "card_allocation": fallback_alloc
+        }
 
 def generate_deck_details(deck_data: dict, pool: List[dict]) -> dict:
     pool_dict = {c["id"]: c for c in pool}

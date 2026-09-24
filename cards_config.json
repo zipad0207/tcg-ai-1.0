@@ -442,7 +442,7 @@
       "name": "熔岩破阵者",
       "card_type": "MINION",
       "cost": 5,
-      "base_dp": 2,
+      "base_dp": 3,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -494,7 +494,7 @@
       "atk_spell_val": 3,
       "def_spell_val": 0,
       "tags": [
-        "DEGRADE_1"
+        "DEGRADE_2"
       ],
       "factions": [
         "Red"
@@ -1702,7 +1702,7 @@
       "name": "翠绿哨兵",
       "card_type": "MINION",
       "cost": 3,
-      "base_dp": 2,
+      "base_dp": 3,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -2010,7 +2010,7 @@
       "name": "荆棘卫士",
       "card_type": "MINION",
       "cost": 1,
-      "base_dp": 2,
+      "base_dp": 3,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -2235,7 +2235,7 @@
       "card_type": "SPELL",
       "cost": 2,
       "base_dp": 0,
-      "atk_spell_val": 4,
+      "atk_spell_val": 5,
       "def_spell_val": 0,
       "tags": [],
       "factions": [

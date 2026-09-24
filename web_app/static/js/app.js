@@ -1,28 +1,28 @@
 // Global state
 window.tcgData = null;
 
-// Global Tag Translator
+// Global Tag Translator (Clean Hearthstone-style keywords, no cheap mobile emojis)
 window.translateTag = function(tag) {
     if (!tag) return '';
     const t = String(tag).toUpperCase().trim();
-    if (t === 'RUSH') return '⚡ 突袭';
-    if (t === 'ATTACK_ONLY') return '⚔️ 仅限进攻';
-    if (t === 'SACRIFICE_1_KILL_1') return '🩸 献祭消灭';
+    if (t === 'RUSH') return '突袭';
+    if (t === 'ATTACK_ONLY') return '仅限进攻';
+    if (t === 'SACRIFICE_1_KILL_1') return '献祭斩杀';
     
-    if (t.startsWith('FORTIFY_')) return `🛡️ 坚守+${t.split('_')[1]}`;
-    if (t.startsWith('DEGRADE_')) return `⚔️ 破甲-${t.split('_')[1]}`;
-    if (t.startsWith('SUPPORT_ATK_')) return `🌟 支援+${t.split('_')[2]}`;
-    if (t.startsWith('BONUS_SCORE_')) return `🏆 突破得分+${t.split('_')[2]}`;
+    if (t.startsWith('FORTIFY_')) return `坚守 +${t.split('_')[1]}`;
+    if (t.startsWith('DEGRADE_')) return `破甲 -${t.split('_')[1]}`;
+    if (t.startsWith('SUPPORT_ATK_')) return `协同 +${t.split('_')[2]}`;
+    if (t.startsWith('BONUS_SCORE_')) return `突破得分 +${t.split('_')[2]}`;
     if (t.startsWith('SPAWN_')) {
         const parts = t.split('_');
-        return `👥 召唤${parts[2]}只(${parts[1]}攻)`;
+        return `召唤${parts[2]}只(${parts[1]}攻)`;
     }
-    if (t.startsWith('DEATH_DRAW_')) return `💀 亡语:抽${t.split('_')[2]}张`;
-    if (t.startsWith('DEATH_MANA_')) return `💀 亡语:法力+${t.split('_')[2]}`;
-    if (t.startsWith('DRAW_')) return `🎴 抽${t.split('_')[1]}张`;
-    if (t.startsWith('RAMP_')) return `💎 法力上限+${t.split('_')[1]}`;
-    if (t.startsWith('TEMP_MANA_')) return `✨ 临时法力+${t.split('_')[2]}`;
-    if (t.startsWith('DISCARD_')) return `🗑️ 弃${t.split('_')[1]}张`;
+    if (t.startsWith('DEATH_DRAW_')) return `亡语: 抽${t.split('_')[2]}张`;
+    if (t.startsWith('DEATH_MANA_')) return `亡语: 法力+${t.split('_')[2]}`;
+    if (t.startsWith('DRAW_')) return `抽${t.split('_')[1]}张`;
+    if (t.startsWith('RAMP_')) return `法力水晶 +${t.split('_')[1]}`;
+    if (t.startsWith('TEMP_MANA_')) return `临时法力 +${t.split('_')[2]}`;
+    if (t.startsWith('DISCARD_')) return `弃${t.split('_')[1]}张`;
 
     return tag;
 };
@@ -74,17 +74,25 @@ async function initApiConfig() {
     const imgVisBtn = document.getElementById('btn-toggle-image-vis');
     const saveBtn = document.getElementById('btn-save-api-cfg');
 
+    const getEyeSvg = (isOpen) => isOpen 
+        ? `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`
+        : `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+
     if (dsVisBtn && dsKeyInput) {
+        dsVisBtn.innerHTML = getEyeSvg(false);
         dsVisBtn.onclick = () => {
-            dsKeyInput.type = dsKeyInput.type === 'password' ? 'text' : 'password';
-            dsVisBtn.innerText = dsKeyInput.type === 'password' ? '👁' : '🔒';
+            const isNowText = dsKeyInput.type === 'password';
+            dsKeyInput.type = isNowText ? 'text' : 'password';
+            dsVisBtn.innerHTML = getEyeSvg(isNowText);
         };
     }
 
     if (imgVisBtn && imgKeyInput) {
+        imgVisBtn.innerHTML = getEyeSvg(false);
         imgVisBtn.onclick = () => {
-            imgKeyInput.type = imgKeyInput.type === 'password' ? 'text' : 'password';
-            imgVisBtn.innerText = imgKeyInput.type === 'password' ? '👁' : '🔒';
+            const isNowText = imgKeyInput.type === 'password';
+            imgKeyInput.type = isNowText ? 'text' : 'password';
+            imgVisBtn.innerHTML = getEyeSvg(isNowText);
         };
     }
 
@@ -106,8 +114,16 @@ async function initApiConfig() {
         const res = await fetch('/api/config/llm');
         if (res.ok) {
             const data = await res.json();
-            if (dsKeyInput && data.deepseek_key_masked) dsKeyInput.placeholder = data.deepseek_key_masked;
-            if (imgKeyInput && data.image_key_masked) imgKeyInput.placeholder = data.image_key_masked;
+            if (dsKeyInput) {
+                dsKeyInput.placeholder = (data.has_deepseek_key && data.deepseek_key_masked) 
+                    ? data.deepseek_key_masked 
+                    : "未配置，请粘贴 DeepSeek Key (sk-...)";
+            }
+            if (imgKeyInput) {
+                imgKeyInput.placeholder = (data.has_image_key && data.image_key_masked) 
+                    ? data.image_key_masked 
+                    : "未配置，请粘贴生图 Key (sk-...)";
+            }
             if (imgModelSelect && data.image_model) imgModelSelect.value = data.image_model;
             updateBadge(data.has_deepseek_key, data.has_image_key);
         }

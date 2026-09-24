@@ -103,7 +103,7 @@ def evaluate():
     parser.add_argument("--html", type=str, default="battle_replay.html", help="导出网页回放文件名")
     parser.add_argument("--tactical", action="store_true", default=True, help="启用阵营战术策略引导 (消除旧模型防守抑制偏差，默认开启)")
     parser.add_argument("--no-tactical", dest="tactical", action="store_false", help="禁用战术引导，使用纯网络原始输出")
-    parser.add_argument("--device", type=str, default="auto", choices=["auto", "cuda", "cpu"], help="运算设备 (默认 auto: 检测到 cuda 则用 gpu，无 cuda 则自动回退 cpu)")
+    parser.add_argument("--device", type=str, default="cpu", choices=["auto", "cuda", "cpu"], help="运算设备 (默认 cpu: 极速模式，限制2线程)")
     args = parser.parse_args()
 
     req_device = (args.device or "auto").strip().lower()

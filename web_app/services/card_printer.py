@@ -48,7 +48,7 @@ class DeepSeekCardPrinter:
     def __init__(self):
         self.api_key = os.getenv("SILICONFLOW_API_KEY") or os.getenv("DEEPSEEK_API_KEY", "")
         self.base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.siliconflow.cn/v1")
-        self.model = "deepseek-ai/DeepSeek-V3"
+        self.model = os.getenv("DEEPSEEK_MODEL", "deepseek-flash")
         self.root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         self.cards_path = os.path.join(self.root_dir, "cards_config.json")
 
@@ -67,8 +67,19 @@ class DeepSeekCardPrinter:
         return {"Red": [], "Blue": [], "Green": [], "Neutral": []}
 
     def save_cards_config(self, config_data: dict):
-        with open(self.cards_path, "w", encoding="utf-8") as f:
-            json.dump(config_data, f, indent=4, ensure_ascii=False)
+        tmp_path = self.cards_path + ".tmp"
+        try:
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                json.dump(config_data, f, indent=4, ensure_ascii=False)
+            os.replace(tmp_path, self.cards_path)
+        except Exception:
+            with open(self.cards_path, "w", encoding="utf-8") as f:
+                json.dump(config_data, f, indent=4, ensure_ascii=False)
+            if os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except OSError:
+                    pass
             
         export_script = os.path.join(self.root_dir, "export_ui_data.py")
         if os.path.exists(export_script):

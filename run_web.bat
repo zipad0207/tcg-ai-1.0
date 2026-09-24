@@ -38,10 +38,7 @@ echo [1/3] Using system Python: %PY_CMD%
 
 :check_port
 echo [2/3] Checking port 8000...
-netstat -ano | findstr /R /C:":8000 " >nul 2>&1
-if errorlevel 1 goto :launch_app
-
-echo [WARNING] Port 8000 is already in use!
+%PY_CMD% -c "import subprocess; [subprocess.run(['taskkill', '/F', '/PID', l.strip().split()[-1]], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) for l in subprocess.check_output('netstat -ano', shell=True).decode('utf-8', errors='ignore').splitlines() if ':8000 ' in l and 'LISTENING' in l]" >nul 2>&1
 
 :launch_app
 echo [3/3] Launching Web Service: http://127.0.0.1:8000
@@ -50,7 +47,7 @@ echo.
 
 start "" cmd /c "timeout /t 3 /nobreak >nul & start http://127.0.0.1:8000"
 
-%PY_CMD% -m uvicorn web_app.main:app --host 127.0.0.1 --port 8000 --reload
+%PY_CMD% -m uvicorn web_app.main:app --host 127.0.0.1 --port 8000
 
 echo.
 echo [INFO] Server stopped.

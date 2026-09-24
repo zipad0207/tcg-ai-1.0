@@ -196,7 +196,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, default="card_ppo_model_tuned.pth", help="模型权重文件")
     parser.add_argument("--p0", "--f0", dest="p0_faction", type=str, default="Red", choices=["Red", "Blue", "Green"], help="先手 P0 阵营 (默认 Red)")
     parser.add_argument("--p1", "--f1", dest="p1_faction", type=str, default="Blue", choices=["Red", "Blue", "Green"], help="后手 P1 阵营 (默认 Blue)")
-    parser.add_argument("--device", type=str, default="auto", choices=["auto", "cuda", "cpu"], help="运算设备 (默认 auto: 检测到 cuda 则用 gpu，无 cuda 则自动回退 cpu)")
+    parser.add_argument("--device", type=str, default="cpu", choices=["auto", "cuda", "cpu"], help="运算设备 (默认 cpu: 极速模式，限制2线程)")
     args = parser.parse_args()
 
     run_simulation(episodes=args.episodes, decks_path=args.decks, cards_path=args.cards, model_path=args.model,

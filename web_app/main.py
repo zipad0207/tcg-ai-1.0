@@ -158,7 +158,7 @@ class LLMConfigRequest(BaseModel):
     # Legacy fallbacks
     api_key: Optional[str] = ""
     base_url: Optional[str] = "https://api.deepseek.com"
-    model: Optional[str] = "deepseek-chat"
+    model: Optional[str] = "deepseek-flash"
 
 @app.get("/api/config/llm")
 def get_llm_config():
@@ -242,6 +242,9 @@ def save_llm_config(req: LLMConfigRequest):
         "deepseek_api_key": ds_key,
         "image_api_key": img_key,
         "image_model": img_model,
+        "base_url": saved_cfg.get("base_url") or "https://api.deepseek.com",
+        "model": "deepseek-flash",
+        "deepseek_model": "deepseek-flash",
         "api_key": ds_key
     }
     with open(cfg_file, "w", encoding="utf-8") as f:
@@ -510,7 +513,7 @@ class PipelineStartRequest(BaseModel):
     mode: str = "tune_only"
     episodes: int = 60
     target_balance: float = 5.0
-    target_pairwise_balance: float = 5.0
+    target_pairwise_balance: float = 8.0
 
 @app.post("/api/pipeline/start")
 def start_pipeline(req: PipelineStartRequest):

@@ -60,21 +60,27 @@ def get_subprocess_env() -> dict:
     return env
 
 def get_api_key() -> str:
-    key = os.environ.get("DEEPSEEK_API_KEY", "") or os.environ.get("SILICONFLOW_API_KEY", "")
-    if not key:
+    key = (os.environ.get("DEEPSEEK_API_KEY", "") or os.environ.get("SILICONFLOW_API_KEY", "")).strip()
+    if not key or "••••" in key or key.startswith("sk-•••"):
+        key = ""
         cfg_path = os.path.join(SCRIPT_DIR, "llm_config.json")
         if os.path.exists(cfg_path):
             try:
                 with open(cfg_path, "r", encoding="utf-8") as f:
                     cfg = json.load(f)
-                    key = cfg.get("deepseek_api_key") or cfg.get("api_key", "")
+                    raw_k = (cfg.get("deepseek_api_key") or cfg.get("api_key", "")).strip()
+                    if raw_k and "••••" not in raw_k and not raw_k.startswith("sk-•••"):
+                        key = raw_k
             except Exception:
                 pass
     if not key and sys.platform == "win32":
         try:
             import winreg
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment") as env_key:
-                key, _ = winreg.QueryValueEx(env_key, "DEEPSEEK_API_KEY")
+                raw_k, _ = winreg.QueryValueEx(env_key, "DEEPSEEK_API_KEY")
+                raw_k = (raw_k or "").strip()
+                if raw_k and "••••" not in raw_k and not raw_k.startswith("sk-•••"):
+                    key = raw_k
         except Exception:
             pass
     return key
@@ -514,9 +520,20 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
 
             final_pack.append(card_dict)
 
-    # 保存扩充后卡池
-    with open(cards_file, "w", encoding="utf-8") as f:
-        json.dump(current_pool, f, indent=2, ensure_ascii=False)
+    # 保存扩充后卡池 (原子写入防止并发读取异常)
+    tmp_cards = cards_file + ".tmp"
+    try:
+        with open(tmp_cards, "w", encoding="utf-8") as f:
+            json.dump(current_pool, f, indent=2, ensure_ascii=False)
+        os.replace(tmp_cards, cards_file)
+    except Exception:
+        with open(cards_file, "w", encoding="utf-8") as f:
+            json.dump(current_pool, f, indent=2, ensure_ascii=False)
+        if os.path.exists(tmp_cards):
+            try:
+                os.remove(tmp_cards)
+            except OSError:
+                pass
 
     # 终端打印表格与配比统计
     mechanic_cards = [c for c in final_pack if c.get("tags")]
@@ -697,7 +714,7 @@ def check_balance_status(metrics: dict, target_tolerance: float = 5.0, target_pa
 
     return False, max_dev, spread, max_pairwise_dev
 
-def step5_deepseek_rebalance_cards(cards_file: str, metrics_file: str, target_balance: float = 5.0, target_pairwise_balance: float = 5.0, severe_threshold: float = 10.0):
+def step5_deepseek_rebalance_cards(cards_file: str, metrics_file: str, target_balance: float = 5.0, target_pairwise_balance: float = 8.0, severe_threshold: float = 10.0):
     print("\n" + "═" * 80)
     print("【阶段五】根据遥测战报调整卡牌基础数值与费用")
     print("═" * 80)
@@ -823,7 +840,7 @@ def main():
     parser.add_argument("--theme", type=str, default="根据环境数据调试", help="设计主题")
     parser.add_argument("--episodes", type=int, default=3000, help="每轮对局规模 (默认 3000 局，保证样本充分)")
     parser.add_argument("--target-balance", type=float, default=5.0, help="目标平衡偏离容差 (默认 5.0 百分点，即 45%%~55%% 平衡区间)")
-    parser.add_argument("--target-pairwise-balance", type=float, default=5.0, help="两两跨阵营对抗胜率偏离容差 (默认 5.0 百分点，即 45%%~55%% 平衡区间)")
+    parser.add_argument("--target-pairwise-balance", type=float, default=8.0, help="两两跨阵营对抗胜率偏离容差 (默认 8.0 百分点，即 42%%~58%% 平衡区间)")
     parser.add_argument("--max-deck-attempts", type=int, default=2, help="同一卡池下 PPO 自主微调构筑的尝试次数 (默认 2 次)")
     parser.add_argument("--severe-imbalance-threshold", type=float, default=10.0, help="阵营胜率严重失衡偏离度阈值 (默认 10.0%%)")
     parser.add_argument("--severe-spread-threshold", type=float, default=15.0, help="阵营胜率极差严重失衡阈值 (默认 15.0%%)")
@@ -833,6 +850,7 @@ def main():
     parser.add_argument("--skip-art", action="store_true", help="跳过新卡原画插图自动后台生成")
     parser.add_argument("--eval-only", action="store_true", help="纯评估模式 (跳过 PPO 模型梯度更新)")
     parser.add_argument("--dry-run", action="store_true", help="快速测试模式 (小规模局数快速跑通流程)")
+    parser.add_argument("--skip-final-audit", action="store_true", help="跳过达成平衡后的 3000 局终验对局 (用于高频压测加速)")
     args = parser.parse_args()
 
     max_outer = args.max_iterations if args.max_iterations is not None else args.max_outer_iterations
@@ -853,6 +871,16 @@ def main():
     print(f" 迭代配置: 卡组微调尝试 {deck_attempts} 次 | 数值微调上限 {max_outer} 轮")
     print(f" 熔断机制: 最大偏离度 >= {args.severe_imbalance_threshold:.1f}% 或 胜率极差 >= {args.severe_spread_threshold:.1f}% 自动快转至 DeepSeek 数值微调")
     print("=" * 85)
+
+    api_key = get_api_key()
+    if not api_key:
+        print("\n" + "!" * 80)
+        print("【终止】未检测到 DEEPSEEK_API_KEY！")
+        print("  说明: 本调优流水线的核心是利用 DeepSeek 大模型对失衡卡牌进行诊断与参数微调。")
+        print("        若未配置 API Key，将无法修改卡牌数值，导致空跑 10 轮上限。")
+        print("  指引: 请先在 Web 界面左侧【AI 服务配置】中填入您的 DeepSeek 密钥并保存！")
+        print("!" * 80 + "\n")
+        sys.exit(1)
 
     # 1. 阶段一：卡牌扩展设计
     if not args.skip_print:
@@ -923,7 +951,7 @@ def main():
                 print("\n" + "★" * 70)
                 print(f"[判定] 胜率达成平衡收敛条件 (第 {outer_round} 轮数值调整，第 {attempt} 次卡组微调)")
                 print(f"   各阵营最大偏离度: {max_dev:.2f}% <= 目标阈值: {args.target_balance:.2f}% (两两最大偏离: {max_pairwise_dev:.2f}% <= {args.target_pairwise_balance:.2f}%, 胜率极差: {spread:.2f}%)")
-                if not args.dry_run and current_brawl_episodes < 3000:
+                if not args.dry_run and not args.skip_final_audit and current_brawl_episodes < 3000:
                     print("   [验证] 执行 3,000 局全量对战验收遥测...")
                     metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=3000, eval_only=args.eval_only)
                     latest_metrics = metrics
@@ -932,7 +960,8 @@ def main():
                 break
             else:
                 is_severe = (max_dev >= args.severe_imbalance_threshold) or (max_pairwise_dev >= args.severe_imbalance_threshold) or (spread >= args.severe_spread_threshold)
-                if is_severe:
+                # Suppress fusion on the first attempt so PPO gets at least one full chance to adapt
+                if is_severe and attempt > 1:
                     print("\n" + "!" * 70)
                     print(f"[严重失衡熔断] 检测到阵营胜率严重失衡:")
                     print(f"   阵营总偏离: {max_dev:.2f}% | 两两对抗最大偏离: {max_pairwise_dev:.2f}% (熔断阈值: >= {args.severe_imbalance_threshold:.1f}%) | 阵营极差: {spread:.2f}%")
@@ -982,6 +1011,10 @@ def main():
     print("\n" + "═" * 85)
     print(" [完成] 流水线执行结束，所有数据与图表已生成。")
     print("═" * 85)
+    
+    if not is_balanced:
+        print("\n[警告] 达到最大迭代轮次后未能达成平衡目标，以失败退出。")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

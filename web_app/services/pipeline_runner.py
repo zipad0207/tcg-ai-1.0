@@ -36,7 +36,7 @@ class PipelineRunner:
             except Exception:
                 pass
 
-    def start(self, mode: str = "tune_only", episodes: int = 60, target_balance: float = 5.0, target_pairwise_balance: float = 5.0) -> dict:
+    def start(self, mode: str = "tune_only", episodes: int = 60, target_balance: float = 5.0, target_pairwise_balance: float = 8.0) -> dict:
         if self.is_running and self.process and self.process.poll() is None:
             return {"success": False, "message": "流水线当前正在运行中，请勿重复启动"}
 
@@ -47,6 +47,28 @@ class PipelineRunner:
 
         script_path = os.path.join(self.root_dir, "pipeline_orchestrator.py")
         cmd = [sys.executable, script_path]
+
+        # Check if DeepSeek API Key is configured before starting
+        cfg_path = os.path.join(self.root_dir, "llm_config.json")
+        has_ds = False
+        env_ds = (os.environ.get("DEEPSEEK_API_KEY") or "").strip()
+        if env_ds and not env_ds.startswith("sk-•••") and not env_ds.startswith("••••"):
+            has_ds = True
+        elif os.path.exists(cfg_path):
+            try:
+                with open(cfg_path, "r", encoding="utf-8") as f:
+                    c = json.load(f)
+                    k = (c.get("deepseek_api_key") or c.get("api_key") or "").strip()
+                    if k and not k.startswith("sk-•••") and not k.startswith("••••"):
+                        has_ds = True
+            except Exception:
+                pass
+        if not has_ds:
+            self.is_running = False
+            return {
+                "success": False,
+                "message": "【未配置 DeepSeek Key】流水线的核心是调用 DeepSeek 大模型对失衡卡牌进行诊断与参数微调。请先在左侧【AI 服务配置】面板中填入您的 DeepSeek API Key 并点击【保存配置】后再启动！"
+            }
 
         if mode == "tune_only":
             cmd.extend([
@@ -78,8 +100,17 @@ class PipelineRunner:
         env = os.environ.copy()
         env["PYTHONUNBUFFERED"] = "1"
         env["PYTHONIOENCODING"] = "utf-8"
+        env["OMP_NUM_THREADS"] = "2"
+        env["MKL_NUM_THREADS"] = "2"
+        env["OPENBLAS_NUM_THREADS"] = "2"
+        env["VECLIB_MAXIMUM_THREADS"] = "2"
+        env["NUMEXPR_NUM_THREADS"] = "2"
         cur_pypath = env.get("PYTHONPATH", "")
         env["PYTHONPATH"] = self.root_dir if not cur_pypath else f"{self.root_dir}{os.pathsep}{cur_pypath}"
+
+        cflags = 0
+        if sys.platform == "win32":
+            cflags = subprocess.BELOW_NORMAL_PRIORITY_CLASS
 
         try:
             self.process = subprocess.Popen(
@@ -88,7 +119,8 @@ class PipelineRunner:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 env=env,
-                bufsize=1
+                bufsize=1,
+                creationflags=cflags
             )
         except Exception as e:
             self.is_running = False
@@ -131,7 +163,10 @@ class PipelineRunner:
                         self.process.stdout.close()
                     except Exception:
                         pass
-                    rc = self.process.poll()
+                    try:
+                        rc = self.process.wait(timeout=1.5)
+                    except Exception:
+                        rc = self.process.poll()
                     was_running = self.is_running
                     self.is_running = False
                     _sync_ui()

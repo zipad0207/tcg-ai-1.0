@@ -12,3 +12,4 @@ requests>=2.28.0
 matplotlib>=3.7.0
 python-dotenv>=1.0.0
 Pillow>=9.5.0
+dashscope>=1.14.0

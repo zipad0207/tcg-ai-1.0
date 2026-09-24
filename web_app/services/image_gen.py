@@ -65,13 +65,35 @@ class ZImageTurboGenerator:
         return f"奇幻史诗厚涂风格，{card_name}，{f_detail}，{action_desc}。色彩沉稳自然，构图居中，质感写实，画面纯净，绝对无文字无水印无边框。"
 
     def build_prompt(self, card_name: str, faction: str, tags: list, dp: int) -> str:
-        # Use DeepSeek-V3 as AI Art Director to conceive cinematic scene prompts
-        if self.api_key:
+        # Use LLM as AI Art Director to conceive cinematic scene prompts
+        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        cfg_path = os.path.join(root_dir, "llm_config.json")
+        saved_cfg = {}
+        if os.path.exists(cfg_path):
+            try:
+                with open(cfg_path, "r", encoding="utf-8") as f:
+                    saved_cfg = json.load(f)
+            except Exception:
+                pass
+
+        ds_key = saved_cfg.get("deepseek_api_key") or os.getenv("DEEPSEEK_API_KEY", "")
+        if ds_key:
+            llm_api_key = ds_key
+            llm_base_url = saved_cfg.get("base_url") or "https://api.deepseek.com"
+            llm_model = "deepseek-flash"
+        elif self.siliconflow_key:
+            llm_api_key = self.siliconflow_key
+            llm_base_url = "https://api.siliconflow.cn/v1"
+            llm_model = "deepseek-ai/DeepSeek-V3"
+        else:
+            llm_api_key = None
+
+        if llm_api_key:
             try:
                 from openai import OpenAI
                 client = OpenAI(
-                    api_key=self.api_key,
-                    base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.siliconflow.cn/v1")
+                    api_key=llm_api_key,
+                    base_url=llm_base_url
                 )
                 tags_cn = [self.translate_tag_cn(t) for t in tags]
                 tags_str = "、".join(tags_cn) if tags_cn else "常规战力兵种"
@@ -88,7 +110,7 @@ class ZImageTurboGenerator:
                 )
                 user_prompt = f"卡牌角色概念：{card_name}，阵营：{faction}，战斗特性：{tags_str}"
                 res = client.chat.completions.create(
-                    model="deepseek-ai/DeepSeek-V3",
+                    model=llm_model,
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt}
@@ -158,14 +180,26 @@ class ZImageTurboGenerator:
                     break
                     
             if updated:
-                with open(config_path, "w", encoding="utf-8") as f:
-                    json.dump(cards_config, f, indent=4, ensure_ascii=False)
+                tmp_path = config_path + ".tmp"
+                try:
+                    with open(tmp_path, "w", encoding="utf-8") as f:
+                        json.dump(cards_config, f, indent=4, ensure_ascii=False)
+                    os.replace(tmp_path, config_path)
+                except Exception:
+                    with open(config_path, "w", encoding="utf-8") as f:
+                        json.dump(cards_config, f, indent=4, ensure_ascii=False)
+                    if os.path.exists(tmp_path):
+                        try:
+                            os.remove(tmp_path)
+                        except OSError:
+                            pass
                     
                 # Also refresh ui_export_data.json
-                export_script = os.path.join(root_dir, "export_ui_data.py")
-                if os.path.exists(export_script):
-                    import subprocess
-                    subprocess.run([sys.executable, export_script], check=False)
+                try:
+                    from export_ui_data import export_ui_data
+                    export_ui_data(root_dir)
+                except Exception:
+                    pass
 
     def generate_image(self, card_id: int, card_name: str, faction: str, tags: list, dp: int, model: str = None) -> dict:
         self.reload_config()
@@ -174,7 +208,7 @@ class ZImageTurboGenerator:
         print(f"[{chosen_model}] Generating image for '{card_name}' (ID: {card_id})...")
         
         if not self.api_key:
-            raise ValueError("SILICONFLOW_API_KEY is missing in .env")
+            raise ValueError("未检测到生图 API Key，请在右上角【AI 配置】中填入您的 SiliconFlow 密钥！")
 
         # Prioritize SiliconFlow API
         if self.siliconflow_key:
@@ -192,7 +226,7 @@ class ZImageTurboGenerator:
             
             # Retry loop for 429 rate limiting
             import time
-            max_retries = 2
+            max_retries = 5
             last_err = ""
             for attempt in range(max_retries + 1):
                 res = requests.post(url, json=payload, headers=headers, timeout=60)
@@ -204,10 +238,10 @@ class ZImageTurboGenerator:
                     self.update_cards_config(card_id, local_url)
                     return {"url": local_url, "prompt": prompt, "status": "success"}
                 elif res.status_code == 429:
-                    last_err = "触发了硅基流动每分钟出图限频（IPM Limit，每分钟约1~2张）。请等待约 20~30 秒后再试。"
+                    last_err = "触发了硅基流动每分钟出图限频（IPM Limit，每分钟约1~2张）。请等待 30 秒后再试。"
                     if attempt < max_retries:
-                        print(f"[SiliconFlow] 429 IPM reached, waiting 10s before retry {attempt+1}/{max_retries}...")
-                        time.sleep(10)
+                        print(f"[SiliconFlow] 429 IPM reached, waiting 30s before retry {attempt+1}/{max_retries}...")
+                        time.sleep(30)
                         continue
                 else:
                     last_err = f"SiliconFlow API Error ({res.status_code}): {res.text}"
