@@ -305,6 +305,7 @@ class GameSession:
                     "dp": int(c.base_dp),
                     "type": str(c.card_type.name),
                     "tags": list(c.tags),
+                    "factions": [f.value if hasattr(f, 'value') else str(f) for f in getattr(c, "factions", [])],
                     "atk_spell_val": int(getattr(c, "atk_spell_val", 0)),
                     "def_spell_val": int(getattr(c, "def_spell_val", 0)),
                     "image_url": img_map.get(c.id, "")
@@ -316,6 +317,7 @@ class GameSession:
                     "dp": int(c.base_dp),
                     "type": str(c.card_type.name),
                     "tags": list(c.tags),
+                    "factions": [f.value if hasattr(f, 'value') else str(f) for f in getattr(c, "factions", [])],
                     "atk_spell_val": int(getattr(c, "atk_spell_val", 0)),
                     "def_spell_val": int(getattr(c, "def_spell_val", 0)),
                     "image_url": img_map.get(c.id, "")
@@ -327,6 +329,7 @@ class GameSession:
                     "dp": int(c.base_dp),
                     "type": str(c.card_type.name),
                     "tags": list(c.tags),
+                    "factions": [f.value if hasattr(f, 'value') else str(f) for f in getattr(c, "factions", [])],
                     "image_url": img_map.get(c.id, "")
                 } for c in p.graveyard]
             }
@@ -338,6 +341,7 @@ class GameSession:
                 "cost": int(getattr(u.card, "cost", 0)),
                 "base_dp": int(getattr(u.card, "base_dp", 0)),
                 "type": str(getattr(u.card.card_type, "name", "MINION")),
+                "factions": [f.value if hasattr(f, 'value') else str(f) for f in getattr(u.card, "factions", [])],
                 "dp": int(u.current_dp),
                 "ready": bool(u.ready_to_attack),
                 "tags": list(u.card.tags),

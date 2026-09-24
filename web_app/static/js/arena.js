@@ -550,120 +550,150 @@ function renderDeckTracker(state) {
     const trackerEnemyDeckStat = document.getElementById('tracker-enemy-deck-stat');
     if (trackerEnemyDeckStat) trackerEnemyDeckStat.innerText = `敌方剩余: ${p1DeckCount}张`;
 
-    // Helper to safely get card cost and faction
-    const resolveCardInfo = (c) => {
-        let cost = (c && c.cost !== undefined && !isNaN(c.cost)) ? Number(c.cost) : null;
-        let dp = (c && c.dp !== undefined) ? Number(c.dp) : (c && c.base_dp !== undefined ? Number(c.base_dp) : null);
-        let factions = (c && c.factions && Array.isArray(c.factions)) ? c.factions : [];
-        let isSpell = c && (c.type === 'SPELL' || c.card_type === 'SPELL');
-        
-        if ((cost === null || factions.length === 0) && window.tcgData && window.tcgData.cards) {
-            const found = window.tcgData.cards.find(x => x.name === c.name || x.id === c.id);
-            if (found) {
-                if (cost === null) cost = found.cost;
-                if (dp === null) dp = found.base_dp;
-                if (factions.length === 0) factions = found.factions || [];
-                if (found.type === 'SPELL') isSpell = true;
-            }
-        }
-        return {
-            cost: cost !== null ? cost : 0,
-            dp: dp !== null ? dp : 0,
-            faction: factions[0] || 'Neutral',
-            isSpell: isSpell
+    try {
+        // Safe helper to get all registered cards as a flat array
+        const getFlatCardPool = () => {
+            if (!window.tcgData || !window.tcgData.cards) return [];
+            if (Array.isArray(window.tcgData.cards)) return window.tcgData.cards;
+            const flat = [];
+            try {
+                Object.values(window.tcgData.cards).forEach(val => {
+                    if (Array.isArray(val)) flat.push(...val);
+                    else if (val && typeof val === 'object') flat.push(val);
+                });
+            } catch (ignore) {}
+            return flat;
         };
-    };
 
-    // 2. Render Player Remaining Cards List
-    const p0CardsList = document.getElementById('tracker-cards-list');
-    if (p0CardsList) {
-        const deckCards = state.p0?.deck || [];
-        if (deckCards.length === 0) {
-            p0CardsList.innerHTML = `<div class="tracker-empty">${state.is_started ? '牌库已抽空' : '对局开始后显示详细记牌清单'}</div>`;
-        } else {
-            const countsMap = new Map();
-            deckCards.forEach(c => {
-                const key = c.name;
-                if (!countsMap.has(key)) {
-                    countsMap.set(key, { card: c, count: 0 });
+        // Helper to safely get card cost, dp and faction
+        const resolveCardInfo = (c) => {
+            if (!c) return { cost: 0, dp: 0, faction: 'Neutral', isSpell: false };
+            let cost = (c.cost !== undefined && !isNaN(c.cost)) ? Number(c.cost) : null;
+            let dp = (c.dp !== undefined) ? Number(c.dp) : (c.base_dp !== undefined ? Number(c.base_dp) : null);
+            let factions = (c.factions && Array.isArray(c.factions)) ? c.factions : [];
+            let isSpell = (c.type === 'SPELL' || c.card_type === 'SPELL');
+            
+            if (cost === null || dp === null || factions.length === 0) {
+                const pool = getFlatCardPool();
+                const found = pool.find(x => (c.id && x.id === c.id) || (c.name && x.name === c.name));
+                if (found) {
+                    if (cost === null) cost = found.cost;
+                    if (dp === null) dp = (found.base_dp !== undefined ? found.base_dp : found.dp);
+                    if (factions.length === 0 && found.factions) factions = found.factions;
+                    if (found.type === 'SPELL') isSpell = true;
                 }
-                countsMap.get(key).count++;
-            });
-
-            const sorted = Array.from(countsMap.values()).sort((a, b) => {
-                const infoA = resolveCardInfo(a.card);
-                const infoB = resolveCardInfo(b.card);
-                if (infoA.cost !== infoB.cost) return infoA.cost - infoB.cost;
-                return a.card.name.localeCompare(b.card.name, 'zh-Hans-CN');
-            });
-
-            p0CardsList.innerHTML = '';
-            sorted.forEach(({ card, count }) => {
-                const info = resolveCardInfo(card);
-                const row = document.createElement('div');
-                row.className = `tracker-card-row faction-${info.faction.toLowerCase()}`;
-                row.innerHTML = `
-                    <div class="tracker-card-left">
-                        <span class="tracker-cost-gem">${info.cost}</span>
-                        <span class="tracker-card-name">${card.name}</span>
-                        ${info.isSpell ? '<span class="tracker-spell-tag">法</span>' : `<span class="tracker-stat-tag">${info.dp}攻</span>`}
-                    </div>
-                    <span class="tracker-card-qty">x${count}</span>
-                `;
-                setupCardTooltip(row, card);
-                p0CardsList.appendChild(row);
-            });
-        }
-    }
-
-    // 3. Render Enemy Revealed Cards
-    const p1RevealedList = document.getElementById('tracker-enemy-revealed-list');
-    if (p1RevealedList) {
-        const enemyRevealedMap = new Map();
-        const addCard = (c) => {
-            if (!c || !c.name) return;
-            const key = c.name;
-            if (!enemyRevealedMap.has(key)) {
-                enemyRevealedMap.set(key, { card: c, count: 0 });
             }
-            enemyRevealedMap.get(key).count++;
+            return {
+                cost: cost !== null ? cost : 0,
+                dp: dp !== null ? dp : 0,
+                faction: factions[0] || 'Neutral',
+                isSpell: Boolean(isSpell)
+            };
         };
 
-        // Gather from enemy graveyard
-        (state.p1?.graveyard || []).forEach(addCard);
-        // Gather from active battlefield
-        (state.lanes || []).forEach(lane => {
-            (lane.p1_attackers || []).forEach(addCard);
-            (lane.p1_defenders || []).forEach(addCard);
-        });
+        // 2. Render Player Remaining Cards List
+        const p0CardsList = document.getElementById('tracker-cards-list');
+        if (p0CardsList) {
+            const deckCards = (state.p0 && Array.isArray(state.p0.deck)) ? state.p0.deck : [];
+            if (deckCards.length === 0) {
+                p0CardsList.innerHTML = `<div class="tracker-empty">${state.is_started ? '牌库已抽空' : '对局开始后显示详细记牌清单'}</div>`;
+            } else {
+                const countsMap = new Map();
+                deckCards.forEach(c => {
+                    if (!c) return;
+                    const key = c.name || `卡牌#${c.id || '?'}`;
+                    if (!countsMap.has(key)) {
+                        countsMap.set(key, { card: c, count: 0 });
+                    }
+                    countsMap.get(key).count++;
+                });
 
-        if (enemyRevealedMap.size === 0) {
-            p1RevealedList.innerHTML = '<div class="tracker-empty">敌方尚未打出卡牌</div>';
-        } else {
-            const sortedEnemy = Array.from(enemyRevealedMap.values()).sort((a, b) => {
-                const infoA = resolveCardInfo(a.card);
-                const infoB = resolveCardInfo(b.card);
-                if (infoA.cost !== infoB.cost) return infoA.cost - infoB.cost;
-                return a.card.name.localeCompare(b.card.name, 'zh-Hans-CN');
-            });
+                const sorted = Array.from(countsMap.values()).sort((a, b) => {
+                    const infoA = resolveCardInfo(a.card);
+                    const infoB = resolveCardInfo(b.card);
+                    if (infoA.cost !== infoB.cost) return infoA.cost - infoB.cost;
+                    const nameA = a.card?.name || '';
+                    const nameB = b.card?.name || '';
+                    return nameA.localeCompare(nameB, 'zh-Hans-CN');
+                });
 
-            p1RevealedList.innerHTML = '';
-            sortedEnemy.forEach(({ card, count }) => {
-                const info = resolveCardInfo(card);
-                const row = document.createElement('div');
-                row.className = `tracker-card-row enemy-tile faction-${info.faction.toLowerCase()}`;
-                row.innerHTML = `
-                    <div class="tracker-card-left">
-                        <span class="tracker-cost-gem">${info.cost}</span>
-                        <span class="tracker-card-name">${card.name}</span>
-                        ${info.isSpell ? '<span class="tracker-spell-tag">法</span>' : `<span class="tracker-stat-tag">${info.dp}攻</span>`}
-                    </div>
-                    <span class="tracker-card-qty">x${count}</span>
-                `;
-                setupCardTooltip(row, card);
-                p1RevealedList.appendChild(row);
-            });
+                p0CardsList.innerHTML = '';
+                sorted.forEach(({ card, count }) => {
+                    const info = resolveCardInfo(card);
+                    const row = document.createElement('div');
+                    row.className = `tracker-card-row faction-${String(info.faction).toLowerCase()}`;
+                    row.innerHTML = `
+                        <div class="tracker-card-left">
+                            <span class="tracker-cost-gem">${info.cost}</span>
+                            <span class="tracker-card-name" title="${card.name || '未知'}">${card.name || '未知'}</span>
+                            ${info.isSpell ? '<span class="tracker-spell-tag">法</span>' : `<span class="tracker-stat-tag">${info.dp}攻</span>`}
+                        </div>
+                        <span class="tracker-card-qty">x${count}</span>
+                    `;
+                    setupCardTooltip(row, card);
+                    p0CardsList.appendChild(row);
+                });
+            }
         }
+
+        // 3. Render Enemy Revealed Cards
+        const p1RevealedList = document.getElementById('tracker-enemy-revealed-list');
+        if (p1RevealedList) {
+            const enemyRevealedMap = new Map();
+            const addCard = (c) => {
+                if (!c) return;
+                const key = c.name || `卡牌#${c.id || '?'}`;
+                if (!enemyRevealedMap.has(key)) {
+                    enemyRevealedMap.set(key, { card: c, count: 0 });
+                }
+                enemyRevealedMap.get(key).count++;
+            };
+
+            // Gather from enemy graveyard
+            if (state.p1 && Array.isArray(state.p1.graveyard)) {
+                state.p1.graveyard.forEach(addCard);
+            }
+            // Gather from active battlefield
+            if (Array.isArray(state.lanes)) {
+                state.lanes.forEach(lane => {
+                    if (!lane) return;
+                    (lane.p1_attackers || []).forEach(addCard);
+                    (lane.p1_defenders || []).forEach(addCard);
+                });
+            }
+
+            if (enemyRevealedMap.size === 0) {
+                p1RevealedList.innerHTML = '<div class="tracker-empty">敌方尚未打出卡牌</div>';
+            } else {
+                const sortedEnemy = Array.from(enemyRevealedMap.values()).sort((a, b) => {
+                    const infoA = resolveCardInfo(a.card);
+                    const infoB = resolveCardInfo(b.card);
+                    if (infoA.cost !== infoB.cost) return infoA.cost - infoB.cost;
+                    const nameA = a.card?.name || '';
+                    const nameB = b.card?.name || '';
+                    return nameA.localeCompare(nameB, 'zh-Hans-CN');
+                });
+
+                p1RevealedList.innerHTML = '';
+                sortedEnemy.forEach(({ card, count }) => {
+                    const info = resolveCardInfo(card);
+                    const row = document.createElement('div');
+                    row.className = `tracker-card-row enemy-tile faction-${String(info.faction).toLowerCase()}`;
+                    row.innerHTML = `
+                        <div class="tracker-card-left">
+                            <span class="tracker-cost-gem">${info.cost}</span>
+                            <span class="tracker-card-name" title="${card.name || '未知'}">${card.name || '未知'}</span>
+                            ${info.isSpell ? '<span class="tracker-spell-tag">法</span>' : `<span class="tracker-stat-tag">${info.dp}攻</span>`}
+                        </div>
+                        <span class="tracker-card-qty">x${count}</span>
+                    `;
+                    setupCardTooltip(row, card);
+                    p1RevealedList.appendChild(row);
+                });
+            }
+        }
+    } catch (trackerErr) {
+        console.error("[DeckTracker] Render error:", trackerErr);
     }
 }
 
