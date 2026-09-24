@@ -34,3 +34,19 @@ pyrightconfig.json
 # Logs
 *.log
 *.zip
+
+# Generated expansion card artwork (keep git repo lightweight and code-focused)
+web_app/static/images/cards/14[8-9].*
+web_app/static/images/cards/1[5-9][0-9].*
+web_app/static/images/cards/24[7-9].*
+web_app/static/images/cards/2[5-9][0-9].*
+web_app/static/images/cards/34[7-9].*
+web_app/static/images/cards/3[5-9][0-9].*
+web_app/static/images/cards/40[7-9].*
+web_app/static/images/cards/4[1-9][0-9].*
+web_app/static/images/cards/50[7-9].*
+web_app/static/images/cards/5[1-9][0-9].*
+web_app/static/images/cards/60[7-9].*
+web_app/static/images/cards/6[1-9][0-9].*
+web_app/static/images/cards/91[5-9].*
+web_app/static/images/cards/9[2-9][0-9].*

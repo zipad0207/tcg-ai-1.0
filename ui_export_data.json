@@ -69,11 +69,11 @@
                 "name": "切割者",
                 "card_type": "MINION",
                 "cost": 2,
-                "base_dp": 1,
+                "base_dp": 2,
                 "atk_spell_val": 0,
                 "def_spell_val": 0,
                 "tags": [
-                    "DEGRADE_1",
+                    "DEGRADE_2",
                     "ATTACK_ONLY"
                 ],
                 "factions": [
@@ -430,8 +430,7 @@
                 "atk_spell_val": 0,
                 "def_spell_val": 0,
                 "tags": [
-                    "RUSH",
-                    "FORTIFY_1"
+                    "RUSH"
                 ],
                 "factions": [
                     "Red"
@@ -742,6 +741,234 @@
                 ],
                 "flavor_text": "喷吐着灼热岩浆的幼龙群，用高温削弱敌人防御后发起集群冲锋",
                 "image_url": "/static/images/cards/147.webp?v=1790174212"
+            },
+            {
+                "id": 148,
+                "name": "赤焰突袭兵",
+                "card_type": "MINION",
+                "cost": 3,
+                "base_dp": 2,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "RUSH"
+                ],
+                "factions": [
+                    "Red"
+                ],
+                "image_url": "/static/images/cards/148.webp?v=1790265867"
+            },
+            {
+                "id": 149,
+                "name": "赤红重装巨像",
+                "card_type": "MINION",
+                "cost": 4,
+                "base_dp": 5,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [],
+                "factions": [
+                    "Red"
+                ],
+                "image_url": "/static/images/cards/149.webp?v=1790265876"
+            },
+            {
+                "id": 150,
+                "name": "熔岩掠袭者",
+                "card_type": "MINION",
+                "cost": 6,
+                "base_dp": 4,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "RUSH"
+                ],
+                "factions": [
+                    "Red"
+                ],
+                "image_url": "/static/images/cards/150.webp?v=1790265887"
+            },
+            {
+                "id": 151,
+                "name": "红莲爆裂",
+                "card_type": "SPELL",
+                "cost": 3,
+                "base_dp": 0,
+                "atk_spell_val": 4,
+                "def_spell_val": 0,
+                "tags": [],
+                "factions": [
+                    "Red"
+                ],
+                "image_url": "/static/images/cards/151.webp?v=1790265895"
+            },
+            {
+                "id": 152,
+                "name": "赤红战备",
+                "card_type": "SPELL",
+                "cost": 3,
+                "base_dp": 0,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "DRAW_2"
+                ],
+                "factions": [
+                    "Red"
+                ],
+                "image_url": "/static/images/cards/152.webp?v=1790265904"
+            },
+            {
+                "id": 153,
+                "name": "赤焰突袭兵",
+                "card_type": "MINION",
+                "cost": 3,
+                "base_dp": 2,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "RUSH",
+                    "DEGRADE_1"
+                ],
+                "factions": [
+                    "Red"
+                ],
+                "image_url": "/static/images/cards/153.webp?v=1790267992"
+            },
+            {
+                "id": 154,
+                "name": "红莲破阵者",
+                "card_type": "MINION",
+                "cost": 3,
+                "base_dp": 3,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "BONUS_SCORE_1",
+                    "SUPPORT_ATK_1"
+                ],
+                "factions": [
+                    "Red"
+                ],
+                "image_url": "/static/images/cards/154.webp?v=1790268000"
+            },
+            {
+                "id": 155,
+                "name": "赤红重装巨像",
+                "card_type": "MINION",
+                "cost": 4,
+                "base_dp": 5,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [],
+                "factions": [
+                    "Red"
+                ],
+                "image_url": "/static/images/cards/155.webp?v=1790268008"
+            },
+            {
+                "id": 156,
+                "name": "熔岩返场督军",
+                "card_type": "MINION",
+                "cost": 6,
+                "base_dp": 6,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "RUSH",
+                    "DEATH_MANA_1"
+                ],
+                "factions": [
+                    "Red"
+                ]
+            },
+            {
+                "id": 157,
+                "name": "红莲爆裂",
+                "card_type": "SPELL",
+                "cost": 2,
+                "base_dp": 0,
+                "atk_spell_val": 4,
+                "def_spell_val": 0,
+                "tags": [],
+                "factions": [
+                    "Red"
+                ]
+            },
+            {
+                "id": 158,
+                "name": "赤焰突袭兵",
+                "card_type": "MINION",
+                "cost": 3,
+                "base_dp": 2,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "RUSH",
+                    "DEGRADE_1"
+                ],
+                "factions": [
+                    "Red"
+                ],
+                "image_url": "/static/images/cards/158.webp?v=1790268112"
+            },
+            {
+                "id": 159,
+                "name": "赤红重装巨像",
+                "card_type": "MINION",
+                "cost": 4,
+                "base_dp": 5,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [],
+                "factions": [
+                    "Red"
+                ],
+                "image_url": "/static/images/cards/159.webp?v=1790268119"
+            },
+            {
+                "id": 160,
+                "name": "熔岩督军",
+                "card_type": "MINION",
+                "cost": 5,
+                "base_dp": 6,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "SUPPORT_ATK_1"
+                ],
+                "factions": [
+                    "Red"
+                ],
+                "image_url": "/static/images/cards/160.webp?v=1790268128"
+            },
+            {
+                "id": 161,
+                "name": "烈焰狂战",
+                "card_type": "MINION",
+                "cost": 6,
+                "base_dp": 8,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [],
+                "factions": [
+                    "Red"
+                ],
+                "image_url": "/static/images/cards/161.webp?v=1790268136"
+            },
+            {
+                "id": 162,
+                "name": "红莲爆裂",
+                "card_type": "SPELL",
+                "cost": 2,
+                "base_dp": 0,
+                "atk_spell_val": 4,
+                "def_spell_val": 0,
+                "tags": [],
+                "factions": [
+                    "Red"
+                ],
+                "image_url": "/static/images/cards/162.webp?v=1790268144"
             }
         ],
         "Blue": [
@@ -781,7 +1008,7 @@
                 "id": 202,
                 "name": "弓箭手",
                 "card_type": "MINION",
-                "cost": 3,
+                "cost": 2,
                 "base_dp": 3,
                 "atk_spell_val": 0,
                 "def_spell_val": 0,
@@ -1018,11 +1245,11 @@
                 "name": "蔚蓝轻装盾卫",
                 "card_type": "MINION",
                 "cost": 1,
-                "base_dp": 2,
+                "base_dp": 3,
                 "atk_spell_val": 0,
                 "def_spell_val": 0,
                 "tags": [
-                    "FORTIFY_1"
+                    "FORTIFY_3"
                 ],
                 "factions": [
                     "Blue"
@@ -1308,7 +1535,7 @@
                 "card_type": "SPELL",
                 "cost": 3,
                 "base_dp": 0,
-                "atk_spell_val": 5,
+                "atk_spell_val": 6,
                 "def_spell_val": 0,
                 "tags": [],
                 "factions": [
@@ -1433,11 +1660,12 @@
                 "name": "蓝晶驻防者",
                 "card_type": "MINION",
                 "cost": 2,
-                "base_dp": 4,
+                "base_dp": 5,
                 "atk_spell_val": 0,
                 "def_spell_val": 0,
                 "tags": [
-                    "FORTIFY_3"
+                    "FORTIFY_4",
+                    "ATTACK_ONLY"
                 ],
                 "factions": [
                     "Blue"
@@ -1489,6 +1717,233 @@
                     "Blue"
                 ],
                 "image_url": "/static/images/cards/246.webp?v=1790174779"
+            },
+            {
+                "id": 247,
+                "name": "蔚蓝潮汐卫士",
+                "card_type": "MINION",
+                "cost": 3,
+                "base_dp": 4,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "FORTIFY_2"
+                ],
+                "factions": [
+                    "Blue"
+                ],
+                "image_url": "/static/images/cards/247.webp?v=1790265921"
+            },
+            {
+                "id": 248,
+                "name": "蓝晶秘术师",
+                "card_type": "MINION",
+                "cost": 4,
+                "base_dp": 3,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "DRAW_1",
+                    "TEMP_MANA_1"
+                ],
+                "factions": [
+                    "Blue"
+                ],
+                "image_url": "/static/images/cards/248.webp?v=1790265930"
+            },
+            {
+                "id": 249,
+                "name": "深蓝重甲鲸",
+                "card_type": "MINION",
+                "cost": 6,
+                "base_dp": 7,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [],
+                "factions": [
+                    "Blue"
+                ],
+                "image_url": "/static/images/cards/249.webp?v=1790265939"
+            },
+            {
+                "id": 250,
+                "name": "蔚蓝反击",
+                "card_type": "SPELL",
+                "cost": 2,
+                "base_dp": 0,
+                "atk_spell_val": 6,
+                "def_spell_val": 0,
+                "tags": [
+                    "DEGRADE_1"
+                ],
+                "factions": [
+                    "Blue"
+                ],
+                "image_url": "/static/images/cards/250.webp?v=1790265947"
+            },
+            {
+                "id": 251,
+                "name": "蓝晶突击者",
+                "card_type": "MINION",
+                "cost": 5,
+                "base_dp": 5,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "RUSH",
+                    "FORTIFY_1"
+                ],
+                "factions": [
+                    "Blue"
+                ],
+                "image_url": "/static/images/cards/251.webp?v=1790265964"
+            },
+            {
+                "id": 252,
+                "name": "蔚蓝秘法学者",
+                "card_type": "MINION",
+                "cost": 2,
+                "base_dp": 2,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "DRAW_1"
+                ],
+                "factions": [
+                    "Blue"
+                ]
+            },
+            {
+                "id": 253,
+                "name": "潮汐坚守者",
+                "card_type": "MINION",
+                "cost": 3,
+                "base_dp": 3,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "FORTIFY_2"
+                ],
+                "factions": [
+                    "Blue"
+                ]
+            },
+            {
+                "id": 254,
+                "name": "深蓝镜影卫",
+                "card_type": "MINION",
+                "cost": 4,
+                "base_dp": 4,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "SPAWN_1_1",
+                    "DEGRADE_1"
+                ],
+                "factions": [
+                    "Blue"
+                ]
+            },
+            {
+                "id": 255,
+                "name": "蓝海巨鲸",
+                "card_type": "MINION",
+                "cost": 6,
+                "base_dp": 7,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [],
+                "factions": [
+                    "Blue"
+                ]
+            },
+            {
+                "id": 256,
+                "name": "潮涌反击",
+                "card_type": "SPELL",
+                "cost": 2,
+                "base_dp": 0,
+                "atk_spell_val": 0,
+                "def_spell_val": 4,
+                "tags": [
+                    "DRAW_1"
+                ],
+                "factions": [
+                    "Blue"
+                ]
+            },
+            {
+                "id": 257,
+                "name": "蔚蓝守备官",
+                "card_type": "MINION",
+                "cost": 2,
+                "base_dp": 1,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "FORTIFY_2"
+                ],
+                "factions": [
+                    "Blue"
+                ],
+                "image_url": "/static/images/cards/257.webp?v=1790268160"
+            },
+            {
+                "id": 258,
+                "name": "冰霜回响",
+                "card_type": "MINION",
+                "cost": 3,
+                "base_dp": 2,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "DEATH_DRAW_1"
+                ],
+                "factions": [
+                    "Blue"
+                ],
+                "image_url": "/static/images/cards/258.webp?v=1790268171"
+            },
+            {
+                "id": 259,
+                "name": "深海巨盾",
+                "card_type": "MINION",
+                "cost": 4,
+                "base_dp": 5,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [],
+                "factions": [
+                    "Blue"
+                ]
+            },
+            {
+                "id": 260,
+                "name": "潮汐领主",
+                "card_type": "MINION",
+                "cost": 6,
+                "base_dp": 7,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "FORTIFY_3"
+                ],
+                "factions": [
+                    "Blue"
+                ]
+            },
+            {
+                "id": 261,
+                "name": "寒冰解离",
+                "card_type": "SPELL",
+                "cost": 3,
+                "base_dp": 0,
+                "atk_spell_val": 6,
+                "def_spell_val": 0,
+                "tags": [],
+                "factions": [
+                    "Blue"
+                ]
             }
         ],
         "Green": [
@@ -1863,7 +2318,7 @@
                 "id": 323,
                 "name": "藤蔓突袭者",
                 "card_type": "MINION",
-                "cost": 4,
+                "cost": 5,
                 "base_dp": 5,
                 "atk_spell_val": 0,
                 "def_spell_val": 0,
@@ -1945,7 +2400,7 @@
                 "name": "荆棘反制者",
                 "card_type": "MINION",
                 "cost": 4,
-                "base_dp": 4,
+                "base_dp": 5,
                 "atk_spell_val": 0,
                 "def_spell_val": 0,
                 "tags": [
@@ -2010,12 +2465,12 @@
                 "id": 332,
                 "name": "荆棘卫士",
                 "card_type": "MINION",
-                "cost": 1,
+                "cost": 2,
                 "base_dp": 3,
                 "atk_spell_val": 0,
                 "def_spell_val": 0,
                 "tags": [
-                    "FORTIFY_1"
+                    "FORTIFY_2"
                 ],
                 "factions": [
                     "Green"
@@ -2027,11 +2482,11 @@
                 "name": "林间哨兵",
                 "card_type": "MINION",
                 "cost": 2,
-                "base_dp": 3,
+                "base_dp": 4,
                 "atk_spell_val": 0,
                 "def_spell_val": 0,
                 "tags": [
-                    "FORTIFY_1",
+                    "FORTIFY_2",
                     "DEATH_DRAW_1"
                 ],
                 "factions": [
@@ -2236,13 +2691,237 @@
                 "card_type": "SPELL",
                 "cost": 2,
                 "base_dp": 0,
-                "atk_spell_val": 5,
+                "atk_spell_val": 6,
                 "def_spell_val": 0,
                 "tags": [],
                 "factions": [
                     "Green"
                 ],
                 "image_url": "/static/images/cards/346.webp?v=1790175460"
+            },
+            {
+                "id": 347,
+                "name": "翠绿藤蔓哨兵",
+                "card_type": "MINION",
+                "cost": 2,
+                "base_dp": 2,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "FORTIFY_2",
+                    "DEATH_DRAW_1"
+                ],
+                "factions": [
+                    "Green"
+                ],
+                "image_url": "/static/images/cards/347.webp?v=1790265979"
+            },
+            {
+                "id": 348,
+                "name": "翠绿古树守护者",
+                "card_type": "MINION",
+                "cost": 5,
+                "base_dp": 6,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "FORTIFY_3"
+                ],
+                "factions": [
+                    "Green"
+                ],
+                "image_url": "/static/images/cards/348.webp?v=1790265989"
+            },
+            {
+                "id": 349,
+                "name": "翠绿净化之光",
+                "card_type": "SPELL",
+                "cost": 3,
+                "base_dp": 0,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "SACRIFICE_1_KILL_1"
+                ],
+                "factions": [
+                    "Green"
+                ],
+                "image_url": "/static/images/cards/349.webp?v=1790265997"
+            },
+            {
+                "id": 350,
+                "name": "翠绿生长",
+                "card_type": "SPELL",
+                "cost": 2,
+                "base_dp": 0,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "RAMP_1",
+                    "DRAW_1"
+                ],
+                "factions": [
+                    "Green"
+                ],
+                "image_url": "/static/images/cards/350.webp?v=1790266007"
+            },
+            {
+                "id": 351,
+                "name": "翠绿复苏使",
+                "card_type": "MINION",
+                "cost": 4,
+                "base_dp": 3,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "DEATH_MANA_1",
+                    "SPAWN_1_1"
+                ],
+                "factions": [
+                    "Green"
+                ],
+                "image_url": "/static/images/cards/351.webp?v=1790266024"
+            },
+            {
+                "id": 352,
+                "name": "翠绿荆棘卫",
+                "card_type": "MINION",
+                "cost": 1,
+                "base_dp": 2,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [],
+                "factions": [
+                    "Green"
+                ]
+            },
+            {
+                "id": 353,
+                "name": "古木坚守者",
+                "card_type": "MINION",
+                "cost": 3,
+                "base_dp": 4,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "FORTIFY_1"
+                ],
+                "factions": [
+                    "Green"
+                ]
+            },
+            {
+                "id": 354,
+                "name": "荆棘解场师",
+                "card_type": "MINION",
+                "cost": 4,
+                "base_dp": 3,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "SACRIFICE_1_KILL_1",
+                    "DEATH_DRAW_1"
+                ],
+                "factions": [
+                    "Green"
+                ]
+            },
+            {
+                "id": 355,
+                "name": "翠绿复苏巨兽",
+                "card_type": "MINION",
+                "cost": 5,
+                "base_dp": 6,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [],
+                "factions": [
+                    "Green"
+                ]
+            },
+            {
+                "id": 356,
+                "name": "自然护盾",
+                "card_type": "SPELL",
+                "cost": 3,
+                "base_dp": 0,
+                "atk_spell_val": 0,
+                "def_spell_val": 6,
+                "tags": [],
+                "factions": [
+                    "Green"
+                ]
+            },
+            {
+                "id": 357,
+                "name": "翠绿斥候",
+                "card_type": "MINION",
+                "cost": 1,
+                "base_dp": 2,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [],
+                "factions": [
+                    "Green"
+                ]
+            },
+            {
+                "id": 358,
+                "name": "藤蔓守卫",
+                "card_type": "MINION",
+                "cost": 3,
+                "base_dp": 2,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "SPAWN_1_1"
+                ],
+                "factions": [
+                    "Green"
+                ]
+            },
+            {
+                "id": 359,
+                "name": "林间巨兽",
+                "card_type": "MINION",
+                "cost": 5,
+                "base_dp": 6,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [],
+                "factions": [
+                    "Green"
+                ]
+            },
+            {
+                "id": 360,
+                "name": "自然先知",
+                "card_type": "MINION",
+                "cost": 7,
+                "base_dp": 8,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "DEATH_MANA_1"
+                ],
+                "factions": [
+                    "Green"
+                ]
+            },
+            {
+                "id": 361,
+                "name": "生长爆发",
+                "card_type": "SPELL",
+                "cost": 2,
+                "base_dp": 0,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "RAMP_1"
+                ],
+                "factions": [
+                    "Green"
+                ]
             }
         ],
         "Neutral": [
@@ -2480,6 +3159,144 @@
                     "Neutral"
                 ],
                 "image_url": "/static/images/cards/914.webp?v=1790175865"
+            },
+            {
+                "id": 915,
+                "name": "中立智慧猫头鹰",
+                "card_type": "MINION",
+                "cost": 2,
+                "base_dp": 1,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "DRAW_1"
+                ],
+                "factions": [
+                    "Neutral"
+                ],
+                "image_url": "/static/images/cards/915.webp?v=1790266032"
+            },
+            {
+                "id": 916,
+                "name": "中立石墙卫士",
+                "card_type": "MINION",
+                "cost": 3,
+                "base_dp": 4,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "FORTIFY_2"
+                ],
+                "factions": [
+                    "Neutral"
+                ],
+                "image_url": "/static/images/cards/916.webp?v=1790266041"
+            },
+            {
+                "id": 917,
+                "name": "中立能量涌动",
+                "card_type": "SPELL",
+                "cost": 0,
+                "base_dp": 0,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "TEMP_MANA_2"
+                ],
+                "factions": [
+                    "Neutral"
+                ],
+                "image_url": "/static/images/cards/917.webp?v=1790266049"
+            },
+            {
+                "id": 918,
+                "name": "中立智慧信使",
+                "card_type": "MINION",
+                "cost": 2,
+                "base_dp": 1,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "DEATH_DRAW_1"
+                ],
+                "factions": [
+                    "Neutral"
+                ]
+            },
+            {
+                "id": 919,
+                "name": "中立壁垒卫兵",
+                "card_type": "MINION",
+                "cost": 3,
+                "base_dp": 4,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "FORTIFY_1"
+                ],
+                "factions": [
+                    "Neutral"
+                ]
+            },
+            {
+                "id": 920,
+                "name": "通用临时润滑",
+                "card_type": "SPELL",
+                "cost": 0,
+                "base_dp": 0,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "TEMP_MANA_1"
+                ],
+                "factions": [
+                    "Neutral"
+                ]
+            },
+            {
+                "id": 921,
+                "name": "智慧古树",
+                "card_type": "MINION",
+                "cost": 4,
+                "base_dp": 3,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "DEATH_DRAW_1"
+                ],
+                "factions": [
+                    "Neutral"
+                ]
+            },
+            {
+                "id": 922,
+                "name": "铁壁卫兵",
+                "card_type": "MINION",
+                "cost": 3,
+                "base_dp": 2,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "FORTIFY_1"
+                ],
+                "factions": [
+                    "Neutral"
+                ]
+            },
+            {
+                "id": 923,
+                "name": "时空裂隙",
+                "card_type": "SPELL",
+                "cost": 0,
+                "base_dp": 0,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "TEMP_MANA_2"
+                ],
+                "factions": [
+                    "Neutral"
+                ]
             }
         ],
         "Dual": [
@@ -2856,6 +3673,155 @@
                     "Green"
                 ],
                 "image_url": "/static/images/cards/606.webp?v=1790175701"
+            },
+            {
+                "id": 407,
+                "name": "赤蓝破阵将",
+                "card_type": "MINION",
+                "cost": 4,
+                "base_dp": 3,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "RUSH",
+                    "DRAW_1"
+                ],
+                "factions": [
+                    "Red",
+                    "Blue"
+                ],
+                "image_url": "/static/images/cards/407.webp?v=1790265912"
+            },
+            {
+                "id": 507,
+                "name": "蓝绿潮涌",
+                "card_type": "SPELL",
+                "cost": 3,
+                "base_dp": 0,
+                "atk_spell_val": 0,
+                "def_spell_val": 6,
+                "tags": [
+                    "FORTIFY_1"
+                ],
+                "factions": [
+                    "Blue",
+                    "Green"
+                ],
+                "image_url": "/static/images/cards/507.webp?v=1790265955"
+            },
+            {
+                "id": 607,
+                "name": "红绿壁垒",
+                "card_type": "MINION",
+                "cost": 6,
+                "base_dp": 6,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "FORTIFY_3"
+                ],
+                "factions": [
+                    "Red",
+                    "Green"
+                ],
+                "image_url": "/static/images/cards/607.webp?v=1790266015"
+            },
+            {
+                "id": 408,
+                "name": "红蓝战术转换",
+                "card_type": "SPELL",
+                "cost": 3,
+                "base_dp": 0,
+                "atk_spell_val": 0,
+                "def_spell_val": 0,
+                "tags": [
+                    "DRAW_2",
+                    "TEMP_MANA_1"
+                ],
+                "factions": [
+                    "Red",
+                    "Blue"
+                ]
+            },
+            {
+                "id": 508,
+                "name": "蓝绿法力共鸣",
+                "card_type": "SPELL",
+                "cost": 3,
+                "base_dp": 0,
+                "atk_spell_val": 0,
+                "def_spell_val": 5,
+                "tags": [
+                    "TEMP_MANA_1"
+                ],
+                "factions": [
+                    "Blue",
+                    "Green"
+                ]
+            },
+            {
+                "id": 608,
+                "name": "红绿生长循环",
+                "card_type": "SPELL",
+                "cost": 4,
+                "base_dp": 0,
+                "atk_spell_val": 3,
+                "def_spell_val": 0,
+                "tags": [
+                    "RAMP_1",
+                    "DRAW_1"
+                ],
+                "factions": [
+                    "Red",
+                    "Green"
+                ]
+            },
+            {
+                "id": 409,
+                "name": "蓝焰返击",
+                "card_type": "SPELL",
+                "cost": 4,
+                "base_dp": 0,
+                "atk_spell_val": 0,
+                "def_spell_val": 6,
+                "tags": [
+                    "TEMP_MANA_1"
+                ],
+                "factions": [
+                    "Red",
+                    "Blue"
+                ],
+                "image_url": "/static/images/cards/409.webp?v=1790268152"
+            },
+            {
+                "id": 509,
+                "name": "翠流护盾",
+                "card_type": "SPELL",
+                "cost": 3,
+                "base_dp": 0,
+                "atk_spell_val": 0,
+                "def_spell_val": 6,
+                "tags": [
+                    "DRAW_1"
+                ],
+                "factions": [
+                    "Blue",
+                    "Green"
+                ]
+            },
+            {
+                "id": 609,
+                "name": "赤藤反击",
+                "card_type": "SPELL",
+                "cost": 4,
+                "base_dp": 0,
+                "atk_spell_val": 6,
+                "def_spell_val": 0,
+                "tags": [],
+                "factions": [
+                    "Red",
+                    "Green"
+                ]
             }
         ]
     },
@@ -2866,131 +3832,17 @@
             "tactical_concept": "基于 PPO 神经网络效用评估与实战博弈测试构筑，平均费用 2.7 费。",
             "key_combos": [
                 "佣兵斥候 (评分 98.0): 核心关键卡，状态价值增益最高。",
-                "熔火双刃卫 (评分 98.0): 辅助节奏卡，协同支撑场面与战术推进。"
+                "赤蓝交织者 (评分 98.0): 辅助节奏卡，协同支撑场面与战术推进。"
             ],
             "decision_evolution_logs": [
-                "第 1 代微调 (胜率 46.0% -> 58.0%, +12.0%): 采纳整批变异，+1[熔火双刃卫] / -1[蓝绿潮涌]",
-                "第 2 代微调 (实测胜率 50.0%, 下跌 8.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 3 代微调 (实测胜率 48.0%, 下跌 10.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 4 代微调 (实测胜率 52.0%, 下跌 6.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 5 代微调 (胜率 58.0% -> 70.0%, +12.0%): 采纳平滑变异，+1[赤蓝交织者] / -1[蓝晶驻防者]",
-                "第 6 代微调 (实测胜率 42.0%, 下跌 28.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 7 代微调 (实测胜率 50.0%, 下跌 20.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 8 代微调 (实测胜率 34.0%, 下跌 36.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 9 代微调 (实测胜率 48.0%, 下跌 22.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 10 代微调 (实测胜率 52.0%, 下跌 18.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 11 代微调 (实测胜率 54.0%, 下跌 16.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 12 代微调 (实测胜率 46.0%, 下跌 24.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 13 代微调 (实测胜率 42.0%, 下跌 28.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 14 代微调 (实测胜率 52.0%, 下跌 18.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 15 代微调 (实测胜率 48.0%, 下跌 22.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 16 代微调 (实测胜率 52.0%, 下跌 18.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 17 代微调 (实测胜率 48.0%, 下跌 22.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 18 代微调 (实测胜率 42.0%, 下跌 28.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 19 代微调 (实测胜率 54.0%, 下跌 16.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 20 代微调 (实测胜率 64.0%, 下跌 6.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。"
+                "第 1 代微调 (实测胜率 26.7%, 变化 -20.0%): 放弃变异，回滚保留原构筑",
+                "第 2 代微调 (实测胜率 40.0%, 变化 -6.7%): 放弃变异，回滚保留原构筑"
             ],
             "introspections": [
                 {
                     "generation": 1,
-                    "winrate": 57.99999999999999,
-                    "prev_winrate": 46.0,
-                    "promoted": {
-                        "id": 405,
-                        "name": "熔火双刃卫",
-                        "thought": "换入 [熔火双刃卫] x1 (持 3 张)"
-                    },
-                    "demoted": {
-                        "id": 502,
-                        "name": "蓝绿潮涌",
-                        "thought": "移出 [蓝绿潮涌] x1 (余 0 张)"
-                    },
-                    "monologue": "移出 换入 [蓝绿潮涌] x1 (余 0 张)\n      [熔火双刃卫] x1 (持 3 张)"
-                },
-                {
-                    "generation": 2,
-                    "winrate": 57.99999999999999,
-                    "prev_winrate": 57.99999999999999,
-                    "promoted": {
-                        "id": 905,
-                        "name": "佣兵斥候",
-                        "thought": "维持原构筑，保留 [蓝晶驻防者]"
-                    },
-                    "demoted": {
-                        "id": 243,
-                        "name": "蓝晶驻防者",
-                        "thought": "尝试换入 [佣兵斥候] 胜率降至 50.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [佣兵斥候] 胜率降至 50.0%，取消变动\n      维持原构筑，保留 [蓝晶驻防者]"
-                },
-                {
-                    "generation": 3,
-                    "winrate": 57.99999999999999,
-                    "prev_winrate": 57.99999999999999,
-                    "promoted": {
-                        "id": 905,
-                        "name": "佣兵斥候",
-                        "thought": "维持原构筑，保留 [蓝晶驻防者]"
-                    },
-                    "demoted": {
-                        "id": 243,
-                        "name": "蓝晶驻防者",
-                        "thought": "尝试换入 [佣兵斥候] 胜率降至 48.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [佣兵斥候] 胜率降至 48.0%，取消变动\n      维持原构筑，保留 [蓝晶驻防者]"
-                },
-                {
-                    "generation": 4,
-                    "winrate": 57.99999999999999,
-                    "prev_winrate": 57.99999999999999,
-                    "promoted": {
-                        "id": 905,
-                        "name": "佣兵斥候",
-                        "thought": "维持原构筑，保留 [熔火双刃卫]"
-                    },
-                    "demoted": {
-                        "id": 405,
-                        "name": "熔火双刃卫",
-                        "thought": "尝试换入 [佣兵斥候] 胜率降至 52.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [佣兵斥候] 胜率降至 52.0%，取消变动\n      维持原构筑，保留 [熔火双刃卫]"
-                },
-                {
-                    "generation": 5,
-                    "winrate": 70.0,
-                    "prev_winrate": 57.99999999999999,
-                    "promoted": {
-                        "id": 404,
-                        "name": "赤蓝交织者",
-                        "thought": "换入 [赤蓝交织者] x1 (持 3 张)"
-                    },
-                    "demoted": {
-                        "id": 243,
-                        "name": "蓝晶驻防者",
-                        "thought": "移出 [蓝晶驻防者] x1 (余 2 张)"
-                    },
-                    "monologue": "移出 换入 [蓝晶驻防者] x1 (余 2 张)\n      [赤蓝交织者] x1 (持 3 张)"
-                },
-                {
-                    "generation": 6,
-                    "winrate": 70.0,
-                    "prev_winrate": 70.0,
-                    "promoted": {
-                        "id": 905,
-                        "name": "佣兵斥候",
-                        "thought": "维持原构筑，保留 [赤蓝交织者]"
-                    },
-                    "demoted": {
-                        "id": 404,
-                        "name": "赤蓝交织者",
-                        "thought": "尝试换入 [佣兵斥候] 胜率降至 42.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [佣兵斥候] 胜率降至 42.0%，取消变动\n      维持原构筑，保留 [赤蓝交织者]"
-                },
-                {
-                    "generation": 7,
-                    "winrate": 70.0,
-                    "prev_winrate": 70.0,
+                    "winrate": 46.666666666666664,
+                    "prev_winrate": 46.666666666666664,
                     "promoted": {
                         "id": 905,
                         "name": "佣兵斥候",
@@ -2999,217 +3851,25 @@
                     "demoted": {
                         "id": 912,
                         "name": "中立过牌机",
-                        "thought": "尝试换入 [佣兵斥候] 胜率降至 50.0%，取消变动"
+                        "thought": "尝试换入 [佣兵斥候] 胜率降至 26.7%，取消变动"
                     },
-                    "monologue": "尝试换入 [佣兵斥候] 胜率降至 50.0%，取消变动\n      维持原构筑，保留 [中立过牌机]"
+                    "monologue": "尝试换入 [佣兵斥候] 胜率降至 26.7%，取消变动\n      维持原构筑，保留 [中立过牌机]"
                 },
                 {
-                    "generation": 8,
-                    "winrate": 70.0,
-                    "prev_winrate": 70.0,
+                    "generation": 2,
+                    "winrate": 46.666666666666664,
+                    "prev_winrate": 46.666666666666664,
                     "promoted": {
-                        "id": 905,
-                        "name": "佣兵斥候",
-                        "thought": "维持原构筑，保留 [蔚蓝轻装盾卫]"
-                    },
-                    "demoted": {
-                        "id": 217,
-                        "name": "蔚蓝轻装盾卫",
-                        "thought": "尝试换入 [佣兵斥候] 胜率降至 34.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [佣兵斥候] 胜率降至 34.0%，取消变动\n      维持原构筑，保留 [蔚蓝轻装盾卫]"
-                },
-                {
-                    "generation": 9,
-                    "winrate": 70.0,
-                    "prev_winrate": 70.0,
-                    "promoted": {
-                        "id": 905,
-                        "name": "佣兵斥候",
-                        "thought": "维持原构筑，保留 [蔚蓝卫士]"
-                    },
-                    "demoted": {
-                        "id": 200,
-                        "name": "蔚蓝卫士",
-                        "thought": "尝试换入 [佣兵斥候] 胜率降至 48.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [佣兵斥候] 胜率降至 48.0%，取消变动\n      维持原构筑，保留 [蔚蓝卫士]"
-                },
-                {
-                    "generation": 10,
-                    "winrate": 70.0,
-                    "prev_winrate": 70.0,
-                    "promoted": {
-                        "id": 905,
-                        "name": "佣兵斥候",
-                        "thought": "维持原构筑，保留 [潮汐守卫]"
-                    },
-                    "demoted": {
-                        "id": 232,
-                        "name": "潮汐守卫",
-                        "thought": "尝试换入 [佣兵斥候] 胜率降至 52.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [佣兵斥候] 胜率降至 52.0%，取消变动\n      维持原构筑，保留 [潮汐守卫]"
-                },
-                {
-                    "generation": 11,
-                    "winrate": 70.0,
-                    "prev_winrate": 70.0,
-                    "promoted": {
-                        "id": 905,
-                        "name": "佣兵斥候",
-                        "thought": "维持原构筑，保留 [训练假人]"
-                    },
-                    "demoted": {
-                        "id": 902,
-                        "name": "训练假人",
-                        "thought": "尝试换入 [佣兵斥候] 胜率降至 54.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [佣兵斥候] 胜率降至 54.0%，取消变动\n      维持原构筑，保留 [训练假人]"
-                },
-                {
-                    "generation": 12,
-                    "winrate": 70.0,
-                    "prev_winrate": 70.0,
-                    "promoted": {
-                        "id": 905,
-                        "name": "佣兵斥候",
-                        "thought": "维持原构筑，保留 [赤蓝交织者]"
-                    },
-                    "demoted": {
                         "id": 404,
                         "name": "赤蓝交织者",
-                        "thought": "尝试换入 [佣兵斥候] 胜率降至 46.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [佣兵斥候] 胜率降至 46.0%，取消变动\n      维持原构筑，保留 [赤蓝交织者]"
-                },
-                {
-                    "generation": 13,
-                    "winrate": 70.0,
-                    "prev_winrate": 70.0,
-                    "promoted": {
-                        "id": 905,
-                        "name": "佣兵斥候",
-                        "thought": "维持原构筑，保留 [训练假人]"
-                    },
-                    "demoted": {
-                        "id": 902,
-                        "name": "训练假人",
-                        "thought": "尝试换入 [佣兵斥候] 胜率降至 42.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [佣兵斥候] 胜率降至 42.0%，取消变动\n      维持原构筑，保留 [训练假人]"
-                },
-                {
-                    "generation": 14,
-                    "winrate": 70.0,
-                    "prev_winrate": 70.0,
-                    "promoted": {
-                        "id": 905,
-                        "name": "佣兵斥候",
-                        "thought": "维持原构筑，保留 [流浪学者]"
-                    },
-                    "demoted": {
-                        "id": 907,
-                        "name": "流浪学者",
-                        "thought": "尝试换入 [佣兵斥候] 胜率降至 52.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [佣兵斥候] 胜率降至 52.0%，取消变动\n      维持原构筑，保留 [流浪学者]"
-                },
-                {
-                    "generation": 15,
-                    "winrate": 70.0,
-                    "prev_winrate": 70.0,
-                    "promoted": {
-                        "id": 201,
-                        "name": "盾兵",
-                        "thought": "维持原构筑，保留 [赤蓝交织者]"
-                    },
-                    "demoted": {
-                        "id": 404,
-                        "name": "赤蓝交织者",
-                        "thought": "尝试换入 [盾兵] 胜率降至 48.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [盾兵] 胜率降至 48.0%，取消变动\n      维持原构筑，保留 [赤蓝交织者]"
-                },
-                {
-                    "generation": 16,
-                    "winrate": 70.0,
-                    "prev_winrate": 70.0,
-                    "promoted": {
-                        "id": 201,
-                        "name": "盾兵",
-                        "thought": "维持原构筑，保留 [赤蓝交织者]"
-                    },
-                    "demoted": {
-                        "id": 404,
-                        "name": "赤蓝交织者",
-                        "thought": "尝试换入 [盾兵] 胜率降至 52.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [盾兵] 胜率降至 52.0%，取消变动\n      维持原构筑，保留 [赤蓝交织者]"
-                },
-                {
-                    "generation": 17,
-                    "winrate": 70.0,
-                    "prev_winrate": 70.0,
-                    "promoted": {
-                        "id": 902,
-                        "name": "训练假人",
                         "thought": "维持原构筑，保留 [秘法学者]"
                     },
                     "demoted": {
                         "id": 233,
                         "name": "秘法学者",
-                        "thought": "尝试换入 [训练假人] 胜率降至 48.0%，取消变动"
+                        "thought": "尝试换入 [赤蓝交织者] 胜率降至 40.0%，取消变动"
                     },
-                    "monologue": "尝试换入 [训练假人] 胜率降至 48.0%，取消变动\n      维持原构筑，保留 [秘法学者]"
-                },
-                {
-                    "generation": 18,
-                    "winrate": 70.0,
-                    "prev_winrate": 70.0,
-                    "promoted": {
-                        "id": 905,
-                        "name": "佣兵斥候",
-                        "thought": "维持原构筑，保留 [秘法学者]"
-                    },
-                    "demoted": {
-                        "id": 233,
-                        "name": "秘法学者",
-                        "thought": "尝试换入 [佣兵斥候] 胜率降至 42.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [佣兵斥候] 胜率降至 42.0%，取消变动\n      维持原构筑，保留 [秘法学者]"
-                },
-                {
-                    "generation": 19,
-                    "winrate": 70.0,
-                    "prev_winrate": 70.0,
-                    "promoted": {
-                        "id": 905,
-                        "name": "佣兵斥候",
-                        "thought": "维持原构筑，保留 [蔚蓝卫士]"
-                    },
-                    "demoted": {
-                        "id": 200,
-                        "name": "蔚蓝卫士",
-                        "thought": "尝试换入 [佣兵斥候] 胜率降至 54.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [佣兵斥候] 胜率降至 54.0%，取消变动\n      维持原构筑，保留 [蔚蓝卫士]"
-                },
-                {
-                    "generation": 20,
-                    "winrate": 70.0,
-                    "prev_winrate": 70.0,
-                    "promoted": {
-                        "id": 905,
-                        "name": "佣兵斥候",
-                        "thought": "维持原构筑，保留 [秘法学者]"
-                    },
-                    "demoted": {
-                        "id": 233,
-                        "name": "秘法学者",
-                        "thought": "尝试换入 [佣兵斥候] 胜率降至 64.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [佣兵斥候] 胜率降至 64.0%，取消变动\n      维持原构筑，保留 [秘法学者]"
+                    "monologue": "尝试换入 [赤蓝交织者] 胜率降至 40.0%，取消变动\n      维持原构筑，保留 [秘法学者]"
                 }
             ],
             "total_cards": 30,
@@ -3219,9 +3879,9 @@
             "mana_curve": {
                 "0": 0,
                 "1": 6,
-                "2": 10,
-                "3": 5,
-                "4": 6,
+                "2": 9,
+                "3": 7,
+                "4": 5,
                 "5": 2,
                 "6": 1,
                 "7": 0,
@@ -3242,12 +3902,12 @@
                 "243": 2,
                 "900": 1,
                 "902": 2,
-                "905": 1,
+                "905": 2,
                 "907": 1,
                 "911": 1,
                 "912": 1,
                 "501": 1,
-                "404": 3,
+                "404": 2,
                 "405": 3
             },
             "card_details": [
@@ -3263,9 +3923,9 @@
                         "FORTIFY_1"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 38.4,
-                    "ppo_value_gain": 0.008,
-                    "ppo_score": 72.67
+                    "ppo_play_prob": 44.9,
+                    "ppo_value_gain": 0.04,
+                    "ppo_score": 84.99
                 },
                 {
                     "id": 217,
@@ -3279,9 +3939,9 @@
                         "FORTIFY_1"
                     ],
                     "count": 3,
-                    "ppo_play_prob": 52.3,
-                    "ppo_value_gain": 0.002,
-                    "ppo_score": 76.65
+                    "ppo_play_prob": 29.6,
+                    "ppo_value_gain": 0.019,
+                    "ppo_score": 72.45
                 },
                 {
                     "id": 902,
@@ -3295,9 +3955,9 @@
                         "FORTIFY_1"
                     ],
                     "count": 2,
-                    "ppo_play_prob": 40.4,
-                    "ppo_value_gain": 0.01,
-                    "ppo_score": 74.08
+                    "ppo_play_prob": 37.7,
+                    "ppo_value_gain": 0.027,
+                    "ppo_score": 78.12
                 },
                 {
                     "id": 200,
@@ -3311,9 +3971,9 @@
                         "FORTIFY_1"
                     ],
                     "count": 2,
-                    "ppo_play_prob": 32.5,
-                    "ppo_value_gain": 0.009,
-                    "ppo_score": 70.73
+                    "ppo_play_prob": 48.8,
+                    "ppo_value_gain": 0.019,
+                    "ppo_score": 80.12
                 },
                 {
                     "id": 212,
@@ -3327,9 +3987,9 @@
                         "FORTIFY_1"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 33.7,
-                    "ppo_value_gain": 0.009,
-                    "ppo_score": 71.09
+                    "ppo_play_prob": 39.2,
+                    "ppo_value_gain": -0.0,
+                    "ppo_score": 70.6
                 },
                 {
                     "id": 232,
@@ -3343,9 +4003,9 @@
                         "FORTIFY_1"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 33.4,
-                    "ppo_value_gain": -0.004,
-                    "ppo_score": 67.21
+                    "ppo_play_prob": 47.0,
+                    "ppo_value_gain": 0.019,
+                    "ppo_score": 79.56
                 },
                 {
                     "id": 237,
@@ -3359,25 +4019,9 @@
                         "FORTIFY_1"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 28.4,
-                    "ppo_value_gain": 0.004,
-                    "ppo_score": 67.66
-                },
-                {
-                    "id": 243,
-                    "name": "蓝晶驻防者",
-                    "cost": 2,
-                    "card_type": "MINION",
-                    "base_dp": 4,
-                    "atk_spell_val": 0,
-                    "def_spell_val": 0,
-                    "tags": [
-                        "FORTIFY_3"
-                    ],
-                    "count": 2,
-                    "ppo_play_prob": 29.0,
-                    "ppo_value_gain": 0.002,
-                    "ppo_score": 67.18
+                    "ppo_play_prob": 41.2,
+                    "ppo_value_gain": 0.006,
+                    "ppo_score": 73.14
                 },
                 {
                     "id": 900,
@@ -3391,9 +4035,9 @@
                         "DRAW_1"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 33.6,
-                    "ppo_value_gain": 0.0,
-                    "ppo_score": 68.47
+                    "ppo_play_prob": 29.2,
+                    "ppo_value_gain": 0.01,
+                    "ppo_score": 69.63
                 },
                 {
                     "id": 905,
@@ -3406,9 +4050,9 @@
                     "tags": [
                         "RUSH"
                     ],
-                    "count": 1,
-                    "ppo_play_prob": 39.2,
-                    "ppo_value_gain": 0.106,
+                    "count": 2,
+                    "ppo_play_prob": 36.0,
+                    "ppo_value_gain": 0.097,
                     "ppo_score": 98.0
                 },
                 {
@@ -3423,9 +4067,9 @@
                         "DRAW_2"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 44.6,
-                    "ppo_value_gain": -0.003,
-                    "ppo_score": 71.78
+                    "ppo_play_prob": 31.7,
+                    "ppo_value_gain": 0.05,
+                    "ppo_score": 82.81
                 },
                 {
                     "id": 208,
@@ -3439,9 +4083,9 @@
                         "FORTIFY_2"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 30.7,
-                    "ppo_value_gain": -0.002,
-                    "ppo_score": 66.71
+                    "ppo_play_prob": 49.4,
+                    "ppo_value_gain": 0.002,
+                    "ppo_score": 75.5
                 },
                 {
                     "id": 233,
@@ -3455,9 +4099,25 @@
                         "DEATH_DRAW_1"
                     ],
                     "count": 2,
-                    "ppo_play_prob": 31.7,
-                    "ppo_value_gain": -0.01,
-                    "ppo_score": 64.74
+                    "ppo_play_prob": 29.2,
+                    "ppo_value_gain": 0.037,
+                    "ppo_score": 77.86
+                },
+                {
+                    "id": 243,
+                    "name": "蓝晶驻防者",
+                    "cost": 3,
+                    "card_type": "MINION",
+                    "base_dp": 3,
+                    "atk_spell_val": 0,
+                    "def_spell_val": 0,
+                    "tags": [
+                        "FORTIFY_2"
+                    ],
+                    "count": 2,
+                    "ppo_play_prob": 34.8,
+                    "ppo_value_gain": 0.018,
+                    "ppo_score": 74.29
                 },
                 {
                     "id": 907,
@@ -3472,9 +4132,9 @@
                         "TEMP_MANA_1"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 31.6,
-                    "ppo_value_gain": -0.002,
-                    "ppo_score": 67.06
+                    "ppo_play_prob": 27.3,
+                    "ppo_value_gain": 0.011,
+                    "ppo_score": 69.17
                 },
                 {
                     "id": 912,
@@ -3488,9 +4148,9 @@
                         "DRAW_1"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 30.7,
-                    "ppo_value_gain": -0.023,
-                    "ppo_score": 60.38
+                    "ppo_play_prob": 32.0,
+                    "ppo_value_gain": 0.036,
+                    "ppo_score": 78.56
                 },
                 {
                     "id": 404,
@@ -3504,10 +4164,10 @@
                         "RUSH",
                         "DEATH_DRAW_1"
                     ],
-                    "count": 3,
-                    "ppo_play_prob": 32.3,
-                    "ppo_value_gain": 0.1,
-                    "ppo_score": 97.8
+                    "count": 2,
+                    "ppo_play_prob": 27.3,
+                    "ppo_value_gain": 0.122,
+                    "ppo_score": 98.0
                 },
                 {
                     "id": 405,
@@ -3522,8 +4182,8 @@
                         "FORTIFY_1"
                     ],
                     "count": 3,
-                    "ppo_play_prob": 35.1,
-                    "ppo_value_gain": 0.107,
+                    "ppo_play_prob": 41.1,
+                    "ppo_value_gain": 0.141,
                     "ppo_score": 98.0
                 },
                 {
@@ -3538,9 +4198,9 @@
                         "FORTIFY_2"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 36.4,
-                    "ppo_value_gain": -0.007,
-                    "ppo_score": 67.39
+                    "ppo_play_prob": 35.4,
+                    "ppo_value_gain": 0.03,
+                    "ppo_score": 78.23
                 },
                 {
                     "id": 501,
@@ -3555,9 +4215,9 @@
                         "RAMP_1"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 32.6,
-                    "ppo_value_gain": 0.001,
-                    "ppo_score": 68.21
+                    "ppo_play_prob": 29.8,
+                    "ppo_value_gain": -0.007,
+                    "ppo_score": 64.74
                 },
                 {
                     "id": 204,
@@ -3569,9 +4229,9 @@
                     "def_spell_val": 0,
                     "tags": [],
                     "count": 1,
-                    "ppo_play_prob": 32.4,
-                    "ppo_value_gain": -0.022,
-                    "ppo_score": 61.47
+                    "ppo_play_prob": 34.8,
+                    "ppo_value_gain": -0.018,
+                    "ppo_score": 63.46
                 }
             ],
             "decklist": [
@@ -3586,17 +4246,17 @@
                 212,
                 232,
                 237,
-                243,
-                243,
                 900,
+                905,
                 905,
                 911,
                 208,
                 233,
                 233,
+                243,
+                243,
                 907,
                 912,
-                404,
                 404,
                 404,
                 405,
@@ -3610,368 +4270,62 @@
         "Red": {
             "deck_name": "赤红·突破攻势流",
             "archetype": "Aggro/Sacrifice",
-            "tactical_concept": "基于 PPO 神经网络效用评估与实战博弈测试构筑，平均费用 2.73 费。",
+            "tactical_concept": "基于 PPO 神经网络效用评估与实战博弈测试构筑，平均费用 2.77 费。",
             "key_combos": [
                 "佣兵斥候 (评分 98.0): 核心关键卡，状态价值增益最高。",
-                "赤蓝交织者 (评分 98.0): 辅助节奏卡，协同支撑场面与战术推进。"
+                "赤焰哨卫 (评分 98.0): 辅助节奏卡，协同支撑场面与战术推进。"
             ],
             "decision_evolution_logs": [
-                "第 1 代微调 (实测胜率 54.0%, 下跌 4.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 2 代微调 (胜率 58.0% -> 68.0%, +10.0%): 采纳整批变异，+1[熔火双刃卫] / -1[红绿共生]",
-                "第 3 代微调 (实测胜率 64.0%, 下跌 4.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 4 代微调 (实测胜率 60.0%, 下跌 8.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 5 代微调 (实测胜率 54.0%, 下跌 14.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 6 代微调 (实测胜率 64.0%, 下跌 4.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 7 代微调 (实测胜率 66.0%, 下跌 2.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 8 代微调 (实测胜率 62.0%, 下跌 6.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 9 代微调 (实测胜率 62.0%, 下跌 6.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 10 代微调 (实测胜率 52.0%, 下跌 16.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 11 代微调 (胜率 68.0% -> 68.0%, +0.0%): 采纳整批变异，+1[熔岩破阵者] / -1[裂甲掷斧手]",
-                "第 12 代微调 (实测胜率 52.0%, 下跌 16.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 13 代微调 (实测胜率 62.0%, 下跌 6.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 14 代微调 (实测胜率 56.0%, 下跌 12.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 15 代微调 (实测胜率 44.0%, 下跌 24.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 16 代微调 (实测胜率 48.0%, 下跌 20.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 17 代微调 (实测胜率 62.0%, 下跌 6.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 18 代微调 (实测胜率 56.0%, 下跌 12.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 19 代微调 (实测胜率 50.0%, 下跌 18.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 20 代微调 (实测胜率 48.0%, 下跌 20.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。"
+                "第 1 代微调 (胜率 33.3% -> 46.7%, +13.3%): 采纳变异，+1[赤焰哨卫] / -1[熔岩破阵者]",
+                "第 2 代微调 (实测胜率 40.0%, 变化 -6.7%): 放弃变异，回滚保留原构筑"
             ],
             "introspections": [
                 {
                     "generation": 1,
-                    "winrate": 57.99999999999999,
-                    "prev_winrate": 57.99999999999999,
+                    "winrate": 46.666666666666664,
+                    "prev_winrate": 33.33333333333333,
                     "promoted": {
-                        "id": 405,
-                        "name": "熔火双刃卫",
-                        "thought": "维持原构筑，保留 [红绿共生体]"
+                        "id": 127,
+                        "name": "赤焰哨卫",
+                        "thought": "加入 [赤焰哨卫] x1 (持 1 张)，胜率提升至 46.7% (+13.3%)"
                     },
                     "demoted": {
-                        "id": 604,
-                        "name": "红绿共生体",
-                        "thought": "尝试换入 [熔火双刃卫] 胜率降至 54.0%，取消变动"
+                        "id": 128,
+                        "name": "熔岩破阵者",
+                        "thought": "移出 [熔岩破阵者] x1 (余 1 张)"
                     },
-                    "monologue": "尝试换入 [熔火双刃卫] 胜率降至 54.0%，取消变动\n      维持原构筑，保留 [红绿共生体]"
+                    "monologue": "移出 [熔岩破阵者] x1 (余 1 张)\n      加入 [赤焰哨卫] x1 (持 1 张)，胜率提升至 46.7% (+13.3%)"
                 },
                 {
                     "generation": 2,
-                    "winrate": 68.0,
-                    "prev_winrate": 57.99999999999999,
-                    "promoted": {
-                        "id": 405,
-                        "name": "熔火双刃卫",
-                        "thought": "换入 [熔火双刃卫] x1 (持 2 张)"
-                    },
-                    "demoted": {
-                        "id": 602,
-                        "name": "红绿共生",
-                        "thought": "移出 [红绿共生] x1 (余 0 张)"
-                    },
-                    "monologue": "移出 换入 [红绿共生] x1 (余 0 张)\n      [熔火双刃卫] x1 (持 2 张)"
-                },
-                {
-                    "generation": 3,
-                    "winrate": 68.0,
-                    "prev_winrate": 68.0,
-                    "promoted": {
-                        "id": 605,
-                        "name": "烈焰藤蔓",
-                        "thought": "维持原构筑，保留 [献祭狂徒]"
-                    },
-                    "demoted": {
-                        "id": 125,
-                        "name": "献祭狂徒",
-                        "thought": "尝试换入 [烈焰藤蔓] 胜率降至 64.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [烈焰藤蔓] 胜率降至 64.0%，取消变动\n      维持原构筑，保留 [献祭狂徒]"
-                },
-                {
-                    "generation": 4,
-                    "winrate": 68.0,
-                    "prev_winrate": 68.0,
-                    "promoted": {
-                        "id": 147,
-                        "name": "熔岩龙巢幼龙",
-                        "thought": "维持原构筑，保留 [酒馆防暴巨汉]"
-                    },
-                    "demoted": {
-                        "id": 906,
-                        "name": "酒馆防暴巨汉",
-                        "thought": "尝试换入 [熔岩龙巢幼龙] 胜率降至 60.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [熔岩龙巢幼龙] 胜率降至 60.0%，取消变动\n      维持原构筑，保留 [酒馆防暴巨汉]"
-                },
-                {
-                    "generation": 5,
-                    "winrate": 68.0,
-                    "prev_winrate": 68.0,
-                    "promoted": {
-                        "id": 127,
-                        "name": "赤焰哨卫",
-                        "thought": "维持原构筑，保留 [酒馆防暴巨汉]"
-                    },
-                    "demoted": {
-                        "id": 906,
-                        "name": "酒馆防暴巨汉",
-                        "thought": "尝试换入 [赤焰哨卫] 胜率降至 54.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [赤焰哨卫] 胜率降至 54.0%，取消变动\n      维持原构筑，保留 [酒馆防暴巨汉]"
-                },
-                {
-                    "generation": 6,
-                    "winrate": 68.0,
-                    "prev_winrate": 68.0,
-                    "promoted": {
-                        "id": 605,
-                        "name": "烈焰藤蔓",
-                        "thought": "维持原构筑，保留 [酒馆防暴巨汉]"
-                    },
-                    "demoted": {
-                        "id": 906,
-                        "name": "酒馆防暴巨汉",
-                        "thought": "尝试换入 [烈焰藤蔓] 胜率降至 64.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [烈焰藤蔓] 胜率降至 64.0%，取消变动\n      维持原构筑，保留 [酒馆防暴巨汉]"
-                },
-                {
-                    "generation": 7,
-                    "winrate": 68.0,
-                    "prev_winrate": 68.0,
+                    "winrate": 46.666666666666664,
+                    "prev_winrate": 46.666666666666664,
                     "promoted": {
                         "id": 404,
                         "name": "赤蓝交织者",
-                        "thought": "维持原构筑，保留 [酒馆防暴巨汉]"
+                        "thought": "维持原构筑，保留 [熔岩破阵者]"
                     },
                     "demoted": {
-                        "id": 906,
-                        "name": "酒馆防暴巨汉",
-                        "thought": "尝试换入 [赤蓝交织者] 胜率降至 66.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [赤蓝交织者] 胜率降至 66.0%，取消变动\n      维持原构筑，保留 [酒馆防暴巨汉]"
-                },
-                {
-                    "generation": 8,
-                    "winrate": 68.0,
-                    "prev_winrate": 68.0,
-                    "promoted": {
-                        "id": 405,
-                        "name": "熔火双刃卫",
-                        "thought": "维持原构筑，保留 [裂甲掷斧手]"
-                    },
-                    "demoted": {
-                        "id": 108,
-                        "name": "裂甲掷斧手",
-                        "thought": "尝试换入 [熔火双刃卫] 胜率降至 62.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [熔火双刃卫] 胜率降至 62.0%，取消变动\n      维持原构筑，保留 [裂甲掷斧手]"
-                },
-                {
-                    "generation": 9,
-                    "winrate": 68.0,
-                    "prev_winrate": 68.0,
-                    "promoted": {
-                        "id": 404,
-                        "name": "赤蓝交织者",
-                        "thought": "维持原构筑，保留 [裂甲掷斧手]"
-                    },
-                    "demoted": {
-                        "id": 108,
-                        "name": "裂甲掷斧手",
-                        "thought": "尝试换入 [赤蓝交织者] 胜率降至 62.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [赤蓝交织者] 胜率降至 62.0%，取消变动\n      维持原构筑，保留 [裂甲掷斧手]"
-                },
-                {
-                    "generation": 10,
-                    "winrate": 68.0,
-                    "prev_winrate": 68.0,
-                    "promoted": {
-                        "id": 127,
-                        "name": "赤焰哨卫",
-                        "thought": "维持原构筑，保留 [裂甲掷斧手]"
-                    },
-                    "demoted": {
-                        "id": 108,
-                        "name": "裂甲掷斧手",
-                        "thought": "尝试换入 [赤焰哨卫] 胜率降至 52.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [赤焰哨卫] 胜率降至 52.0%，取消变动\n      维持原构筑，保留 [裂甲掷斧手]"
-                },
-                {
-                    "generation": 11,
-                    "winrate": 68.0,
-                    "prev_winrate": 68.0,
-                    "promoted": {
                         "id": 128,
                         "name": "熔岩破阵者",
-                        "thought": "换入 [熔岩破阵者] x1 (持 1 张)"
+                        "thought": "尝试换入 [赤蓝交织者] 胜率降至 40.0%，取消变动"
                     },
-                    "demoted": {
-                        "id": 108,
-                        "name": "裂甲掷斧手",
-                        "thought": "移出 [裂甲掷斧手] x1 (余 0 张)"
-                    },
-                    "monologue": "移出 换入 [裂甲掷斧手] x1 (余 0 张)\n      [熔岩破阵者] x1 (持 1 张)"
-                },
-                {
-                    "generation": 12,
-                    "winrate": 68.0,
-                    "prev_winrate": 68.0,
-                    "promoted": {
-                        "id": 602,
-                        "name": "红绿共生",
-                        "thought": "维持原构筑，保留 [红绿破势巨兽]"
-                    },
-                    "demoted": {
-                        "id": 603,
-                        "name": "红绿破势巨兽",
-                        "thought": "尝试换入 [红绿共生] 胜率降至 52.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [红绿共生] 胜率降至 52.0%，取消变动\n      维持原构筑，保留 [红绿破势巨兽]"
-                },
-                {
-                    "generation": 13,
-                    "winrate": 68.0,
-                    "prev_winrate": 68.0,
-                    "promoted": {
-                        "id": 127,
-                        "name": "赤焰哨卫",
-                        "thought": "维持原构筑，保留 [红绿破势巨兽]"
-                    },
-                    "demoted": {
-                        "id": 603,
-                        "name": "红绿破势巨兽",
-                        "thought": "尝试换入 [赤焰哨卫] 胜率降至 62.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [赤焰哨卫] 胜率降至 62.0%，取消变动\n      维持原构筑，保留 [红绿破势巨兽]"
-                },
-                {
-                    "generation": 14,
-                    "winrate": 68.0,
-                    "prev_winrate": 68.0,
-                    "promoted": {
-                        "id": 127,
-                        "name": "赤焰哨卫",
-                        "thought": "维持原构筑，保留 [红绿共生体]"
-                    },
-                    "demoted": {
-                        "id": 604,
-                        "name": "红绿共生体",
-                        "thought": "尝试换入 [赤焰哨卫] 胜率降至 56.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [赤焰哨卫] 胜率降至 56.0%，取消变动\n      维持原构筑，保留 [红绿共生体]"
-                },
-                {
-                    "generation": 15,
-                    "winrate": 68.0,
-                    "prev_winrate": 68.0,
-                    "promoted": {
-                        "id": 604,
-                        "name": "红绿共生体",
-                        "thought": "维持原构筑，保留 [红绿破势巨兽]"
-                    },
-                    "demoted": {
-                        "id": 603,
-                        "name": "红绿破势巨兽",
-                        "thought": "尝试换入 [红绿共生体] 胜率降至 44.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [红绿共生体] 胜率降至 44.0%，取消变动\n      维持原构筑，保留 [红绿破势巨兽]"
-                },
-                {
-                    "generation": 16,
-                    "winrate": 68.0,
-                    "prev_winrate": 68.0,
-                    "promoted": {
-                        "id": 128,
-                        "name": "熔岩破阵者",
-                        "thought": "维持原构筑，保留 [红绿共生体]"
-                    },
-                    "demoted": {
-                        "id": 604,
-                        "name": "红绿共生体",
-                        "thought": "尝试换入 [熔岩破阵者] 胜率降至 48.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [熔岩破阵者] 胜率降至 48.0%，取消变动\n      维持原构筑，保留 [红绿共生体]"
-                },
-                {
-                    "generation": 17,
-                    "winrate": 68.0,
-                    "prev_winrate": 68.0,
-                    "promoted": {
-                        "id": 128,
-                        "name": "熔岩破阵者",
-                        "thought": "维持原构筑，保留 [红绿共生体]"
-                    },
-                    "demoted": {
-                        "id": 604,
-                        "name": "红绿共生体",
-                        "thought": "尝试换入 [熔岩破阵者] 胜率降至 62.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [熔岩破阵者] 胜率降至 62.0%，取消变动\n      维持原构筑，保留 [红绿共生体]"
-                },
-                {
-                    "generation": 18,
-                    "winrate": 68.0,
-                    "prev_winrate": 68.0,
-                    "promoted": {
-                        "id": 404,
-                        "name": "赤蓝交织者",
-                        "thought": "维持原构筑，保留 [红绿共生体]"
-                    },
-                    "demoted": {
-                        "id": 604,
-                        "name": "红绿共生体",
-                        "thought": "尝试换入 [赤蓝交织者] 胜率降至 56.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [赤蓝交织者] 胜率降至 56.0%，取消变动\n      维持原构筑，保留 [红绿共生体]"
-                },
-                {
-                    "generation": 19,
-                    "winrate": 68.0,
-                    "prev_winrate": 68.0,
-                    "promoted": {
-                        "id": 605,
-                        "name": "烈焰藤蔓",
-                        "thought": "维持原构筑，保留 [红绿破势巨兽]"
-                    },
-                    "demoted": {
-                        "id": 603,
-                        "name": "红绿破势巨兽",
-                        "thought": "尝试换入 [烈焰藤蔓] 胜率降至 50.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [烈焰藤蔓] 胜率降至 50.0%，取消变动\n      维持原构筑，保留 [红绿破势巨兽]"
-                },
-                {
-                    "generation": 20,
-                    "winrate": 68.0,
-                    "prev_winrate": 68.0,
-                    "promoted": {
-                        "id": 405,
-                        "name": "熔火双刃卫",
-                        "thought": "维持原构筑，保留 [红绿破势巨兽]"
-                    },
-                    "demoted": {
-                        "id": 603,
-                        "name": "红绿破势巨兽",
-                        "thought": "尝试换入 [熔火双刃卫] 胜率降至 48.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [熔火双刃卫] 胜率降至 48.0%，取消变动\n      维持原构筑，保留 [红绿破势巨兽]"
+                    "monologue": "尝试换入 [赤蓝交织者] 胜率降至 40.0%，取消变动\n      维持原构筑，保留 [熔岩破阵者]"
                 }
             ],
             "total_cards": 30,
-            "minion_count": 29,
-            "spell_count": 1,
-            "avg_cost": 2.73,
+            "minion_count": 28,
+            "spell_count": 2,
+            "avg_cost": 2.77,
             "mana_curve": {
                 "0": 0,
                 "1": 8,
                 "2": 8,
-                "3": 5,
-                "4": 5,
+                "3": 7,
+                "4": 2,
                 "5": 1,
                 "6": 3,
-                "7": 0,
+                "7": 1,
                 "8": 0,
                 "9": 0
             },
@@ -3980,22 +4334,20 @@
                 "112": 3,
                 "117": 1,
                 "122": 1,
-                "125": 1,
+                "127": 1,
                 "128": 1,
-                "136": 1,
+                "136": 2,
                 "140": 1,
                 "141": 1,
                 "144": 1,
                 "145": 3,
+                "147": 1,
                 "900": 1,
                 "902": 2,
                 "905": 3,
-                "906": 1,
                 "913": 1,
-                "603": 1,
-                "404": 1,
-                "604": 2,
-                "405": 2
+                "404": 2,
+                "604": 3
             },
             "card_details": [
                 {
@@ -4008,9 +4360,9 @@
                     "def_spell_val": 0,
                     "tags": [],
                     "count": 3,
-                    "ppo_play_prob": 50.3,
+                    "ppo_play_prob": 45.5,
                     "ppo_value_gain": 0.007,
-                    "ppo_score": 77.23
+                    "ppo_score": 75.43
                 },
                 {
                     "id": 145,
@@ -4025,9 +4377,9 @@
                         "DEATH_MANA_1"
                     ],
                     "count": 3,
-                    "ppo_play_prob": 58.1,
-                    "ppo_value_gain": 0.009,
-                    "ppo_score": 80.88
+                    "ppo_play_prob": 38.9,
+                    "ppo_value_gain": 0.013,
+                    "ppo_score": 74.57
                 },
                 {
                     "id": 902,
@@ -4041,9 +4393,9 @@
                         "FORTIFY_1"
                     ],
                     "count": 2,
-                    "ppo_play_prob": 43.5,
-                    "ppo_value_gain": 0.008,
-                    "ppo_score": 74.71
+                    "ppo_play_prob": 40.5,
+                    "ppo_value_gain": 0.041,
+                    "ppo_score": 83.62
                 },
                 {
                     "id": 100,
@@ -4057,9 +4409,9 @@
                         "DEATH_DRAW_1"
                     ],
                     "count": 2,
-                    "ppo_play_prob": 36.6,
-                    "ppo_value_gain": -0.005,
-                    "ppo_score": 68.04
+                    "ppo_play_prob": 38.0,
+                    "ppo_value_gain": 0.032,
+                    "ppo_score": 79.7
                 },
                 {
                     "id": 141,
@@ -4073,9 +4425,9 @@
                         "DEATH_DRAW_1"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 44.7,
-                    "ppo_value_gain": -0.012,
-                    "ppo_score": 69.36
+                    "ppo_play_prob": 58.3,
+                    "ppo_value_gain": 0.041,
+                    "ppo_score": 90.67
                 },
                 {
                     "id": 900,
@@ -4089,9 +4441,9 @@
                         "DRAW_1"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 38.1,
-                    "ppo_value_gain": -0.005,
-                    "ppo_score": 68.64
+                    "ppo_play_prob": 45.6,
+                    "ppo_value_gain": 0.045,
+                    "ppo_score": 86.67
                 },
                 {
                     "id": 905,
@@ -4105,8 +4457,8 @@
                         "RUSH"
                     ],
                     "count": 3,
-                    "ppo_play_prob": 37.3,
-                    "ppo_value_gain": 0.105,
+                    "ppo_play_prob": 61.5,
+                    "ppo_value_gain": 0.099,
                     "ppo_score": 98.0
                 },
                 {
@@ -4119,9 +4471,9 @@
                     "def_spell_val": 0,
                     "tags": [],
                     "count": 1,
-                    "ppo_play_prob": 31.4,
-                    "ppo_value_gain": 0.007,
-                    "ppo_score": 69.75
+                    "ppo_play_prob": 45.3,
+                    "ppo_value_gain": 0.013,
+                    "ppo_score": 76.94
                 },
                 {
                     "id": 117,
@@ -4133,9 +4485,9 @@
                     "def_spell_val": 0,
                     "tags": [],
                     "count": 1,
-                    "ppo_play_prob": 35.6,
-                    "ppo_value_gain": -0.006,
-                    "ppo_score": 67.37
+                    "ppo_play_prob": 34.8,
+                    "ppo_value_gain": -0.013,
+                    "ppo_score": 65.05
                 },
                 {
                     "id": 122,
@@ -4149,9 +4501,26 @@
                         "FORTIFY_2"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 37.7,
-                    "ppo_value_gain": 0.002,
-                    "ppo_score": 70.62
+                    "ppo_play_prob": 29.3,
+                    "ppo_value_gain": 0.025,
+                    "ppo_score": 74.16
+                },
+                {
+                    "id": 127,
+                    "name": "赤焰哨卫",
+                    "cost": 3,
+                    "card_type": "MINION",
+                    "base_dp": 3,
+                    "atk_spell_val": 0,
+                    "def_spell_val": 0,
+                    "tags": [
+                        "RUSH",
+                        "FORTIFY_1"
+                    ],
+                    "count": 1,
+                    "ppo_play_prob": 27.7,
+                    "ppo_value_gain": 0.133,
+                    "ppo_score": 98.0
                 },
                 {
                     "id": 136,
@@ -4164,10 +4533,10 @@
                     "tags": [
                         "DRAW_2"
                     ],
-                    "count": 1,
-                    "ppo_play_prob": 34.1,
-                    "ppo_value_gain": 0.011,
-                    "ppo_score": 72.08
+                    "count": 2,
+                    "ppo_play_prob": 34.7,
+                    "ppo_value_gain": 0.036,
+                    "ppo_score": 79.79
                 },
                 {
                     "id": 140,
@@ -4181,9 +4550,9 @@
                         "SUPPORT_ATK_1"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 33.0,
-                    "ppo_value_gain": -0.008,
-                    "ppo_score": 65.74
+                    "ppo_play_prob": 37.9,
+                    "ppo_value_gain": -0.015,
+                    "ppo_score": 65.73
                 },
                 {
                     "id": 144,
@@ -4197,25 +4566,9 @@
                         "FORTIFY_2"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 34.7,
-                    "ppo_value_gain": 0.002,
-                    "ppo_score": 69.59
-                },
-                {
-                    "id": 125,
-                    "name": "献祭狂徒",
-                    "cost": 4,
-                    "card_type": "MINION",
-                    "base_dp": 4,
-                    "atk_spell_val": 0,
-                    "def_spell_val": 0,
-                    "tags": [
-                        "SACRIFICE_1_KILL_1"
-                    ],
-                    "count": 1,
-                    "ppo_play_prob": 31.0,
-                    "ppo_value_gain": -0.004,
-                    "ppo_score": 66.29
+                    "ppo_play_prob": 51.4,
+                    "ppo_value_gain": 0.018,
+                    "ppo_score": 80.88
                 },
                 {
                     "id": 404,
@@ -4229,43 +4582,10 @@
                         "RUSH",
                         "DEATH_DRAW_1"
                     ],
-                    "count": 1,
-                    "ppo_play_prob": 32.7,
-                    "ppo_value_gain": 0.102,
-                    "ppo_score": 98.0
-                },
-                {
-                    "id": 405,
-                    "name": "熔火双刃卫",
-                    "cost": 4,
-                    "card_type": "MINION",
-                    "base_dp": 3,
-                    "atk_spell_val": 0,
-                    "def_spell_val": 0,
-                    "tags": [
-                        "RUSH",
-                        "FORTIFY_1"
-                    ],
                     "count": 2,
-                    "ppo_play_prob": 32.5,
-                    "ppo_value_gain": 0.121,
+                    "ppo_play_prob": 33.5,
+                    "ppo_value_gain": 0.146,
                     "ppo_score": 98.0
-                },
-                {
-                    "id": 906,
-                    "name": "酒馆防暴巨汉",
-                    "cost": 4,
-                    "card_type": "MINION",
-                    "base_dp": 4,
-                    "atk_spell_val": 0,
-                    "def_spell_val": 0,
-                    "tags": [
-                        "FORTIFY_2"
-                    ],
-                    "count": 1,
-                    "ppo_play_prob": 32.3,
-                    "ppo_value_gain": -0.002,
-                    "ppo_score": 67.33
                 },
                 {
                     "id": 128,
@@ -4275,30 +4595,11 @@
                     "base_dp": 3,
                     "atk_spell_val": 0,
                     "def_spell_val": 0,
-                    "tags": [
-                        "RUSH"
-                    ],
+                    "tags": [],
                     "count": 1,
-                    "ppo_play_prob": 27.9,
-                    "ppo_value_gain": 0.102,
-                    "ppo_score": 96.63
-                },
-                {
-                    "id": 603,
-                    "name": "红绿破势巨兽",
-                    "cost": 6,
-                    "card_type": "MINION",
-                    "base_dp": 6,
-                    "atk_spell_val": 0,
-                    "def_spell_val": 0,
-                    "tags": [
-                        "FORTIFY_2",
-                        "BONUS_SCORE_1"
-                    ],
-                    "count": 1,
-                    "ppo_play_prob": 30.4,
-                    "ppo_value_gain": -0.007,
-                    "ppo_score": 64.92
+                    "ppo_play_prob": 31.3,
+                    "ppo_value_gain": 0.002,
+                    "ppo_score": 68.07
                 },
                 {
                     "id": 604,
@@ -4312,10 +4613,27 @@
                         "RUSH",
                         "DEATH_DRAW_1"
                     ],
-                    "count": 2,
-                    "ppo_play_prob": 29.4,
-                    "ppo_value_gain": 0.096,
-                    "ppo_score": 95.59
+                    "count": 3,
+                    "ppo_play_prob": 47.7,
+                    "ppo_value_gain": 0.142,
+                    "ppo_score": 98.0
+                },
+                {
+                    "id": 147,
+                    "name": "熔岩龙巢幼龙",
+                    "cost": 7,
+                    "card_type": "MINION",
+                    "base_dp": 3,
+                    "atk_spell_val": 0,
+                    "def_spell_val": 0,
+                    "tags": [
+                        "RUSH",
+                        "SPAWN_1_2"
+                    ],
+                    "count": 1,
+                    "ppo_play_prob": 27.5,
+                    "ppo_value_gain": 0.164,
+                    "ppo_score": 98.0
                 }
             ],
             "decklist": [
@@ -4337,384 +4655,78 @@
                 913,
                 117,
                 122,
+                127,
+                136,
                 136,
                 140,
                 144,
-                125,
                 404,
-                405,
-                405,
-                906,
+                404,
                 128,
-                603,
                 604,
-                604
+                604,
+                604,
+                147
             ]
         },
         "Green": {
             "deck_name": "翠绿·古树成长流",
             "archetype": "Ramp/Behemoth",
-            "tactical_concept": "基于 PPO 神经网络效用评估与实战博弈测试构筑，平均费用 2.7 费。",
+            "tactical_concept": "基于 PPO 神经网络效用评估与实战博弈测试构筑，平均费用 2.77 费。",
             "key_combos": [
                 "佣兵斥候 (评分 98.0): 核心关键卡，状态价值增益最高。",
-                "藤蔓突袭者 (评分 98.0): 辅助节奏卡，协同支撑场面与战术推进。"
+                "红绿共生 (评分 98.0): 辅助节奏卡，协同支撑场面与战术推进。"
             ],
             "decision_evolution_logs": [
-                "第 1 代微调 (实测胜率 36.0%, 下跌 14.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 2 代微调 (胜率 50.0% -> 50.0%, +0.0%): 采纳整批变异，+1[红绿共生] / -1[古树守护者]",
-                "第 3 代微调 (实测胜率 42.0%, 下跌 8.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 4 代微调 (实测胜率 40.0%, 下跌 10.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 5 代微调 (实测胜率 44.0%, 下跌 6.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 6 代微调 (实测胜率 42.0%, 下跌 8.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 7 代微调 (实测胜率 30.0%, 下跌 20.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 8 代微调 (胜率 50.0% -> 56.0%, +6.0%): 采纳平滑变异，+1[佣兵斥候] / -1[翠绿萌芽]",
-                "第 9 代微调 (实测胜率 34.0%, 下跌 22.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 10 代微调 (实测胜率 50.0%, 下跌 6.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 11 代微调 (实测胜率 42.0%, 下跌 14.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 12 代微调 (胜率 56.0% -> 60.0%, +4.0%): 采纳平滑变异，+1[佣兵斥候] / -1[藤蔓突袭者]",
-                "第 13 代微调 (实测胜率 52.0%, 下跌 8.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 14 代微调 (实测胜率 52.0%, 下跌 8.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 15 代微调 (实测胜率 58.0%, 下跌 2.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 16 代微调 (实测胜率 48.0%, 下跌 12.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 17 代微调 (实测胜率 44.0%, 下跌 16.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 18 代微调 (实测胜率 40.0%, 下跌 20.0%): 拒绝平滑变异并列入禁忌表，回滚保留原有构筑。",
-                "第 19 代微调 (实测胜率 54.0%, 下跌 6.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。",
-                "第 20 代微调 (实测胜率 46.0%, 下跌 14.0%): 拒绝整批变异并列入禁忌表，回滚保留原有构筑。"
+                "第 1 代微调 (实测胜率 60.0%, 变化 -26.7%): 放弃变异，回滚保留原构筑",
+                "第 2 代微调 (实测胜率 66.7%, 变化 -20.0%): 放弃变异，回滚保留原构筑"
             ],
             "introspections": [
                 {
                     "generation": 1,
-                    "winrate": 50.0,
-                    "prev_winrate": 50.0,
+                    "winrate": 86.66666666666667,
+                    "prev_winrate": 86.66666666666667,
                     "promoted": {
-                        "id": 602,
-                        "name": "红绿共生",
-                        "thought": "维持原构筑，保留 [翠绿哨兵]"
+                        "id": 605,
+                        "name": "烈焰藤蔓",
+                        "thought": "维持原构筑，保留 [红绿共生]"
                     },
                     "demoted": {
-                        "id": 313,
-                        "name": "翠绿哨兵",
-                        "thought": "尝试换入 [红绿共生] 胜率降至 36.0%，取消变动"
+                        "id": 602,
+                        "name": "红绿共生",
+                        "thought": "尝试换入 [烈焰藤蔓] 胜率降至 60.0%，取消变动"
                     },
-                    "monologue": "尝试换入 [红绿共生] 胜率降至 36.0%，取消变动\n      维持原构筑，保留 [翠绿哨兵]"
+                    "monologue": "尝试换入 [烈焰藤蔓] 胜率降至 60.0%，取消变动\n      维持原构筑，保留 [红绿共生]"
                 },
                 {
                     "generation": 2,
-                    "winrate": 50.0,
-                    "prev_winrate": 50.0,
+                    "winrate": 86.66666666666667,
+                    "prev_winrate": 86.66666666666667,
                     "promoted": {
-                        "id": 602,
-                        "name": "红绿共生",
-                        "thought": "换入 [红绿共生] x1 (持 3 张)"
-                    },
-                    "demoted": {
-                        "id": 334,
-                        "name": "古树守护者",
-                        "thought": "移出 [古树守护者] x1 (余 0 张)"
-                    },
-                    "monologue": "移出 换入 [古树守护者] x1 (余 0 张)\n      [红绿共生] x1 (持 3 张)"
-                },
-                {
-                    "generation": 3,
-                    "winrate": 50.0,
-                    "prev_winrate": 50.0,
-                    "promoted": {
-                        "id": 604,
-                        "name": "红绿共生体",
+                        "id": 904,
+                        "name": "拾荒盾卫",
                         "thought": "维持原构筑，保留 [红绿共生]"
                     },
                     "demoted": {
                         "id": 602,
                         "name": "红绿共生",
-                        "thought": "尝试换入 [红绿共生体] 胜率降至 42.0%，取消变动"
+                        "thought": "尝试换入 [拾荒盾卫] 胜率降至 66.7%，取消变动"
                     },
-                    "monologue": "尝试换入 [红绿共生体] 胜率降至 42.0%，取消变动\n      维持原构筑，保留 [红绿共生]"
-                },
-                {
-                    "generation": 4,
-                    "winrate": 50.0,
-                    "prev_winrate": 50.0,
-                    "promoted": {
-                        "id": 905,
-                        "name": "佣兵斥候",
-                        "thought": "维持原构筑，保留 [翡翠幼龙]"
-                    },
-                    "demoted": {
-                        "id": 309,
-                        "name": "翡翠幼龙",
-                        "thought": "尝试换入 [佣兵斥候] 胜率降至 40.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [佣兵斥候] 胜率降至 40.0%，取消变动\n      维持原构筑，保留 [翡翠幼龙]"
-                },
-                {
-                    "generation": 5,
-                    "winrate": 50.0,
-                    "prev_winrate": 50.0,
-                    "promoted": {
-                        "id": 605,
-                        "name": "烈焰藤蔓",
-                        "thought": "维持原构筑，保留 [翡翠幼龙]"
-                    },
-                    "demoted": {
-                        "id": 309,
-                        "name": "翡翠幼龙",
-                        "thought": "尝试换入 [烈焰藤蔓] 胜率降至 44.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [烈焰藤蔓] 胜率降至 44.0%，取消变动\n      维持原构筑，保留 [翡翠幼龙]"
-                },
-                {
-                    "generation": 6,
-                    "winrate": 50.0,
-                    "prev_winrate": 50.0,
-                    "promoted": {
-                        "id": 905,
-                        "name": "佣兵斥候",
-                        "thought": "维持原构筑，保留 [红绿共生]"
-                    },
-                    "demoted": {
-                        "id": 602,
-                        "name": "红绿共生",
-                        "thought": "尝试换入 [佣兵斥候] 胜率降至 42.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [佣兵斥候] 胜率降至 42.0%，取消变动\n      维持原构筑，保留 [红绿共生]"
-                },
-                {
-                    "generation": 7,
-                    "winrate": 50.0,
-                    "prev_winrate": 50.0,
-                    "promoted": {
-                        "id": 604,
-                        "name": "红绿共生体",
-                        "thought": "维持原构筑，保留 [翡翠幼龙]"
-                    },
-                    "demoted": {
-                        "id": 309,
-                        "name": "翡翠幼龙",
-                        "thought": "尝试换入 [红绿共生体] 胜率降至 30.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [红绿共生体] 胜率降至 30.0%，取消变动\n      维持原构筑，保留 [翡翠幼龙]"
-                },
-                {
-                    "generation": 8,
-                    "winrate": 56.00000000000001,
-                    "prev_winrate": 50.0,
-                    "promoted": {
-                        "id": 905,
-                        "name": "佣兵斥候",
-                        "thought": "换入 [佣兵斥候] x1 (持 2 张)"
-                    },
-                    "demoted": {
-                        "id": 300,
-                        "name": "翠绿萌芽",
-                        "thought": "移出 [翠绿萌芽] x1 (余 1 张)"
-                    },
-                    "monologue": "移出 换入 [翠绿萌芽] x1 (余 1 张)\n      [佣兵斥候] x1 (持 2 张)"
-                },
-                {
-                    "generation": 9,
-                    "winrate": 56.00000000000001,
-                    "prev_winrate": 56.00000000000001,
-                    "promoted": {
-                        "id": 605,
-                        "name": "烈焰藤蔓",
-                        "thought": "维持原构筑，保留 [红绿共生体]"
-                    },
-                    "demoted": {
-                        "id": 604,
-                        "name": "红绿共生体",
-                        "thought": "尝试换入 [烈焰藤蔓] 胜率降至 34.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [烈焰藤蔓] 胜率降至 34.0%，取消变动\n      维持原构筑，保留 [红绿共生体]"
-                },
-                {
-                    "generation": 10,
-                    "winrate": 56.00000000000001,
-                    "prev_winrate": 56.00000000000001,
-                    "promoted": {
-                        "id": 905,
-                        "name": "佣兵斥候",
-                        "thought": "维持原构筑，保留 [战术补给]"
-                    },
-                    "demoted": {
-                        "id": 911,
-                        "name": "战术补给",
-                        "thought": "尝试换入 [佣兵斥候] 胜率降至 50.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [佣兵斥候] 胜率降至 50.0%，取消变动\n      维持原构筑，保留 [战术补给]"
-                },
-                {
-                    "generation": 11,
-                    "winrate": 56.00000000000001,
-                    "prev_winrate": 56.00000000000001,
-                    "promoted": {
-                        "id": 605,
-                        "name": "烈焰藤蔓",
-                        "thought": "维持原构筑，保留 [战术补给]"
-                    },
-                    "demoted": {
-                        "id": 911,
-                        "name": "战术补给",
-                        "thought": "尝试换入 [烈焰藤蔓] 胜率降至 42.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [烈焰藤蔓] 胜率降至 42.0%，取消变动\n      维持原构筑，保留 [战术补给]"
-                },
-                {
-                    "generation": 12,
-                    "winrate": 60.0,
-                    "prev_winrate": 56.00000000000001,
-                    "promoted": {
-                        "id": 905,
-                        "name": "佣兵斥候",
-                        "thought": "换入 [佣兵斥候] x1 (持 3 张)"
-                    },
-                    "demoted": {
-                        "id": 323,
-                        "name": "藤蔓突袭者",
-                        "thought": "移出 [藤蔓突袭者] x1 (余 2 张)"
-                    },
-                    "monologue": "移出 换入 [藤蔓突袭者] x1 (余 2 张)\n      [佣兵斥候] x1 (持 3 张)"
-                },
-                {
-                    "generation": 13,
-                    "winrate": 60.0,
-                    "prev_winrate": 60.0,
-                    "promoted": {
-                        "id": 323,
-                        "name": "藤蔓突袭者",
-                        "thought": "维持原构筑，保留 [战术补给]"
-                    },
-                    "demoted": {
-                        "id": 911,
-                        "name": "战术补给",
-                        "thought": "尝试换入 [藤蔓突袭者] 胜率降至 52.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [藤蔓突袭者] 胜率降至 52.0%，取消变动\n      维持原构筑，保留 [战术补给]"
-                },
-                {
-                    "generation": 14,
-                    "winrate": 60.0,
-                    "prev_winrate": 60.0,
-                    "promoted": {
-                        "id": 605,
-                        "name": "烈焰藤蔓",
-                        "thought": "维持原构筑，保留 [红绿共生体]"
-                    },
-                    "demoted": {
-                        "id": 604,
-                        "name": "红绿共生体",
-                        "thought": "尝试换入 [烈焰藤蔓] 胜率降至 52.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [烈焰藤蔓] 胜率降至 52.0%，取消变动\n      维持原构筑，保留 [红绿共生体]"
-                },
-                {
-                    "generation": 15,
-                    "winrate": 60.0,
-                    "prev_winrate": 60.0,
-                    "promoted": {
-                        "id": 323,
-                        "name": "藤蔓突袭者",
-                        "thought": "维持原构筑，保留 [翡翠幼龙]"
-                    },
-                    "demoted": {
-                        "id": 309,
-                        "name": "翡翠幼龙",
-                        "thought": "尝试换入 [藤蔓突袭者] 胜率降至 58.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [藤蔓突袭者] 胜率降至 58.0%，取消变动\n      维持原构筑，保留 [翡翠幼龙]"
-                },
-                {
-                    "generation": 16,
-                    "winrate": 60.0,
-                    "prev_winrate": 60.0,
-                    "promoted": {
-                        "id": 323,
-                        "name": "藤蔓突袭者",
-                        "thought": "维持原构筑，保留 [翠绿亡语守卫]"
-                    },
-                    "demoted": {
-                        "id": 344,
-                        "name": "翠绿亡语守卫",
-                        "thought": "尝试换入 [藤蔓突袭者] 胜率降至 48.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [藤蔓突袭者] 胜率降至 48.0%，取消变动\n      维持原构筑，保留 [翠绿亡语守卫]"
-                },
-                {
-                    "generation": 17,
-                    "winrate": 60.0,
-                    "prev_winrate": 60.0,
-                    "promoted": {
-                        "id": 605,
-                        "name": "烈焰藤蔓",
-                        "thought": "维持原构筑，保留 [战术补给]"
-                    },
-                    "demoted": {
-                        "id": 911,
-                        "name": "战术补给",
-                        "thought": "尝试换入 [烈焰藤蔓] 胜率降至 44.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [烈焰藤蔓] 胜率降至 44.0%，取消变动\n      维持原构筑，保留 [战术补给]"
-                },
-                {
-                    "generation": 18,
-                    "winrate": 60.0,
-                    "prev_winrate": 60.0,
-                    "promoted": {
-                        "id": 604,
-                        "name": "红绿共生体",
-                        "thought": "维持原构筑，保留 [战术补给]"
-                    },
-                    "demoted": {
-                        "id": 911,
-                        "name": "战术补给",
-                        "thought": "尝试换入 [红绿共生体] 胜率降至 40.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [红绿共生体] 胜率降至 40.0%，取消变动\n      维持原构筑，保留 [战术补给]"
-                },
-                {
-                    "generation": 19,
-                    "winrate": 60.0,
-                    "prev_winrate": 60.0,
-                    "promoted": {
-                        "id": 323,
-                        "name": "藤蔓突袭者",
-                        "thought": "维持原构筑，保留 [翠绿哨兵]"
-                    },
-                    "demoted": {
-                        "id": 313,
-                        "name": "翠绿哨兵",
-                        "thought": "尝试换入 [藤蔓突袭者] 胜率降至 54.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [藤蔓突袭者] 胜率降至 54.0%，取消变动\n      维持原构筑，保留 [翠绿哨兵]"
-                },
-                {
-                    "generation": 20,
-                    "winrate": 60.0,
-                    "prev_winrate": 60.0,
-                    "promoted": {
-                        "id": 604,
-                        "name": "红绿共生体",
-                        "thought": "维持原构筑，保留 [翠绿哨兵]"
-                    },
-                    "demoted": {
-                        "id": 313,
-                        "name": "翠绿哨兵",
-                        "thought": "尝试换入 [红绿共生体] 胜率降至 46.0%，取消变动"
-                    },
-                    "monologue": "尝试换入 [红绿共生体] 胜率降至 46.0%，取消变动\n      维持原构筑，保留 [翠绿哨兵]"
+                    "monologue": "尝试换入 [拾荒盾卫] 胜率降至 66.7%，取消变动\n      维持原构筑，保留 [红绿共生]"
                 }
             ],
             "total_cards": 30,
             "minion_count": 26,
             "spell_count": 4,
-            "avg_cost": 2.7,
+            "avg_cost": 2.77,
             "mana_curve": {
                 "0": 0,
                 "1": 9,
                 "2": 9,
                 "3": 3,
-                "4": 3,
+                "4": 2,
                 "5": 3,
-                "6": 3,
+                "6": 4,
                 "7": 0,
                 "8": 0,
                 "9": 0
@@ -4722,19 +4734,18 @@
             "card_allocation": {
                 "300": 1,
                 "301": 1,
-                "309": 1,
                 "312": 3,
                 "313": 1,
                 "323": 2,
                 "327": 1,
                 "332": 3,
                 "333": 2,
-                "344": 1,
                 "902": 3,
                 "905": 3,
                 "911": 3,
                 "602": 3,
-                "604": 2
+                "604": 2,
+                "605": 2
             },
             "card_details": [
                 {
@@ -4749,9 +4760,9 @@
                         "FORTIFY_1"
                     ],
                     "count": 3,
-                    "ppo_play_prob": 38.9,
-                    "ppo_value_gain": 0.008,
-                    "ppo_score": 72.91
+                    "ppo_play_prob": 65.9,
+                    "ppo_value_gain": 0.027,
+                    "ppo_score": 89.42
                 },
                 {
                     "id": 332,
@@ -4761,13 +4772,11 @@
                     "base_dp": 3,
                     "atk_spell_val": 0,
                     "def_spell_val": 0,
-                    "tags": [
-                        "FORTIFY_1"
-                    ],
+                    "tags": [],
                     "count": 3,
-                    "ppo_play_prob": 31.8,
-                    "ppo_value_gain": 0.017,
-                    "ppo_score": 72.9
+                    "ppo_play_prob": 53.5,
+                    "ppo_value_gain": 0.01,
+                    "ppo_score": 79.27
                 },
                 {
                     "id": 902,
@@ -4781,9 +4790,9 @@
                         "FORTIFY_1"
                     ],
                     "count": 3,
-                    "ppo_play_prob": 38.7,
-                    "ppo_value_gain": 0.007,
-                    "ppo_score": 72.73
+                    "ppo_play_prob": 40.7,
+                    "ppo_value_gain": 0.027,
+                    "ppo_score": 79.24
                 },
                 {
                     "id": 327,
@@ -4797,9 +4806,9 @@
                         "FORTIFY_2"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 34.9,
-                    "ppo_value_gain": 0.006,
-                    "ppo_score": 70.63
+                    "ppo_play_prob": 29.6,
+                    "ppo_value_gain": 0.034,
+                    "ppo_score": 77.14
                 },
                 {
                     "id": 333,
@@ -4810,13 +4819,12 @@
                     "atk_spell_val": 0,
                     "def_spell_val": 0,
                     "tags": [
-                        "FORTIFY_1",
                         "DEATH_DRAW_1"
                     ],
                     "count": 2,
-                    "ppo_play_prob": 45.5,
-                    "ppo_value_gain": 0.002,
-                    "ppo_score": 73.74
+                    "ppo_play_prob": 36.7,
+                    "ppo_value_gain": 0.022,
+                    "ppo_score": 76.18
                 },
                 {
                     "id": 905,
@@ -4830,8 +4838,8 @@
                         "RUSH"
                     ],
                     "count": 3,
-                    "ppo_play_prob": 49.5,
-                    "ppo_value_gain": 0.097,
+                    "ppo_play_prob": 27.4,
+                    "ppo_value_gain": 0.124,
                     "ppo_score": 98.0
                 },
                 {
@@ -4846,9 +4854,9 @@
                         "DRAW_2"
                     ],
                     "count": 3,
-                    "ppo_play_prob": 36.4,
-                    "ppo_value_gain": -0.008,
-                    "ppo_score": 67.29
+                    "ppo_play_prob": 41.3,
+                    "ppo_value_gain": -0.001,
+                    "ppo_score": 71.11
                 },
                 {
                     "id": 300,
@@ -4862,9 +4870,9 @@
                         "RAMP_1"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 31.0,
-                    "ppo_value_gain": 0.019,
-                    "ppo_score": 73.1
+                    "ppo_play_prob": 37.8,
+                    "ppo_value_gain": -0.01,
+                    "ppo_score": 67.21
                 },
                 {
                     "id": 301,
@@ -4878,9 +4886,9 @@
                         "FORTIFY_1"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 41.7,
-                    "ppo_value_gain": 0.002,
-                    "ppo_score": 72.22
+                    "ppo_play_prob": 31.2,
+                    "ppo_value_gain": 0.014,
+                    "ppo_score": 71.62
                 },
                 {
                     "id": 313,
@@ -4895,9 +4903,9 @@
                         "DEATH_DRAW_1"
                     ],
                     "count": 1,
-                    "ppo_play_prob": 37.5,
-                    "ppo_value_gain": -0.007,
-                    "ppo_score": 67.76
+                    "ppo_play_prob": 31.7,
+                    "ppo_value_gain": 0.043,
+                    "ppo_score": 80.67
                 },
                 {
                     "id": 323,
@@ -4908,30 +4916,12 @@
                     "atk_spell_val": 0,
                     "def_spell_val": 0,
                     "tags": [
-                        "RUSH",
                         "FORTIFY_1"
                     ],
                     "count": 2,
-                    "ppo_play_prob": 32.2,
-                    "ppo_value_gain": 0.122,
-                    "ppo_score": 98.0
-                },
-                {
-                    "id": 344,
-                    "name": "翠绿亡语守卫",
-                    "cost": 4,
-                    "card_type": "MINION",
-                    "base_dp": 4,
-                    "atk_spell_val": 0,
-                    "def_spell_val": 0,
-                    "tags": [
-                        "DEATH_DRAW_1",
-                        "FORTIFY_1"
-                    ],
-                    "count": 1,
-                    "ppo_play_prob": 33.7,
-                    "ppo_value_gain": 0.0,
-                    "ppo_score": 68.57
+                    "ppo_play_prob": 31.7,
+                    "ppo_value_gain": 0.018,
+                    "ppo_score": 72.93
                 },
                 {
                     "id": 602,
@@ -4946,25 +4936,9 @@
                         "DEATH_DRAW_1"
                     ],
                     "count": 3,
-                    "ppo_play_prob": 30.3,
-                    "ppo_value_gain": 0.1,
-                    "ppo_score": 97.17
-                },
-                {
-                    "id": 309,
-                    "name": "翡翠幼龙",
-                    "cost": 6,
-                    "card_type": "MINION",
-                    "base_dp": 6,
-                    "atk_spell_val": 0,
-                    "def_spell_val": 0,
-                    "tags": [
-                        "DEATH_MANA_1"
-                    ],
-                    "count": 1,
-                    "ppo_play_prob": 35.1,
-                    "ppo_value_gain": -0.005,
-                    "ppo_score": 67.55
+                    "ppo_play_prob": 32.1,
+                    "ppo_value_gain": 0.152,
+                    "ppo_score": 98.0
                 },
                 {
                     "id": 604,
@@ -4979,9 +4953,26 @@
                         "DEATH_DRAW_1"
                     ],
                     "count": 2,
-                    "ppo_play_prob": 29.2,
-                    "ppo_value_gain": 0.094,
-                    "ppo_score": 95.02
+                    "ppo_play_prob": 36.0,
+                    "ppo_value_gain": 0.131,
+                    "ppo_score": 98.0
+                },
+                {
+                    "id": 605,
+                    "name": "烈焰藤蔓",
+                    "cost": 6,
+                    "card_type": "MINION",
+                    "base_dp": 6,
+                    "atk_spell_val": 0,
+                    "def_spell_val": 0,
+                    "tags": [
+                        "RUSH",
+                        "DEATH_DRAW_1"
+                    ],
+                    "count": 2,
+                    "ppo_play_prob": 29.3,
+                    "ppo_value_gain": 0.138,
+                    "ppo_score": 98.0
                 }
             ],
             "decklist": [
@@ -5008,81 +4999,81 @@
                 313,
                 323,
                 323,
-                344,
                 602,
                 602,
                 602,
-                309,
                 604,
-                604
+                604,
+                605,
+                605
             ]
         }
     },
     "faction_stats": {
         "Red": {
-            "matches": 33,
+            "matches": 39,
             "wins": 17,
-            "winrate": 51.52
+            "winrate": 43.59
         },
         "Blue": {
-            "matches": 47,
-            "wins": 22,
-            "winrate": 46.81
+            "matches": 45,
+            "wins": 21,
+            "winrate": 46.67
         },
         "Green": {
-            "matches": 40,
-            "wins": 21,
-            "winrate": 52.5
+            "matches": 36,
+            "wins": 22,
+            "winrate": 61.11
         }
     },
     "matchups": {
-        "Blue_vs_Blue": {
-            "total": 8,
-            "p0_first_wins": 3,
-            "p1_second_wins": 5,
-            "winrate": 50.0
-        },
-        "Blue_vs_Green": {
-            "total": 11,
+        "Blue_vs_Red": {
+            "total": 7,
             "Blue_wins": 5,
-            "Green_wins": 6
-        },
-        "Green_vs_Blue": {
-            "total": 8,
-            "Green_wins": 5,
-            "Blue_wins": 3
+            "Red_wins": 2
         },
         "Red_vs_Blue": {
-            "total": 3,
-            "Red_wins": 1,
+            "total": 5,
+            "Red_wins": 3,
             "Blue_wins": 2
         },
-        "Blue_vs_Red": {
-            "total": 9,
-            "Blue_wins": 4,
-            "Red_wins": 5
-        },
-        "Green_vs_Green": {
-            "total": 7,
-            "p0_first_wins": 2,
-            "p1_second_wins": 5,
-            "winrate": 50.0
+        "Blue_vs_Green": {
+            "total": 5,
+            "Blue_wins": 1,
+            "Green_wins": 4
         },
         "Red_vs_Red": {
-            "total": 7,
-            "p0_first_wins": 3,
-            "p1_second_wins": 4,
+            "total": 9,
+            "p0_first_wins": 4,
+            "p1_second_wins": 5,
             "winrate": 50.0
         },
         "Red_vs_Green": {
-            "total": 3,
+            "total": 7,
             "Red_wins": 2,
-            "Green_wins": 1
+            "Green_wins": 5
+        },
+        "Green_vs_Green": {
+            "total": 8,
+            "p0_first_wins": 4,
+            "p1_second_wins": 4,
+            "winrate": 50.0
+        },
+        "Blue_vs_Blue": {
+            "total": 11,
+            "p0_first_wins": 8,
+            "p1_second_wins": 3,
+            "winrate": 50.0
         },
         "Green_vs_Red": {
-            "total": 4,
-            "Green_wins": 2,
-            "Red_wins": 2
+            "total": 2,
+            "Green_wins": 1,
+            "Red_wins": 1
+        },
+        "Green_vs_Blue": {
+            "total": 6,
+            "Green_wins": 4,
+            "Blue_wins": 2
         }
     },
     "pairwise_matchups": {
@@ -5099,27 +5090,27 @@
             "f1": "Red",
             "f2": "Blue",
             "total": 12,
-            "wins": 6,
-            "winrate": 50.0,
-            "dev": 0.0,
+            "wins": 5,
+            "winrate": 41.67,
+            "dev": 8.33,
             "is_mirror": false
         },
         "Red_vs_Green": {
             "f1": "Red",
             "f2": "Green",
-            "total": 7,
-            "wins": 4,
-            "winrate": 57.14,
-            "dev": 7.14,
+            "total": 9,
+            "wins": 3,
+            "winrate": 33.33,
+            "dev": 16.67,
             "is_mirror": false
         },
         "Blue_vs_Red": {
             "f1": "Blue",
             "f2": "Red",
             "total": 12,
-            "wins": 6,
-            "winrate": 50.0,
-            "dev": 0.0,
+            "wins": 7,
+            "winrate": 58.33,
+            "dev": 8.33,
             "is_mirror": false
         },
         "Blue_vs_Blue": {
@@ -5134,28 +5125,28 @@
         "Blue_vs_Green": {
             "f1": "Blue",
             "f2": "Green",
-            "total": 19,
-            "wins": 8,
-            "winrate": 42.11,
-            "dev": 7.89,
+            "total": 11,
+            "wins": 3,
+            "winrate": 27.27,
+            "dev": 22.73,
             "is_mirror": false
         },
         "Green_vs_Red": {
             "f1": "Green",
             "f2": "Red",
-            "total": 7,
-            "wins": 3,
-            "winrate": 42.86,
-            "dev": 7.14,
+            "total": 9,
+            "wins": 6,
+            "winrate": 66.67,
+            "dev": 16.67,
             "is_mirror": false
         },
         "Green_vs_Blue": {
             "f1": "Green",
             "f2": "Blue",
-            "total": 19,
-            "wins": 11,
-            "winrate": 57.89,
-            "dev": 7.89,
+            "total": 11,
+            "wins": 8,
+            "winrate": 72.73,
+            "dev": 22.73,
             "is_mirror": false
         },
         "Green_vs_Green": {
@@ -5168,6 +5159,6 @@
             "is_mirror": true
         }
     },
-    "max_pairwise_dev": 7.89,
+    "max_pairwise_dev": 22.73,
     "total_episodes": 60
 }

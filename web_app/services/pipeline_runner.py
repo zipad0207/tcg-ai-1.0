@@ -157,6 +157,12 @@ class PipelineRunner:
                     clean_line = _decode_bytes(raw_line).rstrip("\r\n")
                     if clean_line:
                         self._broadcast(clean_line)
+                        if "加入后台排队出图队列" in clean_line or "[后台生图队列]" in clean_line:
+                            try:
+                                from web_app.services.image_gen import art_queue
+                                art_queue.enqueue()
+                            except Exception:
+                                pass
             except Exception as read_err:
                 if self.is_running:
                     self._broadcast(f"[Console] 管道读取异常: {read_err}")
