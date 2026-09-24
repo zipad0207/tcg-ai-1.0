@@ -1175,31 +1175,102 @@ header h1 {
     box-shadow: 0 6px 16px rgba(0,0,0,0.5);
 }
 
+/* 全景指标看板自适应网格 (彻底解决指标卡挤左侧、右侧大面积空黑问题) */
+.metrics-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+    width: 100%;
+}
+@media (max-width: 1360px) {
+    .metrics-cards-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+@media (max-width: 768px) {
+    .metrics-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 .metric-card { 
-    padding: 16px; 
+    padding: 14px 16px; 
     border-radius: 8px; 
-    background: #1e1610; 
-    border: 1.5px solid var(--border-wood); 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    transition: transform 0.15s; 
+    background: linear-gradient(180deg, #221812 0%, #19110b 100%); 
+    border: 1.5px solid #4a3825; 
+    box-shadow: 0 4px 14px rgba(0,0,0,0.55);
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; 
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 108px;
 }
 
 .metric-card:hover { 
     transform: translateY(-2px); 
     border-color: var(--border-gold); 
+    box-shadow: 0 8px 22px rgba(0,0,0,0.7);
 }
 
-.metric-card.red-border { border-left: 5px solid var(--accent-red); }
-.metric-card.blue-border { border-left: 5px solid var(--accent-blue); }
-.metric-card.green-border { border-left: 5px solid var(--accent-green); }
-.metric-card.gold-border { border-left: 5px solid var(--accent-gold); }
+.metric-card.red-border { border-top: 4px solid var(--accent-red); border-left: 1.5px solid #4a3825; }
+.metric-card.blue-border { border-top: 4px solid var(--accent-blue); border-left: 1.5px solid #4a3825; }
+.metric-card.green-border { border-top: 4px solid var(--accent-green); border-left: 1.5px solid #4a3825; }
+.metric-card.gold-border { border-top: 4px solid var(--accent-gold); border-left: 1.5px solid #4a3825; }
+.metric-card.purple-border { border-top: 4px solid #a855f7; border-left: 1.5px solid #4a3825; }
+.metric-card.cyan-border { border-top: 4px solid #06b6d4; border-left: 1.5px solid #4a3825; }
+
+.metric-header {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #d1c5b4;
+    letter-spacing: 0.3px;
+    margin-bottom: 6px;
+}
 
 .metric-val { 
     font-family: var(--font-fantasy);
-    font-size: 1.7rem; 
+    font-size: 1.85rem; 
     font-weight: 900; 
-    color: var(--text-gold); 
+    color: #fef08a; 
     letter-spacing: 0.5px; 
+    line-height: 1.1;
+    margin-bottom: 4px;
+}
+
+.metric-val.status-text {
+    font-size: 1.35rem;
+    color: #38bdf8;
+}
+
+.metric-sub {
+    font-size: 0.75rem;
+    color: #a89a88;
+    font-weight: 600;
+}
+
+.status-pill {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-align: center;
+}
+.status-pill.healthy {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border: 1px solid #059669;
+}
+.status-pill.warning {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+    border: 1px solid #d97706;
+}
+.status-pill.danger {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border: 1px solid #dc2626;
 }
 
 /* 终端模拟窗 */
@@ -1216,6 +1287,39 @@ header h1 {
     background: #1c140d; 
     padding: 10px 16px; 
     border-bottom: 1.5px solid var(--border-wood); 
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.terminal-dots {
+    display: flex;
+    gap: 6px;
+}
+.terminal-dots .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+.terminal-dots .dot.red { background: #ef4444; }
+.terminal-dots .dot.yellow { background: #f59e0b; }
+.terminal-dots .dot.green { background: #10b981; }
+
+.terminal-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #e2d7c5;
+}
+.terminal-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.auto-scroll-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    user-select: none;
 }
 
 .terminal-body { 
@@ -1228,4 +1332,697 @@ header h1 {
     background: #0f0a06; 
 }
 
+/* ==============================================================================
+   9. Combat Side Panel & Deck Tracker (战局记牌器与对战日志专区)
+   ============================================================================== */
+.combat-side-panel {
+    width: 320px;
+    min-width: 320px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: radial-gradient(circle at 50% 0%, #251911 0%, #150e09 100%);
+    border: 2px solid var(--border-wood);
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.65);
+    overflow: hidden;
+}
+
+.side-panel-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    border-bottom: 1.5px solid #3c2a1a;
+    padding-bottom: 8px;
+}
+
+.panel-tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 10px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    background: #231810;
+    border: 1px solid #4a3825;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.panel-tab-btn:hover {
+    color: #f5f5f5;
+    background: #2d1f14;
+    border-color: #785324;
+}
+
+.panel-tab-btn.active {
+    color: var(--text-gold);
+    background: linear-gradient(180deg, #3d2a1b 0%, #281a10 100%);
+    border-color: var(--border-gold);
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
+}
+
+.side-panel-view {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
+.side-panel-view.active {
+    display: flex;
+}
+
+/* 顶部状态三联徽章 (牌库 / 手牌 / 墓地) */
+.tracker-summary-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.tracker-stat-pill {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #20150e;
+    border: 1px solid #453220;
+    border-radius: 6px;
+    padding: 6px 4px;
+}
+
+.tracker-stat-pill .pill-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+}
+
+.tracker-stat-pill strong {
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: var(--text-gold);
+    font-family: var(--font-fantasy);
+}
+
+/* 记牌器标题栏 */
+.tracker-section-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #ded3c1;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed #3f2a1b;
+}
+
+.tracker-sub {
+    font-size: 0.75rem;
+    color: var(--text-gold);
+    font-weight: 800;
+}
+
+/* 记牌器列表滚动区 */
+.tracker-cards-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding-right: 4px;
+}
+
+.tracker-cards-list.enemy-revealed {
+    max-height: 180px;
+}
+
+.tracker-empty {
+    text-align: center;
+    padding: 24px 8px;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+/* 炉石记牌器风格精致卡条 (Tile Ribbon) */
+.tracker-card-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 32px;
+    background: linear-gradient(90deg, #251912 0%, #1a120c 100%);
+    border: 1px solid #3d2a1b;
+    border-left: 4px solid #6b7280;
+    border-radius: 4px;
+    padding: 0 8px;
+    cursor: default;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.tracker-card-row:hover {
+    background: linear-gradient(90deg, #38271a 0%, #261b11 100%);
+    border-color: var(--border-gold);
+    transform: translateX(2px);
+}
+
+.tracker-card-row.faction-red { border-left-color: #ef4444; }
+.tracker-card-row.faction-blue { border-left-color: #3b82f6; }
+.tracker-card-row.faction-green { border-left-color: #10b981; }
+
+.tracker-card-left {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    overflow: hidden;
+}
+
+/* 法力水晶八角宝石 */
+.tracker-cost-gem {
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    border: 1px solid #93c5fd;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 900;
+    font-family: var(--font-fantasy);
+    box-shadow: 0 0 6px rgba(59, 130, 246, 0.5);
+    flex-shrink: 0;
+}
+
+.tracker-card-name {
+    font-size: 0.82rem;
+    color: #f3ece1;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 145px;
+}
+
+.tracker-stat-tag {
+    font-size: 0.68rem;
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.15);
+    padding: 1px 4px;
+    border-radius: 3px;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.tracker-spell-tag {
+    font-size: 0.68rem;
+    color: #a855f7;
+    background: rgba(168, 85, 247, 0.15);
+    padding: 1px 4px;
+    border-radius: 3px;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.tracker-card-qty {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--text-gold);
+    background: #2a1e14;
+    border: 1px solid #4a3825;
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+.tracker-card-row.enemy-tile {
+    background: linear-gradient(90deg, #24141d 0%, #150d12 100%);
+}
+
+/* ==============================================================================
+   10. Battle Log Feed (对战战斗信息流卡片)
+   ============================================================================== */
+#log-container {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-right: 4px;
+}
+
+.log-entry {
+    background: #1e150f;
+    border: 1px solid #3a2818;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: #e5ded3;
+    animation: fadeInLog 0.2s ease;
+}
+
+@keyframes fadeInLog {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.log-entry.player {
+    border-left: 3px solid #ef4444;
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.12) 0%, #1e150f 100%);
+}
+
+.log-entry.ai {
+    border-left: 3px solid #3b82f6;
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.12) 0%, #1e150f 100%);
+}
+
+.log-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    margin-right: 4px;
+}
+
+.badge-red {
+    background: #7f1d1d;
+    color: #fecaca;
+    border: 1px solid #ef4444;
+}
+
+.badge-blue {
+    background: #1e3a8a;
+    color: #bfdbfe;
+    border: 1px solid #3b82f6;
+}
+
+.log-action {
+    font-weight: 700;
+}
+.log-action.deploy { color: #f59e0b; }
+.log-action.cast { color: #c084fc; }
+.log-action.pass { color: #94a3b8; }
+
+.log-card-pill {
+    display: inline-block;
+    background: #2b1f15;
+    color: #fef08a;
+    border: 1px solid #785324;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.log-card-pill.spell {
+    color: #e9d5ff;
+    border-color: #7e22ce;
+}
+
+.log-lane-tag {
+    display: inline-block;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+.log-lane-tag.left { background: #064e3b; color: #a7f3d0; border: 1px solid #059669; }
+.log-lane-tag.right { background: #1e3a8a; color: #bfdbfe; border: 1px solid #2563eb; }
+.log-zone-tag.atk { color: #f87171; font-weight: 700; }
+.log-zone-tag.def { color: #60a5fa; font-weight: 700; }
+
+/* 交锋冲锋大比分横幅卡片 */
+.log-entry.clash {
+    background: linear-gradient(135deg, #3f1910 0%, #1e110c 100%);
+    border: 1.5px solid #d97706;
+    border-radius: 8px;
+    padding: 10px 12px;
+    box-shadow: 0 4px 15px rgba(217, 119, 6, 0.25);
+}
+
+.log-clash-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 800;
+    color: #fde68a;
+    font-size: 0.84rem;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(217, 119, 6, 0.3);
+    padding-bottom: 4px;
+}
+
+.log-clash-scoreboard {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.clash-side {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.clash-side.red .side-tag { color: #f87171; font-weight: 700; }
+.clash-side.red .delta { color: #f87171; font-size: 1.15rem; font-weight: 900; }
+.clash-side.blue .side-tag { color: #60a5fa; font-weight: 700; }
+.clash-side.blue .delta { color: #60a5fa; font-size: 1.15rem; font-weight: 900; }
+
+.clash-vs {
+    font-size: 0.95rem;
+    font-weight: 900;
+    color: #facc15;
+    font-family: var(--font-fantasy);
+}
+
+.log-defend-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #93c5fd;
+    font-weight: 600;
+}
+
+.log-crit-bar {
+    color: #fca5a5;
+    font-weight: 700;
+}
+
+.log-victory-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fde047;
+    font-size: 0.95rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, rgba(234, 179, 8, 0.2) 0%, transparent 100%);
+    padding: 6px;
+    border-radius: 4px;
+}
+
+/* ==============================================================================
+   11. Deck Workshop Mana Curve & Slots (法力曲线直方图与构筑槽位)
+   ============================================================================== */
+.deck-slot-selector-container {
+    margin-bottom: 12px;
+}
+.deck-slot-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #d1c5b4;
+    margin-bottom: 6px;
+}
+.deck-slot-badge {
+    background: #3b281a;
+    border: 1px solid var(--border-gold);
+    color: var(--text-gold);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+.deck-slot-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-bottom: 10px;
+}
+.deck-slot-tab {
+    background: #231810;
+    border: 1px solid #4a3825;
+    border-radius: 6px;
+    padding: 6px 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.deck-slot-tab:hover {
+    background: #2e2015;
+    border-color: #8c6a45;
+}
+.deck-slot-tab.active {
+    background: linear-gradient(135deg, #3d2a1b 0%, #291c12 100%);
+    border-color: var(--border-gold);
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+}
+.deck-slot-tab.complete {
+    border-left: 3px solid #10b981;
+}
+.slot-tab-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+.slot-tab-tag {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+.slot-tab-name {
+    font-size: 0.72rem;
+    color: #e5ded3;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.slot-count-pill {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    background: rgba(0,0,0,0.3);
+    padding: 1px 4px;
+    border-radius: 3px;
+    display: inline-block;
+}
+.slot-count-pill.ready {
+    color: #10b981;
+    font-weight: 800;
+    background: rgba(16, 185, 129, 0.15);
+}
+
+/* 经典 TCG 法力曲线直方图 (Mana Curve Histogram) */
+.mana-curve-container {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    height: 95px;
+    background: #17100b;
+    border: 1px solid #3d2a1b;
+    border-radius: 8px;
+    padding: 10px 14px 6px;
+    margin-bottom: 12px;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.6);
+}
+.curve-bar-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    height: 100%;
+    justify-content: flex-end;
+    cursor: default;
+    transition: transform 0.15s;
+}
+.curve-bar-col:hover {
+    transform: translateY(-2px);
+}
+.curve-bar-count {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #8c7865;
+    margin-bottom: 3px;
+    font-family: var(--font-fantasy);
+}
+.curve-bar-count.active {
+    color: #fde047;
+}
+.curve-bar-track {
+    width: 22px;
+    height: 52px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid #382718;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+.curve-bar-fill {
+    width: 100%;
+    background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%);
+    border-radius: 3px 3px 0 0;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+    transition: height 0.3s ease;
+}
+.curve-bar-col.has-cards .curve-bar-fill {
+    background: linear-gradient(180deg, #38bdf8 0%, #0284c7 50%, #1e40af 100%);
+}
+.curve-bar-gem {
+    width: 20px;
+    height: 16px;
+    background: #2a1c12;
+    border: 1px solid #5a3d24;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.gem-text {
+    font-size: 0.68rem;
+    font-weight: 900;
+    color: #e5ded3;
+    font-family: var(--font-fantasy);
+}
+
+/* 官方预设快速载入按钮 */
+.deck-preset-bar {
+    background: #1e150e;
+    border: 1px solid #3a2818;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+}
+.preset-title {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+.preset-buttons {
+    display: flex;
+    gap: 6px;
+}
+.preset-btn {
+    flex: 1;
+    font-size: 0.78rem !important;
+    padding: 5px 8px !important;
+}
+.preset-btn.red { background: linear-gradient(180deg, #991b1b, #7f1d1d); border-color: #ef4444; }
+.preset-btn.blue { background: linear-gradient(180deg, #1e40af, #1e3a8a); border-color: #3b82f6; }
+.preset-btn.green { background: linear-gradient(180deg, #065f46, #064e3b); border-color: #10b981; }
+
+/* 构筑卡组卡牌列表条目 */
+.deck-card-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(90deg, #241912 0%, #1a120c 100%);
+    border: 1px solid #3d2a1b;
+    border-left: 4px solid #6b7280;
+    padding: 6px 8px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    transition: all 0.15s;
+}
+.deck-card-item:hover {
+    border-color: var(--border-gold);
+    background: #2e2015;
+}
+.deck-card-item.faction-red { border-left-color: #ef4444; }
+.deck-card-item.faction-blue { border-left-color: #3b82f6; }
+.deck-card-item.faction-green { border-left-color: #10b981; }
+
+.deck-card-item-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+}
+.deck-card-cost-gem {
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    border: 1px solid #93c5fd;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 900;
+    font-family: var(--font-fantasy);
+    flex-shrink: 0;
+}
+.deck-card-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #f3ece1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+.deck-card-chip {
+    font-size: 0.65rem;
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+.deck-card-chip.minion {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.deck-card-chip.spell {
+    color: #c084fc;
+    background: rgba(192, 132, 252, 0.15);
+    border: 1px solid rgba(192, 132, 252, 0.3);
+}
+.deck-card-item-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.deck-card-count-badge {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--text-gold);
+    background: #2b1f15;
+    border: 1px solid #4a3825;
+    padding: 1px 5px;
+    border-radius: 8px;
+}
+.deck-card-count-badge.overlimit {
+    color: #ef4444;
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.2);
+}
+.deck-card-item-controls {
+    display: flex;
+    gap: 3px;
+}
+.deck-qty-btn {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    background: #332317;
+    border: 1px solid #5a3d24;
+    color: #f3ece1;
+    font-size: 0.8rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+.deck-qty-btn:hover:not(:disabled) {
+    background: var(--btn-gold);
+    color: #1c1510;
+    border-color: #facc15;
+}
+.deck-qty-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
 .hidden { display: none !important; }
+

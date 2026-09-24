@@ -550,6 +550,30 @@ function renderDeckTracker(state) {
     const trackerEnemyDeckStat = document.getElementById('tracker-enemy-deck-stat');
     if (trackerEnemyDeckStat) trackerEnemyDeckStat.innerText = `敌方剩余: ${p1DeckCount}张`;
 
+    // Helper to safely get card cost and faction
+    const resolveCardInfo = (c) => {
+        let cost = (c && c.cost !== undefined && !isNaN(c.cost)) ? Number(c.cost) : null;
+        let dp = (c && c.dp !== undefined) ? Number(c.dp) : (c && c.base_dp !== undefined ? Number(c.base_dp) : null);
+        let factions = (c && c.factions && Array.isArray(c.factions)) ? c.factions : [];
+        let isSpell = c && (c.type === 'SPELL' || c.card_type === 'SPELL');
+        
+        if ((cost === null || factions.length === 0) && window.tcgData && window.tcgData.cards) {
+            const found = window.tcgData.cards.find(x => x.name === c.name || x.id === c.id);
+            if (found) {
+                if (cost === null) cost = found.cost;
+                if (dp === null) dp = found.base_dp;
+                if (factions.length === 0) factions = found.factions || [];
+                if (found.type === 'SPELL') isSpell = true;
+            }
+        }
+        return {
+            cost: cost !== null ? cost : 0,
+            dp: dp !== null ? dp : 0,
+            faction: factions[0] || 'Neutral',
+            isSpell: isSpell
+        };
+    };
+
     // 2. Render Player Remaining Cards List
     const p0CardsList = document.getElementById('tracker-cards-list');
     if (p0CardsList) {
@@ -567,18 +591,22 @@ function renderDeckTracker(state) {
             });
 
             const sorted = Array.from(countsMap.values()).sort((a, b) => {
-                if (a.card.cost !== b.card.cost) return a.card.cost - b.card.cost;
+                const infoA = resolveCardInfo(a.card);
+                const infoB = resolveCardInfo(b.card);
+                if (infoA.cost !== infoB.cost) return infoA.cost - infoB.cost;
                 return a.card.name.localeCompare(b.card.name, 'zh-Hans-CN');
             });
 
             p0CardsList.innerHTML = '';
             sorted.forEach(({ card, count }) => {
+                const info = resolveCardInfo(card);
                 const row = document.createElement('div');
-                row.className = 'tracker-card-row';
+                row.className = `tracker-card-row faction-${info.faction.toLowerCase()}`;
                 row.innerHTML = `
                     <div class="tracker-card-left">
-                        <span class="tracker-cost-gem">${card.cost}</span>
+                        <span class="tracker-cost-gem">${info.cost}</span>
                         <span class="tracker-card-name">${card.name}</span>
+                        ${info.isSpell ? '<span class="tracker-spell-tag">法</span>' : `<span class="tracker-stat-tag">${info.dp}攻</span>`}
                     </div>
                     <span class="tracker-card-qty">x${count}</span>
                 `;
@@ -613,18 +641,22 @@ function renderDeckTracker(state) {
             p1RevealedList.innerHTML = '<div class="tracker-empty">敌方尚未打出卡牌</div>';
         } else {
             const sortedEnemy = Array.from(enemyRevealedMap.values()).sort((a, b) => {
-                if (a.card.cost !== b.card.cost) return a.card.cost - b.card.cost;
+                const infoA = resolveCardInfo(a.card);
+                const infoB = resolveCardInfo(b.card);
+                if (infoA.cost !== infoB.cost) return infoA.cost - infoB.cost;
                 return a.card.name.localeCompare(b.card.name, 'zh-Hans-CN');
             });
 
             p1RevealedList.innerHTML = '';
             sortedEnemy.forEach(({ card, count }) => {
+                const info = resolveCardInfo(card);
                 const row = document.createElement('div');
-                row.className = 'tracker-card-row';
+                row.className = `tracker-card-row enemy-tile faction-${info.faction.toLowerCase()}`;
                 row.innerHTML = `
                     <div class="tracker-card-left">
-                        <span class="tracker-cost-gem">${card.cost}</span>
+                        <span class="tracker-cost-gem">${info.cost}</span>
                         <span class="tracker-card-name">${card.name}</span>
+                        ${info.isSpell ? '<span class="tracker-spell-tag">法</span>' : `<span class="tracker-stat-tag">${info.dp}攻</span>`}
                     </div>
                     <span class="tracker-card-qty">x${count}</span>
                 `;
@@ -940,20 +972,77 @@ function renderArena(state) {
         handZone.appendChild(cardEl);
     });
 
-    // Render Battle Logs
+    // Render Battle Logs with Rich Structured Action Feed
     const logContainer = document.getElementById('log-container');
     if (logContainer && state.logs) {
         logContainer.innerHTML = '';
         state.logs.forEach(log => {
             const div = document.createElement('div');
             let logType = 'neutral';
-            if (log.includes('红方') || log.includes('玩家')) logType = 'player';
-            else if (log.includes('蓝方') || log.includes('AI')) logType = 'ai';
-            else if (log.includes('冲锋') || log.includes('交战')) logType = 'clash';
-            else if (log.includes('获胜') || log.includes('平局')) logType = 'victory';
+            
+            // Format log text with styled components
+            let formattedHtml = log;
+            
+            if (log.includes('冲锋交战结算')) {
+                logType = 'clash';
+                // Extract scores: 红方+X分，蓝方+Y分！当前比分：A：B
+                const scoreMatch = log.match(/红方\+(\d+)分.*蓝方\+(\d+)分.*当前比分[：:]\s*(\d+)\s*[：:]\s*(\d+)/);
+                if (scoreMatch) {
+                    const [, rPlus, bPlus, rScore, bScore] = scoreMatch;
+                    formattedHtml = `
+                        <div class="log-clash-header">
+                            <span class="clash-icon">⚔️</span>
+                            <span class="clash-title">全军交锋冲锋结算</span>
+                        </div>
+                        <div class="log-clash-scoreboard">
+                            <div class="clash-side red"><span class="side-tag">红方</span> <strong class="delta">+${rPlus}</strong></div>
+                            <div class="clash-vs">比分 ${rScore} : ${bScore}</div>
+                            <div class="clash-side blue"><span class="side-tag">蓝方</span> <strong class="delta">+${bPlus}</strong></div>
+                        </div>
+                    `;
+                }
+            } else if (log.includes('双方防线稳固')) {
+                logType = 'defend';
+                formattedHtml = `
+                    <div class="log-defend-bar">
+                        <span class="defend-icon">🛡️</span>
+                        <span>双方防线固若金汤，本轮战线未产生突破！</span>
+                    </div>
+                `;
+            } else if (log.includes('演武结束') || log.includes('斩获胜利')) {
+                logType = 'victory';
+                formattedHtml = `
+                    <div class="log-victory-banner">
+                        <span class="victory-icon">🏆</span>
+                        <span class="victory-text">${log}</span>
+                    </div>
+                `;
+            } else if (log.includes('舍身引爆') || log.includes('同归于尽')) {
+                logType = 'sacrifice';
+                formattedHtml = `<div class="log-crit-bar">💥 ${log}</div>`;
+            } else {
+                if (log.includes('红方') || log.includes('玩家')) logType = 'player';
+                else if (log.includes('蓝方') || log.includes('AI')) logType = 'ai';
+                
+                // Format entity tags
+                formattedHtml = formattedHtml
+                    .replace(/【红方\s*玩家】/g, '<span class="log-badge badge-red">红方玩家</span>')
+                    .replace(/【蓝方\s*玩家】/g, '<span class="log-badge badge-blue">蓝方玩家</span>')
+                    .replace(/【红方\s*AI\(P0\)】/g, '<span class="log-badge badge-red">红方AI</span>')
+                    .replace(/【蓝方\s*AI\(P1\)】/g, '<span class="log-badge badge-blue">蓝方AI</span>')
+                    .replace(/【红方】/g, '<span class="log-badge badge-red">红方</span>')
+                    .replace(/【蓝方】/g, '<span class="log-badge badge-blue">蓝方</span>')
+                    .replace(/【左路】/g, '<span class="log-lane-tag left">左路</span>')
+                    .replace(/【右路】/g, '<span class="log-lane-tag right">右路</span>')
+                    .replace(/进攻区/g, '<span class="log-zone-tag atk">进攻区</span>')
+                    .replace(/防守区/g, '<span class="log-zone-tag def">防守区</span>')
+                    .replace(/部署随从\s*(\[[^\]]+\])/g, '<span class="log-action deploy">部署随从</span> <span class="log-card-pill">$1</span>')
+                    .replace(/释放法术\s*(\[[^\]]+\])/g, '<span class="log-action cast">释放法术</span> <span class="log-card-pill spell">$1</span>')
+                    .replace(/结束回合\s*\(PASS\)/g, '<span class="log-action pass">结束回合(PASS)</span>');
+            }
 
             div.className = `log-entry ${logType}`;
-            div.innerText = log;
+            div.innerHTML = formattedHtml;
             logContainer.appendChild(div);
         });
         logContainer.scrollTop = logContainer.scrollHeight;

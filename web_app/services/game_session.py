@@ -335,6 +335,9 @@ class GameSession:
             return [{
                 "id": int(u.card.id),
                 "name": str(u.card.name),
+                "cost": int(getattr(u.card, "cost", 0)),
+                "base_dp": int(getattr(u.card, "base_dp", 0)),
+                "type": str(getattr(u.card.card_type, "name", "MINION")),
                 "dp": int(u.current_dp),
                 "ready": bool(u.ready_to_attack),
                 "tags": list(u.card.tags),

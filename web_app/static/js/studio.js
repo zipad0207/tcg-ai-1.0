@@ -266,16 +266,24 @@ function renderDeckSlotTabs() {
 
     userDecks.forEach((deck, i) => {
         const tab = document.createElement('div');
-        tab.className = `deck-slot-tab${i === activeDeckIndex ? ' active' : ''}`;
-        const fIcons = { 'Red': '🔴', 'Blue': '🔵', 'Green': '🟢' };
-        const icon = fIcons[deck.faction] || '⚪';
+        const isActive = i === activeDeckIndex;
         const count = deck.card_ids ? deck.card_ids.length : 0;
-        const countColor = count === 30 ? 'color:#10b981;font-weight:bold;' : 'color:var(--text-muted);';
+        const isComplete = count === 30;
+        const faction = deck.faction || 'Red';
+        tab.className = `deck-slot-tab faction-${faction.toLowerCase()}${isActive ? ' active' : ''}${isComplete ? ' complete' : ''}`;
+        
+        const fIcons = { 'Red': '🔴', 'Blue': '🔵', 'Green': '🟢' };
+        const icon = fIcons[faction] || '⚪';
 
         tab.innerHTML = `
-            <span class="slot-num">槽位 ${i + 1}</span>
-            <span class="slot-name">${icon} ${deck.name || `卡组${i+1}`}</span>
-            <span class="slot-count" style="${countColor}">${count}/30 张</span>
+            <div class="slot-tab-header">
+                <span class="slot-tab-tag">槽位 ${i + 1}</span>
+                <span class="slot-tab-icon">${icon}</span>
+                <span class="slot-tab-name">${deck.name || `卡组${i+1}`}</span>
+            </div>
+            <div class="slot-tab-footer">
+                <span class="slot-count-pill ${isComplete ? 'ready' : ''}">${count}/30${isComplete ? ' · 满' : ''}</span>
+            </div>
         `;
         tab.onclick = () => window.switchActiveDeck(i);
         tabsContainer.appendChild(tab);
@@ -357,20 +365,29 @@ function renderDeckDrawer() {
     const avg = totalCount > 0 ? (totalMana / totalCount).toFixed(1) : "0.0";
     if (manaAvgEl) manaAvgEl.innerText = `均费: ${avg}`;
 
-    // Render Curve Bars
+    // Render Curve Bars (TCG Mana Curve Histogram)
     if (curveBar) {
         curveBar.innerHTML = '';
+        const curveOrder = ["0-1", "2", "3", "4", "5+"];
         const maxVal = Math.max(1, ...Object.values(curve));
-        for (const [key, val] of Object.entries(curve)) {
+        curveOrder.forEach(key => {
+            const val = curve[key] || 0;
             const pct = Math.round((val / maxVal) * 100);
+            const ratioPct = totalCount > 0 ? Math.round((val / totalCount) * 100) : 0;
             const col = document.createElement('div');
-            col.className = 'curve-bar-col';
+            col.className = `curve-bar-col ${val > 0 ? 'has-cards' : 'empty'}`;
+            col.title = `${key} 费卡牌: ${val} 张 (占比 ${ratioPct}%)`;
             col.innerHTML = `
-                <div class="curve-bar-fill" style="height: ${Math.max(4, pct)}%;"></div>
-                <span>${key} (${val})</span>
+                <span class="curve-bar-count ${val > 0 ? 'active' : ''}">${val}</span>
+                <div class="curve-bar-track">
+                    <div class="curve-bar-fill" style="height: ${val > 0 ? Math.max(12, pct) : 0}%;"></div>
+                </div>
+                <div class="curve-bar-gem">
+                    <span class="gem-text">${key}</span>
+                </div>
             `;
             curveBar.appendChild(col);
-        }
+        });
     }
 
     // Render Items
@@ -391,18 +408,22 @@ function renderDeckDrawer() {
                 const faction = c.factions && c.factions[0] ? c.factions[0] : 'Neutral';
                 const count = cardCounts[id];
                 const isOverLimit = count > 3;
+                const isSpell = c.type === 'SPELL';
 
                 const item = document.createElement('div');
-                item.className = `deck-card-item ${faction}`;
+                item.className = `deck-card-item faction-${faction.toLowerCase()}`;
                 item.innerHTML = `
                     <div class="deck-card-item-left">
-                        <span class="deck-card-cost">${c.cost}</span>
-                        <span class="deck-card-name">${c.name}</span>
-                        <span class="deck-card-count" style="${isOverLimit ? 'color:#ef4444;font-weight:900;' : ''}">x${count}${isOverLimit ? ' (超标!)' : ''}</span>
+                        <span class="deck-card-cost-gem">${c.cost}</span>
+                        <span class="deck-card-name" title="${c.name}">${c.name}</span>
+                        ${isSpell ? '<span class="deck-card-chip spell">法术</span>' : `<span class="deck-card-chip minion">${c.base_dp || c.dp || 0}攻</span>`}
                     </div>
-                    <div class="deck-card-item-controls">
-                        <button class="deck-qty-btn" onclick="removeCardFromDeck(${id})">-</button>
-                        <button class="deck-qty-btn" onclick="addCardToDeck(${id})">+</button>
+                    <div class="deck-card-item-right">
+                        <span class="deck-card-count-badge ${isOverLimit ? 'overlimit' : ''}">x${count}</span>
+                        <div class="deck-card-item-controls">
+                            <button class="deck-qty-btn minus" onclick="removeCardFromDeck(${id})" title="减少1张">-</button>
+                            <button class="deck-qty-btn plus" onclick="addCardToDeck(${id})" title="增加1张" ${count >= 3 ? 'disabled' : ''}>+</button>
+                        </div>
                     </div>
                 `;
                 listContainer.appendChild(item);
