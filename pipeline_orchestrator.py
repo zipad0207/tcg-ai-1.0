@@ -1037,9 +1037,10 @@ def main():
             if q_status.get("is_running"):
                 rem = q_status["total"] - q_status["current"]
                 print("\n" + "═" * 85)
-                print(f" [后台生图队列] 平衡收敛调优已完成，后台当前剩余 {rem} 张新卡插图正在排队生成中。")
-                print("               主流程已就绪，原画将在独立线程持续生成，不阻断前台操作。")
+                print(f" [后台生图队列] 平衡收敛调优已完成，后台当前剩余 {rem} 张新卡插图正在排队生成中...")
+                print("               (系统将继续等待出图队列完毕，以确保卡牌全部具备原画；若需立刻退出可按 Ctrl+C)")
                 print("═" * 85)
+                art_queue.wait_until_done(timeout=300)
         except Exception:
             pass
 

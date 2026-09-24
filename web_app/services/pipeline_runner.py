@@ -173,6 +173,19 @@ class PipelineRunner:
                     was_running = self.is_running
                     self.is_running = False
                     _sync_ui()
+
+                    # 确保后台生图无缝接力：流水线若提前达成平衡退出，Web 常驻服务会接管并继续在后台线程排队绘制剩余新卡
+                    if was_running and mode == "full_pack":
+                        try:
+                            from web_app.services.image_gen import art_queue
+                            art_queue.enqueue()
+                            q_st = art_queue.get_status()
+                            if q_st.get("is_running"):
+                                rem = q_st["total"] - q_st["current"]
+                                self._broadcast(f"[Console] [后台出图托管] 调优已完成，Web 常驻后台正继续自动绘制剩余 {rem} 张新卡插图...")
+                        except Exception:
+                            pass
+
                     if was_running:
                         status_msg = "已达成平衡收敛或执行完毕" if rc == 0 else f"已停止 (code: {rc})"
                         self._broadcast(f"[Console] 任务结束: {status_msg}")
