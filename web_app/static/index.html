@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCG-AI Studio</title>
+    <link rel="stylesheet" href="/static/css/styles.css?v=13">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <h2>TCG-AI <span>STUDIO</span></h2>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-target="arena-view">⚔️ 战局演武场</li>
+                <li data-target="studio-view">🃏 卡组工坊</li>
+                <li data-target="analytics-view">📊 平衡看板</li>
+            </ul>
+
+            <div class="sidebar-spacer"></div>
+
+            <!-- AI 服务配置 Panel -->
+            <div class="sidebar-api-panel">
+                <div class="api-panel-header">
+                    <span class="api-panel-title">AI 服务配置</span>
+                    <span id="api-status-badge" class="api-status-badge">未检测</span>
+                </div>
+                
+                <div class="api-field-group">
+                    <label for="cfg-deepseek-key">DeepSeek Key (语言模型)</label>
+                    <div class="api-key-wrapper">
+                        <input type="password" id="cfg-deepseek-key" class="api-input" placeholder="sk-••••••••••••••••" />
+                        <button type="button" id="btn-toggle-deepseek-vis" class="btn-vis-toggle" title="显示/隐藏密钥">👁</button>
+                    </div>
+                </div>
+
+                <div class="api-field-group">
+                    <label for="cfg-image-model">生图服务 / 模型</label>
+                    <select id="cfg-image-model" class="api-select">
+                        <option value="Tongyi-MAI/Z-Image-Turbo" selected>硅基流动 · Z-Image极速</option>
+                        <option value="Kwai-Kolors/Kolors">硅基流动 · 可图Kolors</option>
+                        <option value="black-forest-labs/FLUX.1-schnell">硅基流动 · FLUX极速</option>
+                        <option value="dashscope">阿里百炼 · 通义万相</option>
+                    </select>
+                </div>
+
+                <div class="api-field-group">
+                    <label for="cfg-image-key">生图 Key (SiliconFlow)</label>
+                    <div class="api-key-wrapper">
+                        <input type="password" id="cfg-image-key" class="api-input" placeholder="sk-••••••••••••••••" />
+                        <button type="button" id="btn-toggle-image-vis" class="btn-vis-toggle" title="显示/隐藏密钥">👁</button>
+                    </div>
+                </div>
+
+                <div class="api-actions">
+                    <button id="btn-save-api-cfg" class="btn primary small full-width">保存配置</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- 1. Battle Arena View -->
+            <section id="arena-view" class="view-section active">
+                <header>
+                    <div class="arena-header-left">
+                        <h1>战局演武场 (Battle Arena)</h1>
+                        <div class="mode-pills">
+                            <button class="pill active" id="mode-pve-btn">玩家对战 AI</button>
+                            <button class="pill" id="mode-aivai-btn">AI 全自动推演</button>
+                        </div>
+                    </div>
+                    <div class="controls arena-controls">
+                        <!-- PvE Controls -->
+                        <div id="pve-controls-group" class="faction-selectors">
+                            <label>出战卡组: 
+                                <select id="pve-p0-deck">
+                                    <option value="preset_Red" selected>🔴 赤红 · 快攻流 (30张)</option>
+                                    <option value="preset_Blue">🔵 蔚蓝 · 坚守流 (30张)</option>
+                                    <option value="preset_Green">🟢 翠绿 · 成长流 (30张)</option>
+                                </select>
+                            </label>
+                            <span style="color:var(--text-muted); font-weight:bold;">VS</span>
+                            <label>对手卡组: 
+                                <select id="pve-p1-deck">
+                                    <option value="preset_Blue" selected>🔵 蔚蓝 · 坚守流 (30张)</option>
+                                    <option value="preset_Red">🔴 赤红 · 快攻流 (30张)</option>
+                                    <option value="preset_Green">🟢 翠绿 · 成长流 (30张)</option>
+                                </select>
+                            </label>
+                            <button id="btn-start-game" class="btn primary">开始对局</button>
+                            <button id="btn-restart-game" class="btn secondary">重新开始</button>
+                        </div>
+
+                        <!-- AI vs AI Controls -->
+                        <div id="aivai-controls-group" class="faction-selectors" style="display:none;">
+                            <label>P0: 
+                                <select id="aivai-p0-faction">
+                                    <option value="Red" selected>🔴 赤红</option>
+                                    <option value="Blue">🔵 蔚蓝</option>
+                                    <option value="Green">🟢 翠绿</option>
+                                </select>
+                            </label>
+                            <span style="color:var(--text-muted); font-weight:bold;">VS</span>
+                            <label>P1: 
+                                <select id="aivai-p1-faction">
+                                    <option value="Blue" selected>🔵 蔚蓝</option>
+                                    <option value="Red">🔴 赤红</option>
+                                    <option value="Green">🟢 翠绿</option>
+                                </select>
+                            </label>
+                            <button id="btn-aivai-toggle" class="btn primary">开始推演</button>
+                            <button id="btn-aivai-step" class="btn secondary">单步推演</button>
+                            <label>速度:
+                                <select id="aivai-speed">
+                                    <option value="1">1x 正常</option>
+                                    <option value="2">2x 快速</option>
+                                    <option value="4">4x 极速</option>
+                                </select>
+                            </label>
+                            <button id="btn-aivai-reset" class="btn">重置</button>
+                        </div>
+                    </div>
+                </header>
+                <div class="arena-layout">
+                    <div class="arena-board">
+                        <!-- Floating Announcement Banner & Toast Container -->
+                        <div id="arena-banner" class="arena-banner hidden"></div>
+                        <div id="arena-toast-container" class="arena-toast-container"></div>
+                        <div id="arena-card-tooltip" class="arena-card-tooltip hidden"></div>
+
+                        <!-- Enemy Player -->
+                        <div class="player-zone enemy">
+                            <div class="player-info">
+                                <span class="faction-badge" id="p1-faction-badge">🔵 敌方 AI (Blue)</span>
+                                <div class="score-container">
+                                    <span class="score-label">胜点:</span>
+                                    <div class="score-gems" id="p1-score-gems"></div>
+                                    <span class="score-text"><span id="p1-score">0</span>/7</span>
+                                </div>
+                                <div class="mana-container">
+                                    <span class="mana-label">法力:</span>
+                                    <div class="mana-crystals" id="p1-mana-crystals"></div>
+                                </div>
+                                <div class="deck-count-container">
+                                    <span class="deck-icon">🎴</span>
+                                    <span class="deck-text">牌库: <strong id="p1-deck-count">30</strong>/30</span>
+                                </div>
+                                <span id="round-indicator" class="badge">回合 1</span>
+                            </div>
+                            <!-- Enemy Hand (Card backs) -->
+                            <div class="hand-zone enemy-hand" id="p1-hand"></div>
+                        </div>
+
+                        <!-- Battlefield -->
+                        <div class="battlefield">
+                            <!-- Left Lane -->
+                            <div class="lane" id="lane-0">
+                                <div class="lane-header">左路战线</div>
+                                <div class="slot def enemy" id="slot-0-def" data-lane="0" data-pos="def"><span class="slot-label">敌方防守位</span></div>
+                                <div class="slot atk enemy" id="slot-0-atk" data-lane="0" data-pos="atk"><span class="slot-label">敌方进攻位</span></div>
+                                <div class="clash-line">左路对线</div>
+                                <div class="slot atk allied targetable" id="target-0-0" data-code="0"><span class="slot-label">我方进攻区</span></div>
+                                <div class="slot def allied targetable" id="target-0-1" data-code="1"><span class="slot-label">我方防守区</span></div>
+                            </div>
+                            <!-- Right Lane -->
+                            <div class="lane" id="lane-1">
+                                <div class="lane-header">右路战线</div>
+                                <div class="slot def enemy" id="slot-1-def" data-lane="1" data-pos="def"><span class="slot-label">敌方防守位</span></div>
+                                <div class="slot atk enemy" id="slot-1-atk" data-lane="1" data-pos="atk"><span class="slot-label">敌方进攻位</span></div>
+                                <div class="clash-line">右路对线</div>
+                                <div class="slot atk allied targetable" id="target-1-2" data-code="2"><span class="slot-label">我方进攻区</span></div>
+                                <div class="slot def allied targetable" id="target-1-3" data-code="3"><span class="slot-label">我方防守区</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Action & Rule Prompt Bar -->
+                        <div id="action-prompt-bar" class="action-prompt-bar">
+                            <span class="prompt-icon">💡</span>
+                            <span id="prompt-text">你的回合：请选择手牌并部署至战场</span>
+                        </div>
+
+                        <!-- Allied Player -->
+                        <div class="player-zone allied">
+                            <div class="player-info">
+                                <span class="faction-badge" id="p0-faction-badge">🔴 我方玩家 (Red)</span>
+                                <div class="score-container">
+                                    <span class="score-label">胜点:</span>
+                                    <div class="score-gems" id="p0-score-gems"></div>
+                                    <span class="score-text"><span id="p0-score">0</span>/7</span>
+                                </div>
+                                <div class="mana-container">
+                                    <span class="mana-label">法力:</span>
+                                    <div class="mana-crystals" id="p0-mana-crystals"></div>
+                                </div>
+                                <div class="deck-count-container">
+                                    <span class="deck-icon">🎴</span>
+                                    <span class="deck-text">牌库: <strong id="p0-deck-count">30</strong>/30</span>
+                                </div>
+                                <span id="turn-badge" class="badge active-turn">你的回合</span>
+                            </div>
+                            <!-- Hand Cards -->
+                            <div class="hand-zone" id="p0-hand"></div>
+                            <div class="action-buttons-row">
+                                <button id="btn-pass" class="btn primary">结束回合</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Combat Intelligence & Log Panel -->
+                    <div class="combat-side-panel glass">
+                        <div class="side-panel-tabs">
+                            <button id="tab-btn-tracker" class="panel-tab-btn active">🎴 战局记牌器</button>
+                            <button id="tab-btn-log" class="panel-tab-btn">📜 对战日志</button>
+                        </div>
+                        
+                        <!-- 1. Deck Tracker Tab -->
+                        <div id="deck-tracker-container" class="side-panel-view active">
+                            <div class="tracker-summary-bar">
+                                <div class="tracker-stat-pill">
+                                    <span class="pill-label">我方牌库:</span>
+                                    <strong id="tracker-p0-deck-num">30</strong>
+                                </div>
+                                <div class="tracker-stat-pill">
+                                    <span class="pill-label">我方手牌:</span>
+                                    <strong id="tracker-p0-hand-num">0</strong>
+                                </div>
+                                <div class="tracker-stat-pill">
+                                    <span class="pill-label">墓地/阵亡:</span>
+                                    <strong id="tracker-p0-grave-num">0</strong>
+                                </div>
+                            </div>
+                            
+                            <div class="tracker-section-title">
+                                <span>我方剩余卡牌清单</span>
+                                <span class="tracker-sub" id="tracker-ratio">30/30</span>
+                            </div>
+                            <div id="tracker-cards-list" class="tracker-cards-list">
+                                <div class="tracker-empty">对局开始后显示详细记牌清单</div>
+                            </div>
+
+                            <div class="tracker-section-title" style="margin-top:10px;">
+                                <span>敌方已打出情报</span>
+                                <span class="tracker-sub" id="tracker-enemy-deck-stat">敌方剩余: 30张</span>
+                            </div>
+                            <div id="tracker-enemy-revealed-list" class="tracker-cards-list enemy-revealed">
+                                <div class="tracker-empty">敌方尚未打出卡牌</div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Battle Log Tab -->
+                        <div id="battle-log-view" class="side-panel-view">
+                            <div id="log-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. Studio View -->
+            <section id="studio-view" class="view-section">
+                <header>
+                    <div class="studio-header-left">
+                        <h1>卡组工坊 (Codex & Deck Studio)</h1>
+                        <div class="filters">
+                            <select id="faction-filter">
+                                <option value="All">全部阵营 (All)</option>
+                                <option value="Red">🔴 赤红 (Red)</option>
+                                <option value="Blue">🔵 蔚蓝 (Blue)</option>
+                                <option value="Green">🟢 翠绿 (Green)</option>
+                                <option value="Neutral">⚪ 中立 (Neutral)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="controls studio-actions">
+                        <button id="btn-open-batch-art" class="btn cyan">⚡ 卡图生成队列</button>
+                        <button id="btn-toggle-deck-drawer" class="btn primary">🛠️ 我的构筑 (<span id="deck-card-count">0/30</span>)</button>
+                    </div>
+                </header>
+                
+                <div class="studio-layout">
+                    <!-- Cards Grid -->
+                    <div class="cards-grid" id="cards-container"></div>
+                    
+                    <!-- Deck Builder Drawer / Sidebar -->
+                    <aside id="deck-builder-drawer" class="deck-drawer glass">
+                        <div class="deck-drawer-header">
+                            <h3>🛠️ 卡组构筑工坊</h3>
+                            <button id="btn-close-deck-drawer" class="btn-icon">✖</button>
+                        </div>
+                        <!-- 6 Deck Slots Tabs Bar -->
+                        <div class="deck-slot-selector-container">
+                            <div class="deck-slot-header">
+                                <span>📁 我的构筑库 (上限 6 套):</span>
+                                <span id="deck-slot-badge" class="deck-slot-badge">槽位 1/6</span>
+                            </div>
+                            <div class="deck-slot-tabs" id="deck-slot-tabs">
+                                <!-- Tabs dynamically rendered by studio.js -->
+                            </div>
+                        </div>
+                        <!-- Deck Name & Faction Meta Bar -->
+                        <div class="deck-meta-bar">
+                            <div class="deck-meta-field">
+                                <label>卡组名称:</label>
+                                <input type="text" id="deck-name-input" class="deck-name-input" placeholder="输入卡组名称" maxlength="24" />
+                            </div>
+                            <div class="deck-meta-field">
+                                <label>卡组阵营:</label>
+                                <select id="deck-faction-select" class="deck-faction-dropdown">
+                                    <option value="Red">🔴 赤红阵营 (快攻/突袭/以小换大)</option>
+                                    <option value="Blue">🔵 蔚蓝阵营 (坚守/支援/控场阻挡)</option>
+                                    <option value="Green">🟢 翠绿阵营 (成长/跳费/大核膨胀)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!-- AI Preset Decks Quick Load Bar -->
+                        <div class="deck-preset-bar">
+                            <div class="preset-title">⚡ 载入 AI 调试官方精调构筑到当前卡组:</div>
+                            <div class="preset-buttons">
+                                <button class="btn small preset-btn red" onclick="window.loadAiPresetDeck && window.loadAiPresetDeck('Red')">🔴 赤红精调</button>
+                                <button class="btn small preset-btn blue" onclick="window.loadAiPresetDeck && window.loadAiPresetDeck('Blue')">🔵 蔚蓝精调</button>
+                                <button class="btn small preset-btn green" onclick="window.loadAiPresetDeck && window.loadAiPresetDeck('Green')">🟢 翠绿精调</button>
+                            </div>
+                        </div>
+                        <div class="deck-status-bar">
+                            <span id="deck-count-text">当前卡牌: 0 / 30 张</span>
+                            <span id="deck-mana-avg">均费: 0.0</span>
+                        </div>
+                        <!-- Mana Curve Bar -->
+                        <div class="mana-curve-container" id="mana-curve-bar"></div>
+                        <!-- Deck Card List -->
+                        <div class="deck-list-container" id="deck-items-list">
+                            <div class="empty-deck-hint">点击卡池卡牌右上角的「+」即可添加至卡组（上限 30 张，单卡最多 3 张）</div>
+                        </div>
+                        <div class="deck-actions-footer">
+                            <div class="deck-btn-row">
+                                <button id="btn-deck-fill-random" class="btn secondary">🎲 随机合规补满</button>
+                                <button id="btn-deck-clear" class="btn secondary">🗑️ 清空</button>
+                            </div>
+                            <div class="deck-btn-row">
+                                <button id="btn-deck-save" class="btn primary">💾 保存卡组</button>
+                                <button id="btn-deck-battle" class="btn gold">⚔️ 带去演武场</button>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+
+                <!-- Modal: Single Art Gen -->
+                <div id="art-modal" class="modal hidden">
+                    <div class="modal-content glass">
+                        <h3>Z-Image-Turbo 生成原画</h3>
+                        <div id="art-preview"></div>
+                        <p id="art-prompt"></p>
+                        <button id="btn-close-modal" class="btn">关闭</button>
+                    </div>
+                </div>
+
+                <!-- Modal: Card Art & Details Lightbox Viewer -->
+                <div id="card-viewer-modal" class="modal hidden">
+                    <div class="modal-content glass card-viewer-box">
+                        <div class="card-viewer-layout">
+                            <div class="card-viewer-art-col">
+                                <img id="viewer-art-img" src="" alt="卡牌原画" class="viewer-img" />
+                                <div id="viewer-art-empty" class="viewer-empty-box hidden">
+                                    <div class="empty-icon">🎨</div>
+                                    <p>此卡暂未生成原画</p>
+                                    <button id="viewer-btn-gen-now" class="btn cyan">✨ 立即生成原画</button>
+                                </div>
+                            </div>
+                            <div class="card-viewer-info-col">
+                                <div class="viewer-top-row">
+                                    <span id="viewer-faction-badge" class="badge">阵营</span>
+                                    <span id="viewer-type-badge" class="badge">随从</span>
+                                </div>
+                                <h2 id="viewer-card-name" class="viewer-title">卡牌名称</h2>
+                                
+                                <div class="viewer-stats-grid">
+                                    <div class="viewer-stat-item">
+                                        <span class="v-label">法力消耗:</span>
+                                        <span id="viewer-cost" class="v-value cost-val">0</span>
+                                    </div>
+                                    <div class="viewer-stat-item">
+                                        <span class="v-label">战力评级:</span>
+                                        <span id="viewer-dp" class="v-value dp-val">0</span>
+                                    </div>
+                                </div>
+
+                                <div class="viewer-section-title">技能与特性说明:</div>
+                                <div id="viewer-tags-list" class="viewer-tags-container"></div>
+                                
+                                <div id="viewer-prompt-preview" class="viewer-prompt-box"></div>
+                                <div id="viewer-status-text" class="viewer-status-text"></div>
+
+                                <div class="viewer-button-row">
+                                    <button id="viewer-btn-add-deck" class="btn primary">➕ 加入构筑</button>
+                                    <button id="viewer-btn-download" class="btn">📥 下载大图</button>
+                                    <button id="viewer-btn-close" class="btn">关闭</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal: Batch Art Generator -->
+                <div id="batch-art-modal" class="modal hidden">
+                    <div class="modal-content glass">
+                        <h3>⚡ 一键批量生成全卡池卡图</h3>
+                        <p class="modal-subtitle" id="batch-art-desc">正在扫描未绘制原画的卡牌...</p>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="batch-progress-bar" style="width: 0%;"></div>
+                        </div>
+                        <div id="batch-status-text" class="batch-status-text">准备就绪</div>
+                        <div class="modal-actions">
+                            <button id="btn-close-batch-art" class="btn">关闭</button>
+                            <button id="btn-start-batch-art" class="btn cyan">🚀 开始批量生成</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. Analytics View -->
+            <section id="analytics-view" class="view-section">
+                <header class="analytics-header">
+                    <div>
+                        <h1>AI 平衡调度与数值调控中心</h1>
+                        <p class="subtitle">支持强化学习 PPO 自博弈评估与 DeepSeek-V3 自动数值微调收敛闭环</p>
+                    </div>
+                </header>
+
+                <!-- Balance Control Toolbar -->
+                <div class="card glass balance-control-card">
+                    <div class="control-row">
+                        <div class="control-item flex-2">
+                            <label>调优模式:</label>
+                            <select id="pipe-mode">
+                                <option value="tune_only" selected>🎯 纯数值微调 (保留现有卡牌 · 专调身材与费用)</option>
+                                <option value="full_pack">🌊 扩展包完整流程 (全新印卡 + 3000局微调)</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label>对局规模 (局/轮):</label>
+                            <select id="pipe-episodes">
+                                <option value="3000" selected>3,000 局 (严谨全量)</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label>阵营总偏离容差:</label>
+                            <select id="pipe-target">
+                                <option value="5.0" selected>±5.0% (健康区间: 45%~55%)</option>
+                                <option value="3.0">±3.0% (高精度收敛: 47%~53%)</option>
+                                <option value="8.0">±8.0% (宽松偏离: 42%~58%)</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label>两两对抗容差:</label>
+                            <select id="pipe-pairwise-target">
+                                <option value="5.0" selected>≤ ±5.0% (严格对称)</option>
+                                <option value="8.0">≤ ±8.0% (宽松容差)</option>
+                                <option value="0">不约束 (仅看总胜率)</option>
+                            </select>
+                        </div>
+                        <div class="control-actions">
+                            <button id="btn-pipe-start" class="btn green" onclick="window.startPipeline && window.startPipeline()">▶️ 启动调优流水线</button>
+                            <button id="btn-pipe-stop" class="btn danger" onclick="window.stopPipeline && window.stopPipeline()" disabled>⏹️ 终止运行</button>
+                            <button id="btn-pipe-refresh" class="btn" onclick="window.refreshAnalyticsData && window.refreshAnalyticsData()">🔄 刷新数据</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Metrics Summary Cards -->
+                <div class="metrics-cards-grid">
+                    <div class="metric-card glass red-border">
+                        <div class="metric-header">🔴 赤红阵营胜率</div>
+                        <div id="stat-red-wr" class="metric-val">--%</div>
+                        <div id="stat-red-sub" class="metric-sub">偏离度: --%</div>
+                    </div>
+                    <div class="metric-card glass blue-border">
+                        <div class="metric-header">🔵 蔚蓝阵营胜率</div>
+                        <div id="stat-blue-wr" class="metric-val">--%</div>
+                        <div id="stat-blue-sub" class="metric-sub">偏离度: --%</div>
+                    </div>
+                    <div class="metric-card glass green-border">
+                        <div class="metric-header">🟢 翠绿阵营胜率</div>
+                        <div id="stat-green-wr" class="metric-val">--%</div>
+                        <div id="stat-green-sub" class="metric-sub">偏离度: --%</div>
+                    </div>
+                    <div class="metric-card glass gold-border">
+                        <div class="metric-header">⚖️ 阵营总偏离</div>
+                        <div id="stat-max-dev" class="metric-val">--%</div>
+                        <div id="stat-balance-badge" class="metric-sub status-pill">监测中</div>
+                    </div>
+                    <div class="metric-card glass purple-border">
+                        <div class="metric-header">⚔️ 两两对抗偏离</div>
+                        <div id="stat-pairwise-dev" class="metric-val">--%</div>
+                        <div id="stat-pairwise-badge" class="metric-sub status-pill">两两监测中</div>
+                    </div>
+                    <div class="metric-card glass cyan-border">
+                        <div class="metric-header">⚡ 调度状态</div>
+                        <div id="stat-runner-status" class="metric-val status-text">🟢 待机就绪</div>
+                        <div id="stat-runner-time" class="metric-sub">耗时: 0s</div>
+                    </div>
+                </div>
+
+                <!-- Live Interactive Terminal Console -->
+                <div class="card glass terminal-wrapper">
+                    <div class="terminal-header">
+                        <div class="terminal-dots">
+                            <span class="dot red"></span>
+                            <span class="dot yellow"></span>
+                            <span class="dot green"></span>
+                        </div>
+                        <span class="terminal-title">🖥️ TCG-AI Balance Engine Live Console (实时输出控制台)</span>
+                        <div class="terminal-actions">
+                            <label class="auto-scroll-label">
+                                <input type="checkbox" id="chk-auto-scroll" checked /> 自动滚屏
+                            </label>
+                            <button id="btn-clear-console" class="btn small" onclick="window.clearPipelineConsole && window.clearPipelineConsole()">清屏</button>
+                        </div>
+                    </div>
+                    <div id="pipe-console" class="terminal-body">
+                        <div class="console-line system">[Console] 欢迎进入 TCG-AI 平衡调度中心。点击上方【▶️ 启动调优流水线】即可开始自动演化。</div>
+                    </div>
+                </div>
+
+                <!-- Charts and Matrix -->
+                <div class="dashboard-grid">
+                    <div class="card glass">
+                        <h3>阵营平衡雷达图 (Win Rate Distribution)</h3>
+                        <div class="radar-chart-wrapper">
+                            <canvas id="winrate-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card glass">
+                        <h3>阵营克制对抗矩阵 (Matchup Matrix)</h3>
+                        <div id="matchup-matrix"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="/static/js/app.js?v=14"></script>
+    <script src="/static/js/studio.js?v=14"></script>
+    <script src="/static/js/arena.js?v=14"></script>
+    <script src="/static/js/analytics.js?v=14"></script>
+</body>
+</html>
