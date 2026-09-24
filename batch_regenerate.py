@@ -55,15 +55,15 @@ def main():
 
     if total == 0:
         print("==================================================")
-        print("🎉 卡池中所有卡牌均已具备原画插图，无需补充生成！")
-        print("💡 如需强制覆盖全量重画，请执行: py batch_regenerate.py --all")
+        print("卡池中所有卡牌均已具备原画插图，无需补充生成。")
+        print("如需强制覆盖全量重画，请执行: py batch_regenerate.py --all")
         print("==================================================")
         return
 
     mode_desc = "全量强制重绘" if args.all else "补全缺失卡图"
     print(f"==================================================")
-    print(f"🚀 开始【{mode_desc}】共 {total} 张卡牌原画")
-    print(f"🎯 使用模型: Tongyi-MAI/Z-Image-Turbo (急速超清)")
+    print(f"开始【{mode_desc}】共 {total} 张卡牌原画")
+    print(f"使用模型: Tongyi-MAI/Z-Image-Turbo")
     print(f"==================================================")
 
     progress_file = os.path.join(root_dir, "web_app", "static", "batch_progress.json")
@@ -108,10 +108,10 @@ def main():
                 model="Tongyi-MAI/Z-Image-Turbo"
             )
             success_count += 1
-            print(f"   -> ✅ 成功: {res['url']}")
+            print(f"   -> [成功]: {res['url']}")
         except Exception as e:
             fail_count += 1
-            print(f"   -> ❌ 失败: {e}")
+            print(f"   -> [失败]: {e}")
 
         time.sleep(2.0)
 
@@ -138,7 +138,7 @@ def main():
         subprocess.run([sys.executable, export_script], check=False)
 
     print(f"==================================================")
-    print(f"🎉 全部卡图重画完成！成功: {success_count}, 失败: {fail_count}")
+    print(f"全部卡图重画完成！成功: {success_count}, 失败: {fail_count}")
     print(f"==================================================")
 
 if __name__ == "__main__":

@@ -189,20 +189,20 @@ window.addCardToDeck = function(cardId) {
 
     // 1. 严格阵营合规判定（阻断跨阵营混卡，如蓝卡加进红卡组）
     if (!window.isCardAllowedForFaction(card, curFaction)) {
-        alert(`❌ 阵营不合法！\n【${card.name}】不属于【${fNames[curFaction]}】合法卡池，无法加入该卡组！\n\n规则：只能加入对应阵营卡牌或中立通用卡。如需组建该卡牌套牌，请先在抽屉上方切换当前卡组阵营。`);
+        alert(`阵营不合法！\n【${card.name}】不属于【${fNames[curFaction]}】合法卡池，无法加入该卡组！\n\n规则：只能加入对应阵营卡牌或中立通用卡。如需组建该卡牌套牌，请先在抽屉上方切换当前卡组阵营。`);
         return;
     }
 
     // 2. 严格 30 张卡组上限
     if (userDeck.card_ids.length >= 30) {
-        alert("❌ 卡组已达 30 张携带上限！无法继续添加。");
+        alert("卡组已达 30 张携带上限！无法继续添加。");
         return;
     }
 
     // 3. 严格同名卡 3 张上限
     const count = userDeck.card_ids.filter(id => id === cardId).length;
     if (count >= 3) {
-        alert(`❌ 同名卡上限！\n卡牌【${card.name}】已达到 3 张最大携带上限！`);
+        alert(`同名卡上限！\n卡牌【${card.name}】已达到 3 张最大携带上限！`);
         return;
     }
 
@@ -258,7 +258,7 @@ function renderDeckSlotTabs() {
     if (toggleDrawerBtn) {
         const fIcons = { 'Red': '🔴', 'Blue': '🔵', 'Green': '🟢' };
         const icon = fIcons[userDeck.faction] || '⚪';
-        toggleDrawerBtn.innerHTML = `🛠️ 我的构筑 · ${icon} 槽位${activeDeckIndex + 1} (${userDeck.card_ids.length}/30)`;
+        toggleDrawerBtn.innerHTML = `我的构筑 · ${icon} 槽位${activeDeckIndex + 1} (${userDeck.card_ids.length}/30)`;
     }
 
     if (!tabsContainer) return;
@@ -312,7 +312,7 @@ window.loadAiPresetDeck = function(faction) {
 
     renderDeckDrawer();
     saveUserDeckSilently();
-    alert(`✅ 已成功将【${userDeck.name}】官方精调构筑 (30/30 张) 导入至槽位 ${activeDeckIndex + 1}！\n可直接带去演武场出战，也可在此自由替换微调。`);
+    alert(`已成功将【${userDeck.name}】精调构筑 (30/30 张) 导入至槽位 ${activeDeckIndex + 1}！\n可直接带去演武场出战，也可在此自由替换微调。`);
 };
 
 function renderDeckDrawer() {
@@ -543,9 +543,9 @@ document.getElementById('btn-deck-save').onclick = async () => {
         if (res.ok && data.success) {
             renderDeckSlotTabs();
             if (window.updateArenaDeckSelectOptions) window.updateArenaDeckSelectOptions();
-            alert(`✅ 槽位 ${activeDeckIndex + 1}【${userDeck.name}】已成功保存！当前卡牌共 ${userDeck.card_ids.length} 张（${userDeck.faction}阵营）。`);
+            alert(`槽位 ${activeDeckIndex + 1}【${userDeck.name}】已成功保存！当前卡牌共 ${userDeck.card_ids.length} 张（${userDeck.faction}阵营）。`);
         } else {
-            alert(`❌ 保存失败: ${data.message || '卡组不合规'}`);
+            alert(`保存失败: ${data.message || '卡组不合规'}`);
         }
     } catch (e) {
         alert("保存失败: " + e.message);
@@ -554,7 +554,7 @@ document.getElementById('btn-deck-save').onclick = async () => {
 
 document.getElementById('btn-deck-battle').onclick = async () => {
     if (userDeck.card_ids.length !== 30) {
-        alert(`⚠️ 当前卡组【${userDeck.name}】尚未满 30 张（当前 ${userDeck.card_ids.length}/30 张）！\n请点击「🎲 随机合规补满」或添加卡牌凑齐 30 张后再出战。`);
+        alert(`当前卡组【${userDeck.name}】尚未满 30 张（当前 ${userDeck.card_ids.length}/30 张）！\n请点击「随机合规补满」或添加卡牌凑齐 30 张后再出战。`);
         return;
     }
     await saveUserDeckSilently();
@@ -617,7 +617,7 @@ function startBatchArtPolling() {
                 const pct = q.percentage || 0;
                 if (bar) bar.style.width = `${pct}%`;
                 if (statusText) {
-                    statusText.innerHTML = `🎨 [${q.current}/${q.total}] 正在生成 <strong>${currentName}</strong> (${pct}%)... ⏳`;
+                    statusText.innerHTML = `[${q.current}/${q.total}] 正在生成 <strong>${currentName}</strong> (${pct}%)...`;
                 }
                 if (descEl) {
                     descEl.innerText = `后台队列运行中：已成功 ${q.success} 张，失败 ${q.failed} 张。`;
@@ -626,7 +626,7 @@ function startBatchArtPolling() {
                 if (q.done) {
                     if (bar) bar.style.width = '100%';
                     if (statusText) {
-                        statusText.innerHTML = `🎉 后台生图完成！共成功绘制 <strong>${q.success}</strong> 张卡图！`;
+                        statusText.innerHTML = `后台生图完成！共成功绘制 <strong>${q.success}</strong> 张卡图！`;
                     }
                     if (startBtn) startBtn.disabled = false;
                     stopBatchArtPolling();
@@ -640,7 +640,7 @@ function startBatchArtPolling() {
                     const missingCount = data.missing_count || 0;
                     if (bar) bar.style.width = '0%';
                     if (descEl) descEl.innerText = `卡池中共有 ${missingCount} 张卡牌缺少原画插图。`;
-                    if (statusText) statusText.innerText = missingCount > 0 ? "点击下方按钮开始后台排队绘制" : "太棒了！所有卡牌的原画已全部绘制完毕！";
+                    if (statusText) statusText.innerText = missingCount > 0 ? "点击下方按钮开始后台排队绘制" : "所有卡牌的原画已全部绘制完毕。";
                     if (startBtn) startBtn.disabled = (missingCount === 0);
                     stopBatchArtPolling();
                 }
@@ -678,7 +678,7 @@ if (btnStartBatch) {
 
         btnStartBatch.disabled = true;
         if (bar) bar.style.width = '5%';
-        if (statusText) statusText.innerHTML = "🚀 正在向后台提交排队生图请求... ⏳";
+        if (statusText) statusText.innerHTML = "正在向后台提交排队生图请求...";
 
         try {
             const res = await fetch('/api/batch_generate_art', { method: 'POST' });
@@ -775,7 +775,7 @@ async function executeRegenerateCurrentCard() {
     const regenBtn = document.getElementById('viewer-btn-regen');
     const genNowBtn = document.getElementById('viewer-btn-gen-now');
 
-    statusText.innerHTML = "🎨 正在调用快手可图（Kwai-Kolors）与纯净提示词绘制中，请稍候约 5-8 秒... ⏳";
+    statusText.innerHTML = "正在调用绘图模型生成原画，请稍候约 5-8 秒...";
     if (regenBtn) regenBtn.disabled = true;
     if (genNowBtn) genNowBtn.disabled = true;
 
@@ -793,7 +793,7 @@ async function executeRegenerateCurrentCard() {
         });
         const data = await res.json();
         if (data.success) {
-            statusText.innerHTML = "✨ 原画绘制成功并已本地永久覆盖！";
+            statusText.innerHTML = "原画绘制成功并已本地保存。";
             const freshUrl = data.data.url.includes('?') ? `${data.data.url}&t=${Date.now()}` : `${data.data.url}?t=${Date.now()}`;
             imgEl.src = freshUrl;
             imgEl.classList.remove('hidden');
@@ -810,14 +810,14 @@ async function executeRegenerateCurrentCard() {
             
             if (data.data.prompt) {
                 promptBox.style.display = 'block';
-                promptBox.innerText = `🎨 DeepSeek 构想提示词:\n${data.data.prompt}`;
+                promptBox.innerText = `生图提示词:\n${data.data.prompt}`;
             }
 
             window.assetVersion = Date.now();
         } else {
             const errStr = data.detail || JSON.stringify(data);
             if (errStr.includes("429") || errStr.includes("IPM limit") || errStr.includes("限频")) {
-                statusText.innerHTML = `<span style="color:#f59e0b">⏳ 提示：硅基流动平台每分钟生成频次已达上限（IPM Limit，每分钟约1~2张）。请等待约 20~30 秒后再次点击即可！</span>`;
+                statusText.innerHTML = `<span style="color:#f59e0b">提示：接口每分钟调用频次已达上限，请等待约 20~30 秒后重试。</span>`;
             } else {
                 statusText.innerHTML = `<span style="color:red">生成失败: ${errStr}</span>`;
             }
@@ -825,7 +825,7 @@ async function executeRegenerateCurrentCard() {
     } catch (e) {
         const errStr = e.message || String(e);
         if (errStr.includes("429") || errStr.includes("IPM limit") || errStr.includes("限频")) {
-            statusText.innerHTML = `<span style="color:#f59e0b">⏳ 提示：硅基流动平台每分钟生成频次已达上限（IPM Limit，每分钟约1~2张）。请等待约 20~30 秒后再次点击即可！</span>`;
+            statusText.innerHTML = `<span style="color:#f59e0b">提示：接口每分钟调用频次已达上限，请等待约 20~30 秒后重试。</span>`;
         } else {
             statusText.innerHTML = `<span style="color:red">生成出错: ${errStr}</span>`;
         }

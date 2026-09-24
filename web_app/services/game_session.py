@@ -45,7 +45,7 @@ class GameSession:
         else:
             self.done = False
             self.obs = None
-            self.logs = ["【演武场待命中】双方构筑准备就绪。点击上方【⚔️ 开始对局】进入战斗！"]
+            self.logs = ["双方构筑准备就绪。点击上方【开始对局】进入战斗。"]
 
     def get_card_images_map(self):
         """Loads card image mappings dynamically from cards_config.json."""
@@ -148,17 +148,17 @@ class GameSession:
             diff0 = cur_s0 - prev_s0
             diff1 = cur_s1 - prev_s1
             if diff0 > 0 or diff1 > 0:
-                self.logs.append(f"💥 冲锋交战结算：红方+{diff0}分，蓝方+{diff1}分！当前比分: {cur_s0} : {cur_s1}")
+                self.logs.append(f"冲锋交战结算：红方+{diff0}分，蓝方+{diff1}分。当前比分: {cur_s0} : {cur_s1}")
             else:
-                self.logs.append("🛡️ 双方防线稳固，本轮交战未产生比分突破。")
+                self.logs.append("双方防线稳固，本轮交战未产生比分突破。")
 
         if self.done:
             if self.env.winner == 0:
-                self.logs.append("🏆 演武结束！红方 (Player 0) 斩获胜利！")
+                self.logs.append("对局结束：红方获胜。")
             elif self.env.winner == 1:
-                self.logs.append("🏆 演武结束！蓝方 AI (Player 1) 斩获胜利！")
+                self.logs.append("对局结束：蓝方获胜。")
             else:
-                self.logs.append("⚖️ 演武结束！双方势均力敌，战成平局！")
+                self.logs.append("对局结束：双方战成平局。")
 
         if len(self.logs) > 15:
             self.logs = self.logs[-15:]

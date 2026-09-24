@@ -169,7 +169,7 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
                     "wr1": wr1, "wr2": wr2, "dev": p_dev
                 }
                 is_p_ok = (target_pairwise_tolerance <= 0) or (p_dev <= target_pairwise_tolerance)
-                flag = "✅ 均势" if is_p_ok else f"🚨 严重偏离 (偏离 50% 达 ±{p_dev:.1f}%)"
+                flag = "均势" if is_p_ok else f"偏离 (偏离 50% 达 ±{p_dev:.1f}%)"
                 pairwise_lines.append(
                     f"  * 【{f1} vs {f2}】: {f1} 胜率 {wr1:.1f}% ({f1_wins} 胜) vs {f2} 胜率 {wr2:.1f}% ({f2_wins} 胜) / 共 {tot} 局 -> 偏离度: {p_dev:.1f}% [{flag}]"
                 )
@@ -242,7 +242,7 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
     pairwise_instructions = []
     for dom, udg, d_w, u_w, diff in pairwise_imbalanced:
         pairwise_instructions.append(f"""
-    * ⚡【两两对抗克制失衡专项修正 —— {dom} 压制 {udg} (胜率 {d_w:.1f}% vs {u_w:.1f}%，偏离 ±{diff:.1f}% > 目标容差 ±{target_pairwise_tolerance:.1f}%)】：
+    * 【两两对抗克制失衡专项修正 —— {dom} 压制 {udg} (胜率 {d_w:.1f}% vs {u_w:.1f}%，偏离 ±{diff:.1f}% > 目标容差 ±{target_pairwise_tolerance:.1f}%)】：
       - 诊断方向：
         1. 【{dom}】是否存在令【{udg}】无力应对的过度压制机制（例如：低费高爆发突袭 RUSH、强力破甲 DEGRADE、或过快跳费 RAMP）？
         2. 【{udg}】在面对【{dom}】特定战术时是否存在防守/对策真空期（例如：面对快攻缺乏 1~2 费坚守 FORTIFY 单位或低费护盾法术；面对大身材随从缺乏单解）？
@@ -279,7 +279,7 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
         mode_banner = f"【全面平衡维持模式 | 阵营总偏离 {max_dev:.1f}% <= {target_tolerance}%, 两两对抗最大偏离 {max_pairwise_dev:.1f}% <= {target_pairwise_tolerance}%】"
         balance_instructions = f"""
 ### 【平衡维持说明】
-★ 当前各阵营综合胜率与两两实战对抗胜率全部进入了目标平衡带！
+当前各阵营综合胜率与两两实战对抗胜率全部进入了目标平衡带。
 各阵营对局胜率均在安全容差以内，属于健康的竞技互动与阵营风格差异。
 **本轮原则上无需对数值进行大规模修改，保护当前稳定的全量牌池生态！**
 """

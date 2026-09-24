@@ -108,7 +108,7 @@ class DeepSeekCardPrinter:
                     if "name" in c:
                         existing_names.add(c["name"])
 
-        prompt = f"""你是一名精通双路集换式卡牌对战（DuelEnv）的数值平衡与卡牌策划大师。
+        prompt = f"""你是一名 TCG 卡牌设计与数值平衡工程师。
 请为【{faction}】阵营 ({faction_desc}) 构想设计 {count} 张全新机制卡牌。
 设计主题与战术方向: 【{theme if theme else '符合阵营核心战术，具备战术搭配与构筑价值的机制卡'}】
 

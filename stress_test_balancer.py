@@ -32,11 +32,11 @@ def run_stress_test(
     skip_final_audit=True
 ):
     print("=" * 75)
-    print(f"  🏆 TCG-AI 连续平衡收敛压力测试启动")
-    print(f"  ★ 核心目标: 连续成功达成平衡收敛 【{target_consecutive} 次】 (中途不失衡、不报错、不卡死)")
-    print(f"  ★ 对局配置: 单轮混战规模 {episodes if not dry_run else 60} 局 | 综合容差 ±{target_balance:.1f}% | 两两容差 ±{target_pairwise:.1f}%")
-    print(f"  ★ 运行模式: {'[极速演练模式]' if dry_run else '[实机对决评测]'} | 卡池策略: {'[每次重置基准卡池]' if reset_cards else '[连续继承演化(检验卡池抗压性)]'}")
-    print(f"  ★ 容错上限: 最多尝试 {max_total_attempts} 轮 (若连胜中断自动重新累计，直至达成连续 {target_consecutive} 次)")
+    print(f"  TCG-AI 连续平衡收敛稳定性压力测试")
+    print(f"  目标: 连续成功收敛 [{target_consecutive}] 次")
+    print(f"  配置: 每轮规模 {episodes if not dry_run else 60} 局 | 综合容差 ±{target_balance:.1f}% | 两两容差 ±{target_pairwise:.1f}%")
+    print(f"  模式: {'[极速演练]' if dry_run else '[完整实机]'} | 卡池: {'[每次重置]' if reset_cards else '[连续继承演化]'}")
+    print(f"  上限: 最多尝试 {max_total_attempts} 轮")
     print("=" * 75)
 
     cards_path = os.path.join(SCRIPT_DIR, "cards_config.json")
@@ -137,7 +137,7 @@ def run_stress_test(
                         "[Episode", "【轮次", "[判定]", "达成平衡收敛", "【对战遥测统计结果】",
                         "【阶段四】", "【阶段五】", "微调记录", "[严重失衡熔断]",
                         "DeepSeek 大模型", "[数值调整]", "[安全兜底]", "已完成卡池数值调优",
-                        "达到最大迭代轮次", "★"
+                        "达到最大迭代轮次", "[平衡达成]"
                     ]):
                         print(f"  {line_s}")
                         if "达成平衡收敛" in line_s or "胜率达成平衡" in line_s or "退出迭代循环" in line_s:
@@ -160,17 +160,15 @@ def run_stress_test(
                     max_streak_reached = consecutive_streak
 
                 print("-" * 75)
-                print(f"🎉【第 {total_attempts} 轮结果】: ✅ 平衡收敛成功！耗时: {duration:.1f} 秒 ({duration/60:.1f} 分钟)")
-                print(f"🔥【连胜计数器】: 当前已连续成功 [ {consecutive_streak} / {target_consecutive} ] 次！")
+                print(f"[第 {total_attempts} 轮结果] 平衡收敛成功 | 耗时: {duration:.1f}s | 连胜: {consecutive_streak}/{target_consecutive}")
                 if consecutive_streak >= target_consecutive:
-                    print(f"🏆【目标达成】: 恭喜！已圆满达成连续 {target_consecutive} 次平衡收敛的压力测试目标！")
+                    print(f"[测试完成] 已达成连续 {target_consecutive} 次平衡收敛目标。")
             else:
                 prev_streak = consecutive_streak
                 consecutive_streak = 0
                 print("-" * 75)
-                print(f"❌【第 {total_attempts} 轮结果】: 失败/未收敛 (退出码: {proc.returncode}) | 耗时: {duration:.1f} 秒")
-                print(f"⚠️【连胜中断】: 连续成功计数在第 {prev_streak} 次中断，连胜计数重置为 0！")
-                print(f"   详细排查日志已保存至: {log_file}")
+                print(f"[第 {total_attempts} 轮结果] 未收敛 (退出码: {proc.returncode}) | 耗时: {duration:.1f}s")
+                print(f"[连胜重置] 在第 {prev_streak} 次中断，重置为 0。详细日志: {log_file}")
 
             history_results.append({
                 "attempt": total_attempts,
@@ -182,7 +180,7 @@ def run_stress_test(
             })
 
     except KeyboardInterrupt:
-        print("\n\n[中断] 用户手动终止了压力测试！")
+        print("\n\n[中断] 用户手动终止测试。")
 
     finally:
         # 清理基准备份
@@ -196,23 +194,23 @@ def run_stress_test(
 
     # 输出高压测试终局大面板
     print("\n" + "=" * 75)
-    print("           🏆 TCG-AI 自动化压力测试总结报告 (连续平衡收敛检验)")
+    print("           TCG-AI 自动化压力测试总结报告 (连续平衡收敛检验)")
     print("=" * 75)
     print(f" 目标连续成功: {target_consecutive} 次")
-    print(f" 实际最高连胜: {max_streak_reached} 次 ({'✅ 达标' if max_streak_reached >= target_consecutive else '⚠️ 未达标'})")
+    print(f" 实际最高连胜: {max_streak_reached} 次 ({'达标' if max_streak_reached >= target_consecutive else '未达标'})")
     print(f" 总测试尝试轮数: {total_attempts} 轮")
-    print(f" 累计成功收敛数: {total_successes} 轮 (总体成功率: {total_successes / max(1, total_attempts) * 100:.1f}%)")
+    print(f" 累计成功收敛数: {total_successes} 轮 (成功率: {total_successes / max(1, total_attempts) * 100:.1f}%)")
     print(f" 累计测试总耗时: {total_test_duration:.1f} 秒 ({total_test_duration/60:.1f} 分钟)")
     print("\n[逐轮战报详情]")
     for r in history_results:
-        st = "✅ 成功收敛" if r["success"] else f"❌ 失败/中断 (code={r['returncode']})"
-        print(f"  * 尝试第 {r['attempt']:02d} 轮: {st} | 耗时: {r['duration_sec']:5.1f}s | 连胜: {r['streak_after']}/{target_consecutive} | 状态: {r['last_info']}")
+        st = "成功收敛" if r["success"] else f"失败/中断 (code={r['returncode']})"
+        print(f"  * 第 {r['attempt']:02d} 轮: {st} | 耗时: {r['duration_sec']:5.1f}s | 连胜: {r['streak_after']}/{target_consecutive} | 状态: {r['last_info']}")
     print("=" * 75)
 
     if max_streak_reached >= target_consecutive:
-        print("【结论】: 🎉 压力测试完美通过！系统在连续高频探索与调优中表现出极佳的收敛稳定性与健壮性！")
+        print("[结论] 压力测试通过，系统在连续测试中保持稳定收敛。")
     else:
-        print("【结论】: ⚠️ 未能达成连续目标次数，请结合上述对应轮次的 stress_test_log_run_X.txt 排查偶发失衡原因。")
+        print(f"[结论] 未能达成连续目标次数，详见各轮日志 stress_test_log_run_X.txt。")
     print("=" * 75 + "\n")
 
 if __name__ == "__main__":

@@ -692,13 +692,13 @@ def check_balance_status(metrics: dict, target_tolerance: float = 5.0, target_pa
     for f in factions:
         wr = f_stats.get(f, {}).get("winrate", 50.0)
         dev = deviations[f]
-        flag = "✅" if dev <= target_tolerance else "❌"
+        flag = "[OK]" if dev <= target_tolerance else "[! ]"
         print(f"    {flag} 【{f:<5}】当前胜率: {wr:5.1f}% (偏离 50% 达 {dev:4.1f}%)")
 
     if target_pairwise_tolerance > 0:
         print("  【2. 阵营两两对抗胜率 (双向合并实机对抗)】:")
         for (f1, f2), (wr, tot, p_dev) in pairwise_results.items():
-            flag = "✅" if p_dev <= target_pairwise_tolerance else "❌"
+            flag = "[OK]" if p_dev <= target_pairwise_tolerance else "[! ]"
             print(f"    {flag} {f1:<5} vs {f2:<5}: {wr:5.1f}% vs {100.0 - wr:5.1f}% (共 {tot} 局, 偏离 {p_dev:4.1f}%)")
 
     if is_balanced:
@@ -948,7 +948,7 @@ def main():
             latest_max_dev = max_dev
 
             if is_balanced:
-                print("\n" + "★" * 70)
+                print("\n" + "=" * 70)
                 print(f"[判定] 胜率达成平衡收敛条件 (第 {outer_round} 轮数值调整，第 {attempt} 次卡组微调)")
                 print(f"   各阵营最大偏离度: {max_dev:.2f}% <= 目标阈值: {args.target_balance:.2f}% (两两最大偏离: {max_pairwise_dev:.2f}% <= {args.target_pairwise_balance:.2f}%, 胜率极差: {spread:.2f}%)")
                 if not args.dry_run and not args.skip_final_audit and current_brawl_episodes < 3000:
@@ -956,18 +956,17 @@ def main():
                     metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=3000, eval_only=args.eval_only)
                     latest_metrics = metrics
                 print("   已达成收敛，退出迭代循环。")
-                print("★" * 70)
+                print("=" * 70)
                 break
             else:
                 is_severe = (max_dev >= args.severe_imbalance_threshold) or (max_pairwise_dev >= args.severe_imbalance_threshold) or (spread >= args.severe_spread_threshold)
                 # Suppress fusion on the first attempt so PPO gets at least one full chance to adapt
                 if is_severe and attempt > 1:
-                    print("\n" + "!" * 70)
-                    print(f"[严重失衡熔断] 检测到阵营胜率严重失衡:")
-                    print(f"   阵营总偏离: {max_dev:.2f}% | 两两对抗最大偏离: {max_pairwise_dev:.2f}% (熔断阈值: >= {args.severe_imbalance_threshold:.1f}%) | 阵营极差: {spread:.2f}%")
-                    print(f"   原因诊断: 存在显著的单卡数值/费用硬伤或极端克制（非卡组构筑微调所能弥补）。")
-                    print(f"   执行动作: 提前终止当前内环构筑探索 (当前第 {attempt}/{deck_attempts} 次)，直接快转至外环 DeepSeek 调卡牌数值！")
-                    print("!" * 70)
+                    print("\n" + "=" * 70)
+                    print(f"[失衡触发] 检测到阵营胜率偏离较大:")
+                    print(f"   阵营总偏离: {max_dev:.2f}% | 两两对抗最大偏离: {max_pairwise_dev:.2f}% (阈值: >= {args.severe_imbalance_threshold:.1f}%) | 阵营极差: {spread:.2f}%")
+                    print(f"   原因: 存在卡牌数值/费用或克制差距，结束当前构筑调整，进入卡牌数值微调。")
+                    print("=" * 70)
                     break
                 elif attempt < deck_attempts:
                     print(f"\n[检测] 当前偏离度 (总偏离 {max_dev:.2f}%, 两两偏离 {max_pairwise_dev:.2f}%) > 目标，处于温和偏离区间，继续由 PPO 进行卡组微调 ({attempt + 1} / {deck_attempts})...")
@@ -1001,7 +1000,7 @@ def main():
             if q_status.get("is_running"):
                 rem = q_status["total"] - q_status["current"]
                 print("\n" + "═" * 85)
-                print(f" [后台生图队列] 🎨 平衡收敛调优已完成，后台当前剩余 {rem} 张新卡插图正在排队生成中...")
+                print(f" [后台生图队列] 平衡收敛调优已完成，后台当前剩余 {rem} 张新卡插图正在排队生成中...")
                 print(f"               (系统将继续等待出图队列完毕，以确保卡牌全部具备原画；若需立刻退出可按 Ctrl+C)")
                 print("═" * 85)
                 art_queue.wait_until_done(timeout=300)

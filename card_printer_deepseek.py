@@ -396,7 +396,7 @@ def run_post_print_benchmark(cards_path: str, all_printed_cards: Dict[str, List[
                 for cname in p1_played: card_played_win[cname] += 1
 
             if total_played_games % 250 == 0 or total_played_games == episodes:
-                print(f"   ⏳ 评测进度: {total_played_games:4d}/{episodes} 局...")
+                print(f"   [评测进度] {total_played_games:4d}/{episodes} 局...")
 
     elapsed = time.time() - start_time
     avg_turns = float(np.mean(total_turns)) if total_turns else 0.0
@@ -407,9 +407,9 @@ def run_post_print_benchmark(cards_path: str, all_printed_cards: Dict[str, List[
     print("\n" + "═" * 85)
     print("【印后数值平衡实测结果】")
     print("═" * 85)
-    print(f"⏱️ 测试总耗时: {elapsed:.2f} 秒 ({total_played_games/max(0.01, elapsed):.1f} 局/秒)")
-    print(f"对局统计: 红方胜 {red_wins} 场 ({p0_rate:.1f}%) | 蓝方胜 {blue_wins} 场 ({p1_rate:.1f}%)" + (f" | 🟢 绿方胜 {green_wins} 场" if has_green else ""))
-    print(f"⌛ 平均对局回合: {avg_turns:.1f} 轮")
+    print(f"测试总耗时: {elapsed:.2f} 秒 ({total_played_games/max(0.01, elapsed):.1f} 局/秒)")
+    print(f"对局统计: 红方胜 {red_wins} 场 ({p0_rate:.1f}%) | 蓝方胜 {blue_wins} 场 ({p1_rate:.1f}%)" + (f" | 绿方胜 {green_wins} 场" if has_green else ""))
+    print(f"平均对局回合: {avg_turns:.1f} 轮")
     print("─" * 85)
     print("新卡实战表现与胜率统计:")
     print(f"{'ID':<6}{'阵营':<8}{'名称':<14}{'费用':<6}{'出牌频次':<20}{'实战胜率':<12}{'状态评定'}")
@@ -581,7 +581,7 @@ def main():
                         counter += 1
 
                 if final_name != orig_name:
-                    print(f"   ⚠️ [防重名拦截] 检测到卡牌名称 [{orig_name}] 已存在，已自动重命名为 [{final_name}]")
+                    print(f"   [防重名拦截] 检测到卡牌名称 [{orig_name}] 已存在，已自动重命名为 [{final_name}]")
 
                 c["name"] = final_name
                 all_existing_names.add(final_name)
@@ -623,7 +623,7 @@ def main():
             from web_app.services.image_gen import art_queue
             flat_cards = [c for c_list in all_printed_cards.values() for c in c_list]
             art_queue.enqueue(flat_cards)
-            print(f"[后台生图队列] 🚀 已将本次印制的 {len(flat_cards)} 张新卡加入后台自动排队出图队列。")
+            print(f"[后台生图队列] 已将本次印制的 {len(flat_cards)} 张新卡加入后台自动排队出图队列。")
         except Exception as img_err:
             print(f"[后台生图队列] 提示: {img_err}")
 

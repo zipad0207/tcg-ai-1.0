@@ -341,10 +341,10 @@ def main():
         max_dev = max(abs(r_wr - 50.0), abs(b_wr - 50.0), abs(g_wr - 50.0))
         target_tol = 5.0
         if max_dev <= target_tol:
-            print(f"\n🎉 平衡目标达成！三大阵营最大偏离度仅 {max_dev:.2f}% (<= {target_tol:.2f}%)，进入平衡区间，终止迭代！")
+            print(f"\n[平衡达成] 三大阵营最大偏离度为 {max_dev:.2f}% (<= {target_tol:.2f}%)，进入平衡区间，终止迭代。")
             break
         else:
-            print(f"⚠️ 当前最大偏离度为 {max_dev:.2f}% (目标 <= {target_tol:.2f}%)，继续触发下一轮微调...")
+            print(f"[继续迭代] 当前最大偏离度为 {max_dev:.2f}% (目标 <= {target_tol:.2f}%)，继续触发下一轮微调...")
 
     # 生成图表
     step3_generate_comparison_plot(initial_stats, final_metrics, history_wr)

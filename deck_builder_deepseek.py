@@ -166,7 +166,7 @@ def build_prompt_for_deck(faction: str, pool: List[dict]) -> str:
         "Green": "翠绿古树跳费流：核心战术为前期快速跳费 (RAMP)，中期控场，中后期拍下高额 DP 巨兽 (远古巨树、灭世巨龙) 实施全面压制。前期必须带够低费的跳费随从和 RAMP 法术来加速攒法力，否则高费巨兽出不来就被快攻打死了。高费巨兽是卡组核心，必须保证足够数量。"
     }.get(faction, "均衡战术卡组")
 
-    return f"""你是一名世界顶尖的 TCG（集换式卡牌游戏）职业选手兼卡组构筑架构师。
+    return f"""你是一名负责卡牌游戏构筑与法力曲线优化的数值策划。
 我们正在进行【双路对撞 TCG 物理沙盒】的 AI 卡组构筑。
 
 ### 规则硬性约束：
@@ -185,7 +185,7 @@ def build_prompt_for_deck(faction: str, pool: List[dict]) -> str:
 ### 输出格式规范：
 请直接返回合法的纯 JSON 格式（不要输出冗余 markdown 说明），JSON 结构如下：
 {{
-  "deck_name": "卡组中文响亮名称",
+  "deck_name": "卡组名称",
   "archetype": "流派类型（如 Aggro/Sacrifice/Control/Ramp）",
   "tactical_concept": "卡组核心战术思路与获胜逻辑概述（100字以内）",
   "key_combos": [
@@ -350,7 +350,7 @@ def print_deck_profile(faction: str, deck_info: dict):
     print("═" * 80 + "\n")
 
 def main():
-    parser = argparse.ArgumentParser(description="TCG-AI 智能选卡构筑大师 (AI Deckbuilder)")
+    parser = argparse.ArgumentParser(description="TCG-AI 卡组构筑工具 (AI Deckbuilder)")
     parser.add_argument("--cards", type=str, default="cards_config.json",
                         help="卡池配置文件路径 (默认 cards_config.json)")
     parser.add_argument("--output", type=str, default="decks_config.json",
@@ -372,9 +372,9 @@ def main():
     if os.path.exists(args.output):
         decks_result = load_json(args.output)
 
-    print("\n" + "⚔️ " * 20)
+    print("\n" + "═" * 50)
     print("TCG 卡组构筑工具启动")
-    print("⚔️ " * 20)
+    print("═" * 50)
 
     for faction in factions_to_build:
         pool = get_faction_pool(cards_db, faction)

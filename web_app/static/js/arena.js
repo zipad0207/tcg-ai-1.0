@@ -255,7 +255,7 @@ function showGameToast(msg, type = "info") {
     if (!container) return;
     const toast = document.createElement('div');
     toast.className = `arena-toast ${type}`;
-    const icon = type === 'warning' ? '⚠️' : (type === 'error' ? '❌' : (type === 'spell' ? '✨' : (type === 'success' ? '✓' : 'ℹ️')));
+    const icon = type === 'warning' ? '[!]' : (type === 'error' ? '[×]' : (type === 'spell' ? '[*]' : (type === 'success' ? '[✓]' : '[i]')));
     toast.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
     container.appendChild(toast);
     setTimeout(() => {
@@ -949,8 +949,8 @@ function renderArena(state) {
             let logType = 'neutral';
             if (log.includes('红方') || log.includes('玩家')) logType = 'player';
             else if (log.includes('蓝方') || log.includes('AI')) logType = 'ai';
-            else if (log.includes('冲锋') || log.includes('交战') || log.includes('💥')) logType = 'clash';
-            else if (log.includes('获胜') || log.includes('🏆')) logType = 'victory';
+            else if (log.includes('冲锋') || log.includes('交战')) logType = 'clash';
+            else if (log.includes('获胜') || log.includes('平局')) logType = 'victory';
 
             div.className = `log-entry ${logType}`;
             div.innerText = log;
@@ -961,9 +961,9 @@ function renderArena(state) {
         const latestLog = state.logs[state.logs.length - 1];
         if (latestLog && latestLog !== lastAnnouncedLog) {
             lastAnnouncedLog = latestLog;
-            if (latestLog.includes('💥 冲锋交战结算')) {
+            if (latestLog.includes('冲锋交战结算')) {
                 showTurnBanner("交锋结算", "clash");
-            } else if (latestLog.includes('🏆') && state.done) {
+            } else if (latestLog.includes('获胜') && state.done) {
                 const isP0Win = state.winner === 0;
                 showTurnBanner(isP0Win ? "对局胜利" : "对局失败", "victory");
             }

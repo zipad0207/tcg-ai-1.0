@@ -146,7 +146,7 @@ class PipelineRunner:
                 print(f"[PipelineRunner] UI data sync error: {ex}")
 
         def _reader():
-            self._broadcast(f"[Console] 🚀 平衡调度流水线已启动 (模式: {mode}, 参数: {' '.join(cmd[2:])})")
+            self._broadcast(f"[Console] 平衡调度流水线已启动 (模式: {mode}, 参数: {' '.join(cmd[2:])})")
             try:
                 for raw_line in iter(self.process.stdout.readline, b''):
                     if not raw_line or not self.is_running:
@@ -156,7 +156,7 @@ class PipelineRunner:
                         self._broadcast(clean_line)
             except Exception as read_err:
                 if self.is_running:
-                    self._broadcast(f"[Console] ⚠️ 管道读取异常: {read_err}")
+                    self._broadcast(f"[Console] 管道读取异常: {read_err}")
             finally:
                 if self.process:
                     try:
@@ -171,8 +171,8 @@ class PipelineRunner:
                     self.is_running = False
                     _sync_ui()
                     if was_running:
-                        status_msg = "已达成平衡收敛或执行完毕 🎉" if rc == 0 else f"已停止 (code: {rc})"
-                        self._broadcast(f"[Console] 🏁 任务结束: {status_msg}")
+                        status_msg = "已达成平衡收敛或执行完毕" if rc == 0 else f"已停止 (code: {rc})"
+                        self._broadcast(f"[Console] 任务结束: {status_msg}")
 
         self.thread = threading.Thread(target=_reader, daemon=True)
         self.thread.start()
@@ -204,7 +204,7 @@ class PipelineRunner:
             except Exception:
                 pass
 
-            self._broadcast("[Console] 🛑 用户已手动强制终止当前流水线及所有自博弈子进程。")
+            self._broadcast("[Console] 已手动终止当前流水线及子进程。")
             return {"success": True, "message": "任务已停止"}
         except Exception as e:
             return {"success": False, "message": f"终止任务失败: {str(e)}"}

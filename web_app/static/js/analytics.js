@@ -83,13 +83,13 @@ function updateMetricCards(data) {
         badgeEl.className = 'metric-sub status-pill';
         if (maxDev <= targetTol) {
             badgeEl.classList.add('healthy');
-            badgeEl.textContent = `✅ 总偏离 ≤${targetTol}%`;
+            badgeEl.textContent = `总偏离 ≤${targetTol}%`;
         } else if (maxDev <= warnTol) {
             badgeEl.classList.add('warning');
-            badgeEl.textContent = `⚠️ 轻微偏离 (${targetTol}~${warnTol}%)`;
+            badgeEl.textContent = `轻微偏离 (${targetTol}~${warnTol}%)`;
         } else {
             badgeEl.classList.add('danger');
-            badgeEl.textContent = `🚨 显著失衡 (>${warnTol}%)`;
+            badgeEl.textContent = `显著失衡 (>${warnTol}%)`;
         }
     }
 
@@ -111,13 +111,13 @@ function updateMetricCards(data) {
         pairBadgeEl.className = 'metric-sub status-pill';
         if (maxPairwiseDev <= targetPairTol) {
             pairBadgeEl.classList.add('healthy');
-            pairBadgeEl.textContent = `✅ 两两均 ≤${targetPairTol}%`;
+            pairBadgeEl.textContent = `两两均 ≤${targetPairTol}%`;
         } else if (maxPairwiseDev <= warnPairTol) {
             pairBadgeEl.classList.add('warning');
-            pairBadgeEl.textContent = `⚠️ 轻度克制 (±${maxPairwiseDev.toFixed(1)}%)`;
+            pairBadgeEl.textContent = `轻度克制 (±${maxPairwiseDev.toFixed(1)}%)`;
         } else {
             pairBadgeEl.classList.add('danger');
-            pairBadgeEl.textContent = `🚨 克制偏离 (>${warnPairTol}%)`;
+            pairBadgeEl.textContent = `克制偏离 (>${warnPairTol}%)`;
         }
     }
 }
@@ -160,7 +160,7 @@ function renderRadarChart(data) {
                 labels: labels,
                 datasets: [
                     {
-                        label: '50% 完美平衡基准',
+                        label: '50% 平衡基准线',
                         data: labels.map(() => 50),
                         borderColor: 'rgba(255, 255, 255, 0.35)',
                         borderWidth: 1.5,
@@ -332,7 +332,7 @@ function renderMatchupMatrix(data) {
                 const dev = cell.dev;
                 let bg = 'rgba(255,255,255,0.03)';
                 let color = '#34d399'; // green within target
-                let badgeText = '✅ 均势';
+                let badgeText = '均势';
                 let badgeBg = 'rgba(16, 185, 129, 0.15)';
                 let badgeColor = '#10b981';
 
@@ -362,7 +362,7 @@ function renderMatchupMatrix(data) {
     html += '</table></div>';
 
     const statusColor = maxPairwiseDev <= targetPairTol ? '#10b981' : (maxPairwiseDev <= severePairTol ? '#f59e0b' : '#ef4444');
-    const statusIcon = maxPairwiseDev <= targetPairTol ? '✅ 达标' : '⚠️ 需调优';
+    const statusIcon = maxPairwiseDev <= targetPairTol ? '达标' : '需调优';
     html += `<div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center; font-size:0.78rem; color:#94a3b8; border-top:1px solid rgba(255,255,255,0.06); padding-top:8px;">
         <span>双向实机合并战报 (对局数已合并先手与后手)</span>
         <span>两两最大偏离: <strong style="color:${statusColor}; font-size:0.85rem;">±${maxPairwiseDev.toFixed(1)}%</strong> (${statusIcon} · 目标约束 ≤ ±${targetPairTol.toFixed(1)}%)</span>
@@ -412,8 +412,8 @@ function handleConsoleLog(line) {
 
     let type = '';
     if (line.startsWith('[Console]')) type = 'system';
-    else if (line.includes('达成平衡') || line.includes('收敛') || line.includes('[完成]') || line.includes('🎉')) type = 'success';
-    else if (line.includes('严重失衡') || line.includes('熔断') || line.includes('⚠️')) type = 'warning';
+    else if (line.includes('达成平衡') || line.includes('收敛') || line.includes('[完成]')) type = 'success';
+    else if (line.includes('严重失衡') || line.includes('熔断') || line.includes('[失衡触发]')) type = 'warning';
     else if (line.includes('异常') || line.includes('失败') || line.includes('错误') || line.includes('[ERROR]')) type = 'error';
     else if (line.includes('【轮次') || line.includes('[判定]') || line.includes('微调') || line.includes('DeepSeek')) type = 'highlight';
 
@@ -481,7 +481,7 @@ function initPipelineControls() {
 function clearPipelineConsole() {
     const consoleBox = document.getElementById('pipe-console');
     if (consoleBox) {
-        consoleBox.innerHTML = '<div class="console-line system">[Console] 控制台已清屏。点击【▶️ 启动调优流水线】即可开始。</div>';
+        consoleBox.innerHTML = '<div class="console-line system">[Console] 控制台已清屏。点击【启动调优流水线】即可开始。</div>';
     }
 }
 
@@ -500,7 +500,7 @@ async function startPipeline() {
                     setTimeout(() => { dsInput.style.outline = ''; }, 4000);
                 }
                 alert('【未配置 DeepSeek Key 密钥】\n\n无论选择哪种调优模式，AI 平衡调优流水线的核心均需要调用 DeepSeek 大模型对失衡卡牌进行诊断、身材重构与参数微调。\n\n请先在左侧【AI 服务配置】面板中填入您的 DeepSeek API Key (sk-...) 并点击【保存配置】后再启动！');
-                appendConsoleLine('❌ [Console] 启动被拦截：未检测到有效 DeepSeek Key。请在左侧面板配置后重试。', 'error');
+                appendConsoleLine('[Console] 启动被拦截：未检测到有效 DeepSeek Key。请在左侧面板配置后重试。', 'error');
                 return;
             }
         }
@@ -525,11 +525,11 @@ async function startPipeline() {
     if (btnStart) btnStart.disabled = true;
     if (btnStop) btnStop.disabled = false;
     if (statusVal) {
-        statusVal.textContent = '⚙️ 启动中...';
+        statusVal.textContent = '启动中...';
         statusVal.style.color = '#00cec9';
     }
 
-    appendConsoleLine(`[Console] 🚀 正在向调度器下发启动指令: 模式 [${mode}], 单轮 [${episodes} 局], 阵营总容差 [±${targetBalance}%], 两两对抗容差 [±${targetPairwiseBalance}%]...`, 'system');
+    appendConsoleLine(`[Console] 正在向调度器下发启动指令: 模式 [${mode}], 单轮 [${episodes} 局], 阵营总容差 [±${targetBalance}%], 两两对抗容差 [±${targetPairwiseBalance}%]...`, 'system');
 
     try {
         const res = await fetch('/api/pipeline/start', {
@@ -544,17 +544,17 @@ async function startPipeline() {
         });
         const data = await res.json();
         if (data.success) {
-            appendConsoleLine(`[Console] ✅ 流水线启动成功！已启动后台自博弈进程。`, 'success');
+            appendConsoleLine(`[Console] 流水线启动成功！已启动后台自博弈进程。`, 'success');
             pollPipelineStatus();
         } else {
             alert(`【流水线启动失败】\n\n${data.message}`);
-            appendConsoleLine(`[Console] ❌ 启动失败: ${data.message}`, 'error');
+            appendConsoleLine(`[Console] 启动失败: ${data.message}`, 'error');
             if (btnStart) btnStart.disabled = false;
             if (btnStop) btnStop.disabled = true;
             pollPipelineStatus();
         }
     } catch (err) {
-        appendConsoleLine(`[Console] ❌ 网络或请求异常: ${err}`, 'error');
+        appendConsoleLine(`[Console] 网络或请求异常: ${err}`, 'error');
         if (btnStart) btnStart.disabled = false;
         pollPipelineStatus();
     }
@@ -565,7 +565,7 @@ async function stopPipeline() {
     const btnStop = document.getElementById('btn-pipe-stop');
     if (btnStop) btnStop.disabled = true;
 
-    appendConsoleLine('[Console] 🛑 正在请求停止流水线...', 'system');
+    appendConsoleLine('[Console] 正在请求停止流水线...', 'system');
 
     try {
         const res = await fetch('/api/pipeline/stop', { method: 'POST' });
@@ -573,7 +573,7 @@ async function stopPipeline() {
         appendConsoleLine(`[Console] ${data.message}`, data.success ? 'warning' : 'error');
         pollPipelineStatus();
     } catch (err) {
-        appendConsoleLine(`[Console] ❌ 停止流水线异常: ${err}`, 'error');
+        appendConsoleLine(`[Console] 停止流水线异常: ${err}`, 'error');
         pollPipelineStatus();
     }
 }
@@ -594,7 +594,7 @@ async function pollPipelineStatus() {
             if (btnStart) btnStart.disabled = true;
             if (btnStop) btnStop.disabled = false;
             if (statusVal) {
-                statusVal.textContent = '⚙️ 调优中...';
+                statusVal.textContent = '调优中...';
                 statusVal.style.color = '#00cec9';
             }
             if (statusTime) {
@@ -604,7 +604,7 @@ async function pollPipelineStatus() {
             if (btnStart) btnStart.disabled = false;
             if (btnStop) btnStop.disabled = true;
             if (statusVal) {
-                statusVal.textContent = '🟢 待机就绪';
+                statusVal.textContent = '待机就绪';
                 statusVal.style.color = '#10b981';
             }
             if (statusTime) {
@@ -634,21 +634,21 @@ async function refreshAnalyticsData() {
             updateMetricCards(data);
 
             if (btnRefresh) {
-                btnRefresh.innerHTML = '✅ 刷新成功';
+                btnRefresh.innerHTML = '刷新成功';
                 setTimeout(() => {
-                    btnRefresh.innerHTML = '🔄 刷新数据';
+                    btnRefresh.innerHTML = '刷新数据';
                     btnRefresh.disabled = false;
                 }, 700);
             }
 
             const ep = data.total_episodes || 0;
             const maxPDev = (data.max_pairwise_dev != null) ? data.max_pairwise_dev.toFixed(1) : '--';
-            appendConsoleLine(`[Console] 🔄 数据已更新 (混战累计: ${ep} 局 | 两两对抗最大偏离: ±${maxPDev}%)。`, 'success');
+            appendConsoleLine(`[Console] 数据已更新 (混战累计: ${ep} 局 | 两两对抗最大偏离: ±${maxPDev}%)。`, 'success');
         } else {
             if (btnRefresh) {
-                btnRefresh.innerHTML = '❌ 刷新失败';
+                btnRefresh.innerHTML = '刷新失败';
                 setTimeout(() => {
-                    btnRefresh.innerHTML = '🔄 刷新数据';
+                    btnRefresh.innerHTML = '刷新数据';
                     btnRefresh.disabled = false;
                 }, 1000);
             }
@@ -656,9 +656,9 @@ async function refreshAnalyticsData() {
     } catch (e) {
         console.error("[Analytics] Failed to refresh data:", e);
         if (btnRefresh) {
-            btnRefresh.innerHTML = '❌ 网络异常';
+            btnRefresh.innerHTML = '网络异常';
             setTimeout(() => {
-                btnRefresh.innerHTML = '🔄 刷新数据';
+                btnRefresh.innerHTML = '刷新数据';
                 btnRefresh.disabled = false;
             }, 1000);
         }

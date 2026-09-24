@@ -62,7 +62,7 @@ class ZImageTurboGenerator:
             if translated != "身形沉稳利落的战斗姿态":
                 action_desc = translated
                 break
-        return f"奇幻史诗厚涂风格，{card_name}，{f_detail}，{action_desc}。色彩沉稳自然，构图居中，质感写实，画面纯净，绝对无文字无水印无边框。"
+        return f"奇幻写实厚涂风格，{card_name}，{f_detail}，{action_desc}。色彩沉稳自然，构图居中，质感写实，画面纯净，无文字无水印无边框。"
 
     def build_prompt(self, card_name: str, faction: str, tags: list, dp: int) -> str:
         # Use LLM as AI Art Director to conceive cinematic scene prompts
@@ -98,7 +98,7 @@ class ZImageTurboGenerator:
                 tags_cn = [self.translate_tag_cn(t) for t in tags]
                 tags_str = "、".join(tags_cn) if tags_cn else "常规战力兵种"
                 system_prompt = (
-                    "你是一位顶级集换式卡牌（如万智牌、炉石传说）的资深艺术总监。"
+                    "你是一位集换式卡牌的美术设定师。"
                     "请为卡牌撰写一段画面描述（供绘图AI生成原画）。\n"
                     "要求：\n"
                     "1. 聚焦主体人物/生物的形体外貌、装备材质与动态姿态。\n"
@@ -122,7 +122,7 @@ class ZImageTurboGenerator:
                 ds_prompt = res.choices[0].message.content.strip()
                 if ds_prompt:
                     print(f"[DeepSeek Art Director] Generated prompt: {ds_prompt}")
-                    return f"{ds_prompt}。极致构图，奇幻厚涂画风，史诗级光影，画面纯净，绝对无文字无水印无边框。"
+                    return f"{ds_prompt}。构图居中，奇幻厚涂画风，自然光影，画面纯净，无文字无水印无边框。"
             except Exception as e:
                 print(f"[DeepSeek Art Director] Fallback to template due to: {e}")
 

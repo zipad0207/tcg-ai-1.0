@@ -606,11 +606,11 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
             rejected_pairs.add((best_candidate, worst_candidate))
             remain_worst = candidate_counts.get(worst_candidate, 0)
             now_best = candidate_counts.get(best_candidate, 0)
-            thought_demote = f"[{c_name_worst}] 卡手率较高或收益偏弱，调减 {swap_cnt} 张 (现保留 {remain_worst} 张)。"
-            thought_promote = f"[{c_name_best}] 具有极佳节奏收益，增补 {swap_cnt} 张 (现持有 {now_best} 张)。"
-            log_entry = f"第 {gen} 代微调 (胜率 {best_winrate:.1f}% -> {test_winrate:.1f}%, {delta_wr:+.1f}%): 采纳{step_type_str}变异，+{swap_cnt}[{c_name_best}] / -{swap_cnt}[{c_name_worst}]"
+            thought_demote = f"移出 [{c_name_worst}] x{swap_cnt} (余 {remain_worst} 张)"
+            thought_promote = f"加入 [{c_name_best}] x{swap_cnt} (持 {now_best} 张)，胜率提升至 {test_winrate:.1f}% ({delta_wr:+.1f}%)"
+            log_entry = f"第 {gen} 代微调 (胜率 {best_winrate:.1f}% -> {test_winrate:.1f}%, {delta_wr:+.1f}%): 采纳变异，+{swap_cnt}[{c_name_best}] / -{swap_cnt}[{c_name_worst}]"
 
-            print(f"   [代数 {gen}/{generations}] 采纳{step_type_str}新构筑！实战胜率: {test_winrate:5.1f}% ({delta_wr:+5.1f}%) | +{swap_cnt}[{c_name_best}] / -{swap_cnt}[{c_name_worst}] (原卡余 {remain_worst} 张)")
+            print(f"   [代数 {gen}/{generations}] 采纳新构筑: 胜率 {test_winrate:5.1f}% ({delta_wr:+5.1f}%) | +{swap_cnt}[{c_name_best}] / -{swap_cnt}[{c_name_worst}] (余 {remain_worst})")
             best_counts = candidate_counts
             best_winrate = test_winrate
             best_p_win, best_p_tot, best_idles, best_hands = t_p_win, t_p_tot, t_idles, t_hands
@@ -620,11 +620,11 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
             if all((best_candidate, worst_candidate, s) in rejected_actions for s in all_possible):
                 rejected_pairs.add((best_candidate, worst_candidate))
 
-            thought_demote = f"[{c_name_best}] 导致构筑节奏崩坏 ({test_winrate:.1f}%)，触发保护回滚！"
-            thought_promote = f"维持原构筑，保留 [{c_name_worst}] 的卡位。"
-            log_entry = f"第 {gen} 代微调 (实测胜率 {test_winrate:.1f}%, 下跌 {abs(delta_wr):.1f}%): 拒绝{step_type_str}变异并列入禁忌表，回滚保留原有构筑。"
+            thought_demote = f"尝试换入 [{c_name_best}] 胜率降至 {test_winrate:.1f}%，取消变动"
+            thought_promote = f"维持原构筑，保留 [{c_name_worst}]"
+            log_entry = f"第 {gen} 代微调 (实测胜率 {test_winrate:.1f}%, 变化 {delta_wr:+.1f}%): 放弃变异，回滚保留原构筑"
 
-            print(f"   [代数 {gen}/{generations}] 拒绝{step_type_str}变异并列入禁忌表！实测胜率暴跌: {test_winrate:5.1f}% ({delta_wr:+5.1f}%) | 转向探索其他卡位")
+            print(f"   [代数 {gen}/{generations}] 拒绝调整: 实测胜率 {test_winrate:5.1f}% ({delta_wr:+5.1f}%) | 回滚保留原构筑")
             gen_reflection["winrate"] = best_winrate
 
         gen_reflection["promoted"] = {"id": best_candidate, "name": c_name_best, "thought": thought_promote}
