@@ -103,10 +103,7 @@ def get_model_name() -> str:
                     model = cfg.get("model", "")
             except Exception:
                 pass
-    if not model:
-        base_url = get_base_url()
-        model = "deepseek-ai/DeepSeek-V3" if "siliconflow" in base_url.lower() else "deepseek-chat"
-    return model
+    return model or "deepseek-flash"
 
 # 支持的核心合法词条
 LEGAL_TAG_PATTERNS = [
