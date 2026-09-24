@@ -1,5 +1,5 @@
-# TCG-AI Core Dependencies
-# Compatible with CPU / CUDA environments
+# TCG-AI 核心依赖库清单
+# 支持 CPU / CUDA 环境快速安装与一键部署
 
 torch>=2.0.0
 numpy>=1.24.0
