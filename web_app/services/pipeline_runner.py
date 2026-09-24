@@ -73,36 +73,32 @@ class PipelineRunner:
         if mode == "tune_only":
             cmd.extend([
                 "--skip-print",
-                "--skip-ppo-decks",
-                "--eval-only",
                 "--episodes", str(episodes),
                 "--target-balance", str(target_balance),
-                "--target-pairwise-balance", str(target_pairwise_balance)
+                "--target-pairwise-balance", str(target_pairwise_balance),
+                "--eval-only"
             ])
         elif mode == "fast_demo":
             cmd.extend([
                 "--skip-print",
-                "--skip-ppo-decks",
-                "--eval-only",
                 "--dry-run",
                 "--target-balance", str(target_balance),
-                "--target-pairwise-balance", str(target_pairwise_balance)
+                "--target-pairwise-balance", str(target_pairwise_balance),
+                "--eval-only"
             ])
         elif mode == "full_pack":
             cmd.extend([
-                "--skip-ppo-decks",
-                "--eval-only",
                 "--episodes", str(episodes),
                 "--target-balance", str(target_balance),
-                "--target-pairwise-balance", str(target_pairwise_balance)
+                "--target-pairwise-balance", str(target_pairwise_balance),
+                "--eval-only"
             ])
         else:
             cmd.extend([
                 "--skip-print",
-                "--skip-ppo-decks",
-                "--eval-only",
                 "--dry-run",
-                "--target-pairwise-balance", str(target_pairwise_balance)
+                "--target-pairwise-balance", str(target_pairwise_balance),
+                "--eval-only"
             ])
 
         env = os.environ.copy()
@@ -113,6 +109,9 @@ class PipelineRunner:
         env["OPENBLAS_NUM_THREADS"] = "2"
         env["VECLIB_MAXIMUM_THREADS"] = "2"
         env["NUMEXPR_NUM_THREADS"] = "2"
+        env["TORCH_NUM_THREADS"] = "2"
+        env["OMP_WAIT_POLICY"] = "PASSIVE"
+        env["KMP_BLOCKTIME"] = "0"
         cur_pypath = env.get("PYTHONPATH", "")
         env["PYTHONPATH"] = self.root_dir if not cur_pypath else f"{self.root_dir}{os.pathsep}{cur_pypath}"
 

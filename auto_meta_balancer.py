@@ -5,17 +5,38 @@ TCG-AI 多阵营全自动元平衡调优与混战自博弈流水线
 
 import os
 import sys
-import json
-import random
-import numpy as np
-import torch
-import matplotlib.pyplot as plt
+
+# 限制并发线程与被动等待，保障用户桌面和系统流畅
+os.environ["OMP_NUM_THREADS"] = "2"
+os.environ["MKL_NUM_THREADS"] = "2"
+os.environ["OPENBLAS_NUM_THREADS"] = "2"
+os.environ["TORCH_NUM_THREADS"] = "2"
+os.environ["OMP_WAIT_POLICY"] = "PASSIVE"
+os.environ["KMP_BLOCKTIME"] = "0"
 
 if sys.platform == "win32":
     try:
         sys.stdout.reconfigure(encoding="utf-8")
     except Exception:
         pass
+    try:
+        import ctypes
+        from ctypes import wintypes
+        k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        k32.GetCurrentProcess.restype = wintypes.HANDLE
+        k32.SetPriorityClass.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        k32.SetPriorityClass.restype = wintypes.BOOL
+        k32.SetPriorityClass(k32.GetCurrentProcess(), 0x00004000)  # BELOW_NORMAL_PRIORITY_CLASS
+    except Exception:
+        pass
+
+import json
+import random
+import numpy as np
+import torch
+import matplotlib.pyplot as plt
+
+torch.set_num_threads(2)
 
 from sandbox import DuelEnv, Faction
 

@@ -29,6 +29,18 @@ from openai import OpenAI
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
+if sys.platform == "win32":
+    try:
+        import ctypes
+        from ctypes import wintypes
+        k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        k32.GetCurrentProcess.restype = wintypes.HANDLE
+        k32.SetPriorityClass.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        k32.SetPriorityClass.restype = wintypes.BOOL
+        k32.SetPriorityClass(k32.GetCurrentProcess(), 0x00004000)  # BELOW_NORMAL_PRIORITY_CLASS
+    except Exception:
+        pass
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def resolve_path(p: str) -> str:
@@ -57,7 +69,19 @@ def get_subprocess_env() -> dict:
     env["PYTHONPATH"] = os.pathsep.join(all_paths)
     env["PYTHONIOENCODING"] = "utf-8"
     env["PYTHONUNBUFFERED"] = "1"
+    env["OMP_NUM_THREADS"] = "2"
+    env["MKL_NUM_THREADS"] = "2"
+    env["OPENBLAS_NUM_THREADS"] = "2"
+    env["VECLIB_MAXIMUM_THREADS"] = "2"
+    env["NUMEXPR_NUM_THREADS"] = "2"
+    env["TORCH_NUM_THREADS"] = "2"
+    env["OMP_WAIT_POLICY"] = "PASSIVE"
+    env["KMP_BLOCKTIME"] = "0"
     return env
+
+def run_command_safe(cmd: list) -> subprocess.CompletedProcess:
+    cflags = 0x00004000 if sys.platform == "win32" else 0  # BELOW_NORMAL_PRIORITY_CLASS
+    return subprocess.run(cmd, check=True, env=get_subprocess_env(), creationflags=cflags)
 
 def get_api_key() -> str:
     key = (os.environ.get("DEEPSEEK_API_KEY", "") or os.environ.get("SILICONFLOW_API_KEY", "")).strip()
@@ -590,7 +614,7 @@ def step2_generate_prebuild_decks(cards_file: str, decks_file: str, new_cards: O
             print(f"  [提示] 保存扩展包新卡临时文件异常: {e}")
 
     print(f"  [执行指令] {' '.join(cmd)}")
-    subprocess.run(cmd, check=True, env=get_subprocess_env())
+    run_command_safe(cmd)
     print("  [完成] 套牌构筑已更新至 decks_config.json")
 
 # ==============================================================================
@@ -612,7 +636,7 @@ def step3_ppo_deck_evolution(cards_file: str, decks_file: str, generations: int 
         "--samples", str(samples)
     ]
     print(f"  [执行指令] {' '.join(cmd)}")
-    subprocess.run(cmd, check=True, env=get_subprocess_env())
+    run_command_safe(cmd)
     print("  [完成] 卡组自适应微调已更新至 decks_config.json")
 
 # ==============================================================================
@@ -633,7 +657,7 @@ def step4_run_brawl_audit(cards_file: str, decks_file: str, metrics_file: str, e
     if eval_only:
         cmd.append("--eval-only")
     print(f"  [执行指令] {' '.join(cmd)}")
-    subprocess.run(cmd, check=True, env=get_subprocess_env())
+    run_command_safe(cmd)
 
     with open(metrics_file, "r", encoding="utf-8") as f:
         metrics = json.load(f)
@@ -742,7 +766,7 @@ def step5_deepseek_rebalance_cards(cards_file: str, metrics_file: str, target_ba
         "--severe-threshold", str(severe_threshold)
     ]
     print(f"  [执行指令] {' '.join(cmd)}")
-    subprocess.run(cmd, check=True, env=get_subprocess_env())
+    run_command_safe(cmd)
     print("  [完成] 卡牌数值与费用调整完毕并保存至 cards_config.json")
 
 # ==============================================================================
@@ -758,7 +782,7 @@ def step6_export_reports_and_charts(cards_file: str, metrics_file: str, history_
     if os.path.exists(ui_export_script):
         try:
             print("  [1/2] 正在导出前端 UI 接口数据 (ui_export_data.json)...")
-            subprocess.run([sys.executable, ui_export_script], check=True, env=get_subprocess_env())
+            run_command_safe([sys.executable, ui_export_script])
         except Exception as e:
             print(f"  [警告] UI 数据导出异常: {e}")
 
@@ -860,35 +884,34 @@ def main():
     parser.add_argument("--max-iterations", type=int, default=None, help="(兼容旧参数) 等价于 --max-outer-iterations")
     parser.add_argument("--skip-print", action="store_true", help="跳过印卡阶段，直接基于现有卡池开始调优")
     parser.add_argument("--skip-art", action="store_true", help="跳过新卡原画插图自动后台生成")
-    parser.add_argument("--eval-only", action="store_true", help="纯评估模式 (跳过 PPO 模型梯度更新)")
+    parser.add_argument("--skip-ppo-decks", action="store_true", default=True, help="跳过高耗能 PPO 暴力演化卡组，保持成熟/DeepSeek痛点定向卡组")
+    parser.add_argument("--enable-ppo-decks", action="store_true", default=False, help="强制启用 PPO 暴力演化卡组 (高 CPU 消耗)")
+    parser.add_argument("--eval-only", action="store_true", default=True, help="纯评估模式 (跳过 PPO 模型梯度更新，极速且不占 CPU)")
+    parser.add_argument("--train-ppo-model", action="store_true", default=False, help="强制开启 PPO 模型梯度反向传播训练 (高 CPU 消耗)")
     parser.add_argument("--dry-run", action="store_true", help="快速测试模式 (小规模局数快速跑通流程)")
     parser.add_argument("--skip-final-audit", action="store_true", help="跳过达成平衡后的 3000 局终验对局 (用于高频压测加速)")
-    parser.add_argument("--skip-ppo-decks", action="store_true", default=True, help="跳过高耗能 PPO 卡组演化 (默认开启，严格保留 DeepSeek 定向痛点换卡)")
-    parser.add_argument("--enable-ppo-decks", action="store_true", help="启用耗时 PPO 暴力演化变异卡组")
-    parser.add_argument("--train-ppo-model", action="store_true", help="启用耗时 PPO 梯度反向传播训练 (默认仅做快速对战胜率遥测)")
     args = parser.parse_args()
-
-    # 默认跳过暴力的 PPO 遗传换卡，保留 DeepSeek 定向痛点构筑
-    skip_ppo_decks = not args.enable_ppo_decks
 
     max_outer = args.max_iterations if args.max_iterations is not None else args.max_outer_iterations
     cards_file = resolve_path("cards_config.json")
     decks_file = resolve_path("decks_config.json")
     metrics_file = resolve_path("training_metrics_brawl.json")
 
+    skip_ppo_decks = not getattr(args, "enable_ppo_decks", False)
+    eval_only_mode = not getattr(args, "train_ppo_model", False)
+
     brawl_episodes = 60 if args.dry_run else args.episodes
     ppo_gens = 2 if args.dry_run else 20
     ppo_games = 15 if args.dry_run else 50
     ppo_samples = 4 if args.dry_run else 15
-    deck_attempts = 1 if (args.dry_run or skip_ppo_decks) else args.max_deck_attempts
-    eval_only_mode = args.eval_only or (not args.train_ppo_model)
+    deck_attempts = 1 if args.dry_run else args.max_deck_attempts
 
     print("=" * 85)
     print(" TCG-AI 多阵营扩展包生成与平衡调度流水线启动")
     print(f" 模式: {'[快速演练]' if args.dry_run else '[全量执行]'}")
-    print(f" 混战规模: {brawl_episodes} 局/轮 (PPO 遥测: {'极速纯评估 (秒级)' if eval_only_mode else '真自博弈反向传播训练'}) | 目标平衡偏离度: <= {args.target_balance:.1f}%")
+    print(f" 混战规模: {brawl_episodes} 局/轮 (PPO 强化学习: {'纯对战评估 (平稳快速 · 不抢占CPU)' if eval_only_mode else '反向传播训练 (重负载)'}) | 目标平衡偏离度: <= {args.target_balance:.1f}%")
+    print(f" 卡组策略: {'保留 DeepSeek 痛点定向构筑 (平稳)' if skip_ppo_decks else 'PPO 暴力遗传演化 (高负载)'}")
     print(f" 迭代配置: 卡组微调尝试 {deck_attempts} 次 | 数值微调上限 {max_outer} 轮")
-    print(f" 构筑策略: {'[痛点定向保留] 严格沿用 DeepSeek 痛点增量换卡/成熟套牌' if skip_ppo_decks else '[PPO演化微调] 允许 PPO 随机变异微调构筑'}")
     print(f" 熔断机制: 最大偏离度 >= {args.severe_imbalance_threshold:.1f}% 或 胜率极差 >= {args.severe_spread_threshold:.1f}% 自动快转至 DeepSeek 数值微调")
     print("=" * 85)
 
@@ -946,6 +969,9 @@ def main():
 
         for attempt in range(1, deck_attempts + 1):
             print("\n" + "─" * 70)
+            print(f"  ▶ [卡组自适应] 第 {attempt} / {deck_attempts} 次微调")
+            print("─" * 70)
+
             # 3A: PPO 智能体调构筑 (增量演化)
             if not skip_ppo_decks:
                 step3_ppo_deck_evolution(cards_file, decks_file, generations=ppo_gens, games_per_gen=ppo_games, samples=ppo_samples)
@@ -974,7 +1000,7 @@ def main():
                 print(f"   各阵营最大偏离度: {max_dev:.2f}% <= 目标阈值: {args.target_balance:.2f}% (两两最大偏离: {max_pairwise_dev:.2f}% <= {args.target_pairwise_balance:.2f}%, 胜率极差: {spread:.2f}%)")
                 if not args.dry_run and not args.skip_final_audit and current_brawl_episodes < 3000:
                     print("   [验证] 执行 3,000 局全量对战验收遥测...")
-                    metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=3000, eval_only=args.eval_only)
+                    metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=3000, eval_only=eval_only_mode)
                     latest_metrics = metrics
                 print("   已达成收敛，退出迭代循环。")
                 print("=" * 70)
@@ -1021,8 +1047,8 @@ def main():
             if q_status.get("is_running"):
                 rem = q_status["total"] - q_status["current"]
                 print("\n" + "═" * 85)
-                print(f" [后台生图队列] 🎨 平衡调优已圆满收敛！后台当前剩余 {rem} 张新卡插图正在排队异步生成中...")
-                print(f"               (插图将在后台自动处理并在 Web 界面即时显示，流水线主任务正常收尾，无需等待阻塞。)")
+                print(f" [后台生图队列] 平衡收敛调优已完成，后台当前剩余 {rem} 张新卡插图正在排队生成中。")
+                print("               主流程已就绪，原画将在独立线程持续生成，不阻断前台操作。")
                 print("═" * 85)
         except Exception:
             pass

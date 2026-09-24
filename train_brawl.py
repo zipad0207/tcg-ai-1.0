@@ -5,10 +5,38 @@ TCG-AI 多阵营自博弈强化学习训练脚本
 
 import os
 import sys
+
+# 必须在导入 torch / numpy 之前设定并发限制与被动等待策略，防止线程池暴增与自旋占用 100% CPU
+os.environ["OMP_NUM_THREADS"] = "2"
+os.environ["MKL_NUM_THREADS"] = "2"
+os.environ["OPENBLAS_NUM_THREADS"] = "2"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "2"
+os.environ["NUMEXPR_NUM_THREADS"] = "2"
+os.environ["TORCH_NUM_THREADS"] = "2"
+os.environ["OMP_WAIT_POLICY"] = "PASSIVE"
+os.environ["KMP_BLOCKTIME"] = "0"
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+    try:
+        import ctypes
+        from ctypes import wintypes
+        k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        k32.GetCurrentProcess.restype = wintypes.HANDLE
+        k32.SetPriorityClass.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        k32.SetPriorityClass.restype = wintypes.BOOL
+        k32.SetPriorityClass(k32.GetCurrentProcess(), 0x00004000)  # BELOW_NORMAL_PRIORITY_CLASS
+    except Exception:
+        pass
+
 import json
 import random
 import signal
 import argparse
+import time
 import numpy as np
 import torch
 import torch.nn as nn
@@ -16,9 +44,10 @@ import torch.optim as optim
 from torch.distributions.categorical import Categorical
 import matplotlib.pyplot as plt
 
-if sys.platform == "win32":
+torch.set_num_threads(2)
+if hasattr(torch, "set_num_interop_threads"):
     try:
-        sys.stdout.reconfigure(encoding="utf-8")
+        torch.set_num_interop_threads(1)
     except Exception:
         pass
 
@@ -519,6 +548,10 @@ def main():
                 metrics["matchups"][m_key][f"{name0}_wins"] += 1
             else:
                 metrics["matchups"][m_key][f"{name1}_wins"] += 1
+
+        # 主动出让 CPU 时间片给系统调度器，防止 Windows 界面卡顿
+        if ep % 20 == 0:
+            time.sleep(0.001)
 
         report_freq = 25 if TOTAL_EPISODES <= 1000 else 50
         if ep % report_freq == 0 or ep == 10:

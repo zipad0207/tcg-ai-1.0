@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TCG-AI Studio</title>
-    <link rel="stylesheet" href="/static/css/styles.css?v=v8.3">
+    <link rel="stylesheet" href="/static/css/styles.css?v=v8.2">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
     <div class="app-container">
         <!-- Sidebar Navigation -->
@@ -16,7 +18,8 @@
             </div>
             <ul class="nav-links">
                 <li class="active" data-target="arena-view">
-                    <svg class="nav-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="nav-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="6" y1="18" x2="18" y2="6"></line>
                         <polyline points="10 6 18 6 18 14"></polyline>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -25,7 +28,8 @@
                     <span>战局演武场</span>
                 </li>
                 <li data-target="studio-view">
-                    <svg class="nav-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="nav-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="5" width="12" height="16" rx="2"></rect>
                         <path d="M7 2h10a2 2 0 0 1 2 2v14"></path>
                         <line x1="6" y1="11" x2="12" y2="11"></line>
@@ -33,7 +37,8 @@
                     <span>卡组工坊</span>
                 </li>
                 <li data-target="analytics-view">
-                    <svg class="nav-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="nav-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path>
                         <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path>
                         <path d="M7 21h10"></path>
@@ -52,12 +57,14 @@
                     <span class="api-panel-title">AI 服务配置</span>
                     <span id="api-status-badge" class="api-status-badge">未检测</span>
                 </div>
-                
+
                 <div class="api-field-group">
                     <label for="cfg-deepseek-key">DeepSeek Key (语言模型)</label>
                     <div class="api-key-wrapper">
-                        <input type="password" id="cfg-deepseek-key" class="api-input" placeholder="未配置，请粘贴 DeepSeek Key (sk-...)" />
-                        <button type="button" id="btn-toggle-deepseek-vis" class="btn-vis-toggle" title="显示/隐藏密钥"></button>
+                        <input type="password" id="cfg-deepseek-key" class="api-input"
+                            placeholder="未配置，请粘贴 DeepSeek Key (sk-...)" />
+                        <button type="button" id="btn-toggle-deepseek-vis" class="btn-vis-toggle"
+                            title="显示/隐藏密钥"></button>
                     </div>
                 </div>
 
@@ -74,7 +81,8 @@
                 <div class="api-field-group">
                     <label for="cfg-image-key">生图 Key (SiliconFlow)</label>
                     <div class="api-key-wrapper">
-                        <input type="password" id="cfg-image-key" class="api-input" placeholder="未配置，请粘贴生图 Key (sk-...)" />
+                        <input type="password" id="cfg-image-key" class="api-input"
+                            placeholder="未配置，请粘贴生图 Key (sk-...)" />
                         <button type="button" id="btn-toggle-image-vis" class="btn-vis-toggle" title="显示/隐藏密钥"></button>
                     </div>
                 </div>
@@ -104,7 +112,7 @@
                     <div class="controls arena-controls">
                         <!-- PvE Controls -->
                         <div id="pve-controls-group" class="faction-selectors">
-                            <label>出战卡组: 
+                            <label>出战卡组:
                                 <select id="pve-p0-deck">
                                     <option value="preset_Red" selected>赤红 · 快攻构筑 (30张)</option>
                                     <option value="preset_Blue">蔚蓝 · 坚守构筑 (30张)</option>
@@ -112,7 +120,7 @@
                                 </select>
                             </label>
                             <span style="color:var(--text-muted); font-weight:bold;">VS</span>
-                            <label>对手卡组: 
+                            <label>对手卡组:
                                 <select id="pve-p1-deck">
                                     <option value="preset_Blue" selected>蔚蓝 · 坚守构筑 (30张)</option>
                                     <option value="preset_Red">赤红 · 快攻构筑 (30张)</option>
@@ -125,7 +133,7 @@
 
                         <!-- AI vs AI Controls -->
                         <div id="aivai-controls-group" class="faction-selectors" style="display:none;">
-                            <label>P0: 
+                            <label>P0:
                                 <select id="aivai-p0-faction">
                                     <option value="Red" selected>🔴 赤红</option>
                                     <option value="Blue">🔵 蔚蓝</option>
@@ -133,7 +141,7 @@
                                 </select>
                             </label>
                             <span style="color:var(--text-muted); font-weight:bold;">VS</span>
-                            <label>P1: 
+                            <label>P1:
                                 <select id="aivai-p1-faction">
                                     <option value="Blue" selected>🔵 蔚蓝</option>
                                     <option value="Red">🔴 赤红</option>
@@ -175,7 +183,9 @@
                                 </div>
                                 <div class="deck-count-container">
                                     <span class="deck-icon">
-                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
                                             <rect x="4" y="6" width="13" height="15" rx="2"></rect>
                                             <path d="M7 3h11a2 2 0 0 1 2 2v13"></path>
                                         </svg>
@@ -193,27 +203,36 @@
                             <!-- Left Lane -->
                             <div class="lane" id="lane-0">
                                 <div class="lane-header">左路战线</div>
-                                <div class="slot def enemy" id="slot-0-def" data-lane="0" data-pos="def"><span class="slot-label">敌方防守位</span></div>
-                                <div class="slot atk enemy" id="slot-0-atk" data-lane="0" data-pos="atk"><span class="slot-label">敌方进攻位</span></div>
+                                <div class="slot def enemy" id="slot-0-def" data-lane="0" data-pos="def"><span
+                                        class="slot-label">敌方防守位</span></div>
+                                <div class="slot atk enemy" id="slot-0-atk" data-lane="0" data-pos="atk"><span
+                                        class="slot-label">敌方进攻位</span></div>
                                 <div class="clash-line">左路对线</div>
-                                <div class="slot atk allied targetable" id="target-0-0" data-code="0"><span class="slot-label">我方进攻区</span></div>
-                                <div class="slot def allied targetable" id="target-0-1" data-code="1"><span class="slot-label">我方防守区</span></div>
+                                <div class="slot atk allied targetable" id="target-0-0" data-code="0"><span
+                                        class="slot-label">我方进攻区</span></div>
+                                <div class="slot def allied targetable" id="target-0-1" data-code="1"><span
+                                        class="slot-label">我方防守区</span></div>
                             </div>
                             <!-- Right Lane -->
                             <div class="lane" id="lane-1">
                                 <div class="lane-header">右路战线</div>
-                                <div class="slot def enemy" id="slot-1-def" data-lane="1" data-pos="def"><span class="slot-label">敌方防守位</span></div>
-                                <div class="slot atk enemy" id="slot-1-atk" data-lane="1" data-pos="atk"><span class="slot-label">敌方进攻位</span></div>
+                                <div class="slot def enemy" id="slot-1-def" data-lane="1" data-pos="def"><span
+                                        class="slot-label">敌方防守位</span></div>
+                                <div class="slot atk enemy" id="slot-1-atk" data-lane="1" data-pos="atk"><span
+                                        class="slot-label">敌方进攻位</span></div>
                                 <div class="clash-line">右路对线</div>
-                                <div class="slot atk allied targetable" id="target-1-2" data-code="2"><span class="slot-label">我方进攻区</span></div>
-                                <div class="slot def allied targetable" id="target-1-3" data-code="3"><span class="slot-label">我方防守区</span></div>
+                                <div class="slot atk allied targetable" id="target-1-2" data-code="2"><span
+                                        class="slot-label">我方进攻区</span></div>
+                                <div class="slot def allied targetable" id="target-1-3" data-code="3"><span
+                                        class="slot-label">我方防守区</span></div>
                             </div>
                         </div>
 
                         <!-- Dynamic Action & Rule Prompt Bar -->
                         <div id="action-prompt-bar" class="action-prompt-bar">
                             <span class="prompt-icon">
-                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <circle cx="12" cy="12" r="9"></circle>
                                     <line x1="12" y1="8" x2="12" y2="12"></line>
                                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -237,7 +256,9 @@
                                 </div>
                                 <div class="deck-count-container">
                                     <span class="deck-icon">
-                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
                                             <rect x="4" y="6" width="13" height="15" rx="2"></rect>
                                             <path d="M7 3h11a2 2 0 0 1 2 2v13"></path>
                                         </svg>
@@ -253,12 +274,13 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Combat Intelligence & Log Panel -->
                     <div class="combat-side-panel glass">
                         <div class="side-panel-tabs">
                             <button id="tab-btn-tracker" class="panel-tab-btn active">
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                    stroke-width="2" style="vertical-align:middle;margin-right:4px;">
                                     <rect x="4" y="4" width="16" height="16" rx="2"></rect>
                                     <line x1="8" y1="9" x2="16" y2="9"></line>
                                     <line x1="8" y1="13" x2="14" y2="13"></line>
@@ -266,14 +288,15 @@
                                 战局记牌器
                             </button>
                             <button id="tab-btn-log" class="panel-tab-btn">
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                    stroke-width="2" style="vertical-align:middle;margin-right:4px;">
                                     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                                     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                                 </svg>
                                 对战日志
                             </button>
                         </div>
-                        
+
                         <!-- 1. Deck Tracker Tab -->
                         <div id="deck-tracker-container" class="side-panel-view active">
                             <div class="tracker-summary-bar">
@@ -290,7 +313,7 @@
                                     <strong id="tracker-p0-grave-num">0</strong>
                                 </div>
                             </div>
-                            
+
                             <div class="tracker-section-title">
                                 <span>我方剩余卡牌清单</span>
                                 <span class="tracker-sub" id="tracker-ratio">30/30</span>
@@ -337,14 +360,15 @@
                     </div>
                     <div class="controls studio-actions">
                         <button id="btn-open-batch-art" class="btn secondary">卡图生成队列</button>
-                        <button id="btn-toggle-deck-drawer" class="btn primary">我的构筑 (<span id="deck-card-count">0/30</span>)</button>
+                        <button id="btn-toggle-deck-drawer" class="btn primary">我的构筑 (<span
+                                id="deck-card-count">0/30</span>)</button>
                     </div>
                 </header>
-                
+
                 <div class="studio-layout">
                     <!-- Cards Grid -->
                     <div class="cards-grid" id="cards-container"></div>
-                    
+
                     <!-- Deck Builder Drawer / Sidebar -->
                     <aside id="deck-builder-drawer" class="deck-drawer glass">
                         <div class="deck-drawer-header">
@@ -365,7 +389,8 @@
                         <div class="deck-meta-bar">
                             <div class="deck-meta-field">
                                 <label>卡组名称:</label>
-                                <input type="text" id="deck-name-input" class="deck-name-input" placeholder="输入卡组名称" maxlength="24" />
+                                <input type="text" id="deck-name-input" class="deck-name-input" placeholder="输入卡组名称"
+                                    maxlength="24" />
                             </div>
                             <div class="deck-meta-field">
                                 <label>卡组阵营:</label>
@@ -380,9 +405,12 @@
                         <div class="deck-preset-bar">
                             <div class="preset-title">载入官方预设构筑到当前卡组:</div>
                             <div class="preset-buttons">
-                                <button class="btn small preset-btn red" onclick="window.loadAiPresetDeck && window.loadAiPresetDeck('Red')">赤红精调</button>
-                                <button class="btn small preset-btn blue" onclick="window.loadAiPresetDeck && window.loadAiPresetDeck('Blue')">蔚蓝精调</button>
-                                <button class="btn small preset-btn green" onclick="window.loadAiPresetDeck && window.loadAiPresetDeck('Green')">翠绿精调</button>
+                                <button class="btn small preset-btn red"
+                                    onclick="window.loadAiPresetDeck && window.loadAiPresetDeck('Red')">赤红精调</button>
+                                <button class="btn small preset-btn blue"
+                                    onclick="window.loadAiPresetDeck && window.loadAiPresetDeck('Blue')">蔚蓝精调</button>
+                                <button class="btn small preset-btn green"
+                                    onclick="window.loadAiPresetDeck && window.loadAiPresetDeck('Green')">翠绿精调</button>
                             </div>
                         </div>
                         <div class="deck-status-bar">
@@ -436,7 +464,7 @@
                                     <span id="viewer-type-badge" class="badge">随从</span>
                                 </div>
                                 <h2 id="viewer-card-name" class="viewer-title">卡牌名称</h2>
-                                
+
                                 <div class="viewer-stats-grid">
                                     <div class="viewer-stat-item">
                                         <span class="v-label">法力消耗:</span>
@@ -450,7 +478,7 @@
 
                                 <div class="viewer-section-title">技能与特性说明:</div>
                                 <div id="viewer-tags-list" class="viewer-tags-container"></div>
-                                
+
                                 <div id="viewer-prompt-preview" class="viewer-prompt-box"></div>
                                 <div id="viewer-status-text" class="viewer-status-text"></div>
 
@@ -500,17 +528,17 @@
                         <div class="control-item flex-2">
                             <label>调优模式:</label>
                             <select id="pipe-mode">
-                                <option value="tune_only" selected>纯数值微调 (保留现有卡牌与成熟卡组 · 专调身材与费用)</option>
-                                <option value="full_pack">扩展包全流程 (DeepSeek印卡 + 痛点定向增量换卡 + 快速对战收敛)</option>
+                                <option value="tune_only" selected>纯数值微调 (保留现有卡牌 · 专调身材与费用)</option>
+                                <option value="full_pack">扩展包完整流程 (全新印卡 + 平衡微调闭环)</option>
                             </select>
                         </div>
                         <div class="control-item">
                             <label>对局规模 (局/轮):</label>
                             <select id="pipe-episodes">
-                                <option value="600" selected>600 局 (推荐 · 快速高置信度 ~15秒)</option>
-                                <option value="1500">1,500 局 (高精度全量 ~35秒)</option>
-                                <option value="3000">3,000 局 (严谨极值 ~70秒)</option>
-                                <option value="200">200 局 (极速体验 · 秒级出结果)</option>
+                                <option value="600" selected>600 局 (平稳轻量 · 推荐)</option>
+                                <option value="1500">1,500 局 (高置信度)</option>
+                                <option value="3000">3,000 局 (严谨全量)</option>
+                                <option value="200">200 局 (极速演练)</option>
                             </select>
                         </div>
                         <div class="control-item">
@@ -529,9 +557,12 @@
                             </select>
                         </div>
                         <div class="control-actions">
-                            <button id="btn-pipe-start" class="btn green" onclick="window.startPipeline && window.startPipeline()">启动调优流水线</button>
-                            <button id="btn-pipe-stop" class="btn danger" onclick="window.stopPipeline && window.stopPipeline()" disabled>终止运行</button>
-                            <button id="btn-pipe-refresh" class="btn" onclick="window.refreshAnalyticsData && window.refreshAnalyticsData()">刷新数据</button>
+                            <button id="btn-pipe-start" class="btn green"
+                                onclick="window.startPipeline && window.startPipeline()">启动调优流水线</button>
+                            <button id="btn-pipe-stop" class="btn danger"
+                                onclick="window.stopPipeline && window.stopPipeline()" disabled>终止运行</button>
+                            <button id="btn-pipe-refresh" class="btn"
+                                onclick="window.refreshAnalyticsData && window.refreshAnalyticsData()">刷新数据</button>
                         </div>
                     </div>
                 </div>
@@ -583,7 +614,8 @@
                             <label class="auto-scroll-label">
                                 <input type="checkbox" id="chk-auto-scroll" checked /> 自动滚屏
                             </label>
-                            <button id="btn-clear-console" class="btn small" onclick="window.clearPipelineConsole && window.clearPipelineConsole()">清屏</button>
+                            <button id="btn-clear-console" class="btn small"
+                                onclick="window.clearPipelineConsole && window.clearPipelineConsole()">清屏</button>
                         </div>
                     </div>
                     <div id="pipe-console" class="terminal-body">
@@ -607,9 +639,10 @@
             </section>
         </main>
     </div>
-    <script src="/static/js/app.js?v=v8.3"></script>
-    <script src="/static/js/studio.js?v=v8.3"></script>
-    <script src="/static/js/arena.js?v=v8.3"></script>
-    <script src="/static/js/analytics.js?v=v8.3"></script>
+    <script src="/static/js/app.js?v=v8.2"></script>
+    <script src="/static/js/studio.js?v=v8.2"></script>
+    <script src="/static/js/arena.js?v=v8.2"></script>
+    <script src="/static/js/analytics.js?v=v8.2"></script>
 </body>
+
 </html>
