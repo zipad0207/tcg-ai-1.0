@@ -1,4 +1,6 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
 import re
 import sys
 import json
@@ -11,6 +13,15 @@ if hasattr(sys.stdout, "reconfigure"):
 
 def get_api_key() -> str:
     key = os.environ.get("DEEPSEEK_API_KEY", "")
+    if not key:
+        cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_config.json")
+        if os.path.exists(cfg_path):
+            try:
+                with open(cfg_path, "r", encoding="utf-8") as f:
+                    cfg = json.load(f)
+                    key = cfg.get("api_key", "")
+            except Exception:
+                pass
     if not key and sys.platform == "win32":
         try:
             import winreg

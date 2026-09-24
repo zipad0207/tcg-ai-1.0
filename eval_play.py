@@ -103,9 +103,27 @@ def evaluate():
     parser.add_argument("--html", type=str, default="battle_replay.html", help="导出网页回放文件名")
     parser.add_argument("--tactical", action="store_true", default=True, help="启用阵营战术策略引导 (消除旧模型防守抑制偏差，默认开启)")
     parser.add_argument("--no-tactical", dest="tactical", action="store_false", help="禁用战术引导，使用纯网络原始输出")
+    parser.add_argument("--device", type=str, default="auto", choices=["auto", "cuda", "cpu"], help="运算设备 (默认 auto: 检测到 cuda 则用 gpu，无 cuda 则自动回退 cpu)")
     args = parser.parse_args()
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    req_device = (args.device or "auto").strip().lower()
+    if req_device == "cpu":
+        device = torch.device("cpu")
+        print("[运算设备] 已指定使用 CPU 模式运行。")
+    elif req_device == "cuda":
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+            print(f"[运算设备] 已启用 CUDA GPU 加速: {torch.cuda.get_device_name(0)}")
+        else:
+            device = torch.device("cpu")
+            print("[运算设备] 提示: 未检测到可用 CUDA GPU，自动回退至 CPU 运算模式。")
+    else:
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+            print(f"[运算设备] 自动检测到 CUDA GPU 加速: {torch.cuda.get_device_name(0)}")
+        else:
+            device = torch.device("cpu")
+            print("[运算设备] 未检测到可用 CUDA GPU，自动采用 CPU 模式运行。")
     
     # 查找模型
     model_path = find_model_path(args.model, args.stage)

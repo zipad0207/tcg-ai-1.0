@@ -42,6 +42,8 @@ parser.add_argument("--load-model", type=str, default=None,
 parser.add_argument("--lr", type=float, default=3e-4, help="学习率")
 parser.add_argument("--eval-only", action="store_true",
                     help="纯对战评估模式 (跳过梯度更新与反向传播，仅做对战胜率遥测，速度提升 4x)")
+parser.add_argument("--device", type=str, default="auto", choices=["auto", "cuda", "cpu"],
+                    help="运算设备 (默认 auto: 检测到 cuda 则用 gpu，无 cuda 则自动回退 cpu)")
 args = parser.parse_args()
 
 def resolve_path(p):
@@ -60,7 +62,24 @@ TUNED_MODEL_PATH = resolve_path("card_ppo_model_tuned.pth")
 METRICS_SAVE_PATH = resolve_path("training_metrics_brawl.json")
 FIGURE_SAVE_PATH = resolve_path("figure_brawl.png")
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+req_dev = (args.device or "auto").strip().lower()
+if req_dev == "cpu":
+    DEVICE = torch.device("cpu")
+    print("[运算设备] 已指定使用 CPU 模式运行。")
+elif req_dev == "cuda":
+    if torch.cuda.is_available():
+        DEVICE = torch.device("cuda")
+        print(f"[运算设备] 已启用 CUDA GPU 加速: {torch.cuda.get_device_name(0)}")
+    else:
+        DEVICE = torch.device("cpu")
+        print("[运算设备] 提示: 未检测到可用 CUDA GPU，自动回退至 CPU 运算模式。")
+else:
+    if torch.cuda.is_available():
+        DEVICE = torch.device("cuda")
+        print(f"[运算设备] 自动检测到 CUDA GPU 加速: {torch.cuda.get_device_name(0)}")
+    else:
+        DEVICE = torch.device("cpu")
+        print("[运算设备] 未检测到可用 CUDA GPU，自动采用 CPU 模式运行。")
 
 # PPO 超参数
 LR = args.lr

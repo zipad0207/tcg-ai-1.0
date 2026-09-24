@@ -13,7 +13,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/100.webp?v=1790173665"
     },
     {
       "id": 101,
@@ -28,7 +29,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/101.webp?v=1790173675"
     },
     {
       "id": 102,
@@ -44,7 +46,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/102.webp?v=1790173689"
     },
     {
       "id": 103,
@@ -52,27 +55,30 @@
       "card_type": "SPELL",
       "cost": 2,
       "base_dp": 0,
-      "atk_spell_val": 4,
+      "atk_spell_val": 3,
       "def_spell_val": 0,
       "tags": [],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/103.webp?v=1790173700"
     },
     {
       "id": 104,
       "name": "切割者",
       "card_type": "MINION",
       "cost": 2,
-      "base_dp": 2,
+      "base_dp": 1,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "DEGRADE_1"
+        "DEGRADE_1",
+        "ATTACK_ONLY"
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/104.webp?v=1790173709"
     },
     {
       "id": 105,
@@ -85,7 +91,8 @@
       "tags": [],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/105.webp?v=1790173723"
     },
     {
       "id": 106,
@@ -100,7 +107,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/106.webp?v=1790173733"
     },
     {
       "id": 107,
@@ -116,14 +124,15 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/107.webp?v=1790173743"
     },
     {
       "id": 108,
       "name": "裂甲掷斧手",
       "card_type": "MINION",
       "cost": 4,
-      "base_dp": 3,
+      "base_dp": 4,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -131,7 +140,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/108.webp?v=1790173755"
     },
     {
       "id": 109,
@@ -146,7 +156,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/109.webp?v=1790173767"
     },
     {
       "id": 110,
@@ -162,7 +173,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/110.webp?v=1790173780"
     },
     {
       "id": 111,
@@ -175,7 +187,8 @@
       "tags": [],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/111.webp?v=1790173794"
     },
     {
       "id": 112,
@@ -188,7 +201,8 @@
       "tags": [],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/112.webp?v=1790173805"
     },
     {
       "id": 113,
@@ -204,7 +218,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/113.webp?v=1790173815"
     },
     {
       "id": 114,
@@ -217,7 +232,8 @@
       "tags": [],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/114.webp?v=1790173828"
     },
     {
       "id": 115,
@@ -232,7 +248,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/115.webp?v=1790173855"
     },
     {
       "id": 116,
@@ -247,7 +264,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/116.webp?v=1790173865"
     },
     {
       "id": 117,
@@ -260,7 +278,8 @@
       "tags": [],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/117.webp?v=1790173876"
     },
     {
       "id": 118,
@@ -275,7 +294,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/118.webp?v=1790173892"
     },
     {
       "id": 119,
@@ -290,7 +310,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/119.webp?v=1790173912"
     },
     {
       "id": 120,
@@ -300,12 +321,11 @@
       "base_dp": 5,
       "atk_spell_val": 0,
       "def_spell_val": 0,
-      "tags": [
-        "RUSH"
-      ],
+      "tags": [],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/120.webp?v=1790173924"
     },
     {
       "id": 121,
@@ -321,7 +341,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/121.webp?v=1790173933"
     },
     {
       "id": 122,
@@ -336,22 +357,22 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/122.webp?v=1790173945"
     },
     {
       "id": 123,
       "name": "破阵先锋",
       "card_type": "MINION",
       "cost": 5,
-      "base_dp": 4,
+      "base_dp": 5,
       "atk_spell_val": 0,
       "def_spell_val": 0,
-      "tags": [
-        "RUSH"
-      ],
+      "tags": [],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/123.webp?v=1790173954"
     },
     {
       "id": 124,
@@ -366,7 +387,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/124.webp?v=1790173967"
     },
     {
       "id": 125,
@@ -381,7 +403,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/125.webp?v=1790173977"
     },
     {
       "id": 126,
@@ -394,14 +417,15 @@
       "tags": [],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/126.webp?v=1790173989"
     },
     {
       "id": 127,
       "name": "赤焰哨卫",
       "card_type": "MINION",
       "cost": 4,
-      "base_dp": 3,
+      "base_dp": 2,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -410,14 +434,15 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/127.webp?v=1790174000"
     },
     {
       "id": 128,
       "name": "熔岩破阵者",
       "card_type": "MINION",
       "cost": 5,
-      "base_dp": 4,
+      "base_dp": 2,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -425,7 +450,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/128.webp?v=1790174010"
     },
     {
       "id": 129,
@@ -440,7 +466,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/129.webp?v=1790174021"
     },
     {
       "id": 130,
@@ -455,7 +482,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/130.webp?v=1790174031"
     },
     {
       "id": 131,
@@ -463,14 +491,15 @@
       "card_type": "SPELL",
       "cost": 4,
       "base_dp": 0,
-      "atk_spell_val": 4,
+      "atk_spell_val": 3,
       "def_spell_val": 0,
       "tags": [
         "DEGRADE_1"
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/131.webp?v=1790174046"
     },
     {
       "id": 132,
@@ -483,7 +512,8 @@
       "tags": [],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/132.webp?v=1790174057"
     },
     {
       "id": 133,
@@ -496,7 +526,8 @@
       "tags": [],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/133.webp?v=1790174067"
     },
     {
       "id": 134,
@@ -511,7 +542,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/134.webp?v=1790174077"
     },
     {
       "id": 135,
@@ -524,7 +556,8 @@
       "tags": [],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/135.webp?v=1790174087"
     },
     {
       "id": 136,
@@ -539,7 +572,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/136.webp?v=1790174097"
     },
     {
       "id": 137,
@@ -552,7 +586,8 @@
       "tags": [],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/137.webp?v=1790174106"
     },
     {
       "id": 138,
@@ -565,7 +600,8 @@
       "tags": [],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/138.webp?v=1790174117"
     },
     {
       "id": 139,
@@ -573,12 +609,13 @@
       "card_type": "SPELL",
       "cost": 3,
       "base_dp": 0,
-      "atk_spell_val": 4,
+      "atk_spell_val": 3,
       "def_spell_val": 0,
       "tags": [],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/139.webp?v=1790174127"
     },
     {
       "id": 140,
@@ -593,7 +630,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/140.webp?v=1790174146"
     },
     {
       "id": 141,
@@ -608,22 +646,22 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/141.webp?v=1790174155"
     },
     {
       "id": 142,
       "name": "赤焰破甲兵",
       "card_type": "MINION",
       "cost": 3,
-      "base_dp": 2,
+      "base_dp": 4,
       "atk_spell_val": 0,
       "def_spell_val": 0,
-      "tags": [
-        "RUSH"
-      ],
+      "tags": [],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/142.webp?v=1790174165"
     },
     {
       "id": 143,
@@ -636,7 +674,8 @@
       "tags": [],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/143.webp?v=1790174174"
     },
     {
       "id": 144,
@@ -651,7 +690,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/144.webp?v=1790174184"
     },
     {
       "id": 145,
@@ -667,7 +707,8 @@
       ],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/145.webp?v=1790174193"
     },
     {
       "id": 146,
@@ -680,7 +721,26 @@
       "tags": [],
       "factions": [
         "Red"
-      ]
+      ],
+      "image_url": "/static/images/cards/146.webp?v=1790174202"
+    },
+    {
+      "id": 147,
+      "name": "熔岩龙巢幼龙",
+      "card_type": "MINION",
+      "cost": 7,
+      "base_dp": 3,
+      "atk_spell_val": 0,
+      "def_spell_val": 0,
+      "tags": [
+        "RUSH",
+        "SPAWN_1_2"
+      ],
+      "factions": [
+        "Red"
+      ],
+      "flavor_text": "喷吐着灼热岩浆的幼龙群，用高温削弱敌人防御后发起集群冲锋",
+      "image_url": "/static/images/cards/147.webp?v=1790174212"
     }
   ],
   "Blue": [
@@ -697,14 +757,15 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/200.webp?v=1790174223"
     },
     {
       "id": 201,
       "name": "盾兵",
       "card_type": "MINION",
       "cost": 1,
-      "base_dp": 1,
+      "base_dp": 2,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -712,7 +773,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/201.webp?v=1790174234"
     },
     {
       "id": 202,
@@ -727,7 +789,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/202.webp?v=1790174244"
     },
     {
       "id": 203,
@@ -736,11 +799,12 @@
       "cost": 1,
       "base_dp": 0,
       "atk_spell_val": 0,
-      "def_spell_val": 3,
+      "def_spell_val": 6,
       "tags": [],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/203.webp?v=1790174254"
     },
     {
       "id": 204,
@@ -753,7 +817,8 @@
       "tags": [],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/204.webp?v=1790174264"
     },
     {
       "id": 205,
@@ -768,7 +833,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/205.webp?v=1790174274"
     },
     {
       "id": 206,
@@ -783,7 +849,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/206.webp?v=1790174283"
     },
     {
       "id": 207,
@@ -799,7 +866,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/207.webp?v=1790174293"
     },
     {
       "id": 208,
@@ -814,7 +882,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/208.webp?v=1790174303"
     },
     {
       "id": 209,
@@ -829,7 +898,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/209.webp?v=1790174318"
     },
     {
       "id": 210,
@@ -842,7 +912,8 @@
       "tags": [],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/210.webp?v=1790174328"
     },
     {
       "id": 211,
@@ -858,7 +929,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/211.webp?v=1790174337"
     },
     {
       "id": 212,
@@ -873,7 +945,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/212.webp?v=1790174362"
     },
     {
       "id": 213,
@@ -888,13 +961,14 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/213.webp?v=1790174371"
     },
     {
       "id": 214,
       "name": "蔚蓝泰坦盾卫",
       "card_type": "MINION",
-      "cost": 6,
+      "cost": 5,
       "base_dp": 5,
       "atk_spell_val": 0,
       "def_spell_val": 0,
@@ -904,20 +978,22 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/214.webp?v=1790174388"
     },
     {
       "id": 215,
       "name": "蔚蓝冲击",
       "card_type": "SPELL",
-      "cost": 2,
+      "cost": 3,
       "base_dp": 0,
-      "atk_spell_val": 7,
+      "atk_spell_val": 6,
       "def_spell_val": 0,
       "tags": [],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/215.webp?v=1790174397"
     },
     {
       "id": 216,
@@ -933,13 +1009,14 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/216.webp?v=1790174407"
     },
     {
       "id": 217,
       "name": "蔚蓝轻装盾卫",
       "card_type": "MINION",
-      "cost": 2,
+      "cost": 1,
       "base_dp": 2,
       "atk_spell_val": 0,
       "def_spell_val": 0,
@@ -948,7 +1025,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/217.webp?v=1790174418"
     },
     {
       "id": 218,
@@ -963,7 +1041,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/218.webp?v=1790174428"
     },
     {
       "id": 219,
@@ -978,7 +1057,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/219.webp?v=1790174439"
     },
     {
       "id": 220,
@@ -986,14 +1066,15 @@
       "card_type": "SPELL",
       "cost": 2,
       "base_dp": 0,
-      "atk_spell_val": 3,
+      "atk_spell_val": 5,
       "def_spell_val": 0,
       "tags": [
         "DEGRADE_1"
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/220.webp?v=1790174452"
     },
     {
       "id": 221,
@@ -1008,7 +1089,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/221.webp?v=1790174462"
     },
     {
       "id": 222,
@@ -1023,22 +1105,22 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/222.webp?v=1790174476"
     },
     {
       "id": 223,
       "name": "冰潮突袭者",
       "card_type": "MINION",
-      "cost": 3,
-      "base_dp": 4,
+      "cost": 4,
+      "base_dp": 5,
       "atk_spell_val": 0,
       "def_spell_val": 0,
-      "tags": [
-        "RUSH"
-      ],
+      "tags": [],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/223.webp?v=1790174487"
     },
     {
       "id": 224,
@@ -1053,7 +1135,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/224.webp?v=1790174505"
     },
     {
       "id": 225,
@@ -1068,7 +1151,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/225.webp?v=1790174515"
     },
     {
       "id": 226,
@@ -1076,12 +1160,15 @@
       "card_type": "SPELL",
       "cost": 3,
       "base_dp": 0,
-      "atk_spell_val": 5,
+      "atk_spell_val": 6,
       "def_spell_val": 0,
-      "tags": [],
+      "tags": [
+        "DEGRADE_1"
+      ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/226.webp?v=1790174527"
     },
     {
       "id": 227,
@@ -1096,7 +1183,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/227.webp?v=1790174539"
     },
     {
       "id": 228,
@@ -1112,7 +1200,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/228.webp?v=1790174585"
     },
     {
       "id": 229,
@@ -1128,7 +1217,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/229.webp?v=1790174595"
     },
     {
       "id": 230,
@@ -1144,7 +1234,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/230.webp?v=1790174605"
     },
     {
       "id": 231,
@@ -1159,7 +1250,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/231.webp?v=1790174616"
     },
     {
       "id": 232,
@@ -1174,7 +1266,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/232.webp?v=1790174625"
     },
     {
       "id": 233,
@@ -1189,7 +1282,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/233.webp?v=1790174636"
     },
     {
       "id": 234,
@@ -1204,7 +1298,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/234.webp?v=1790174648"
     },
     {
       "id": 235,
@@ -1212,12 +1307,13 @@
       "card_type": "SPELL",
       "cost": 3,
       "base_dp": 0,
-      "atk_spell_val": 4,
+      "atk_spell_val": 5,
       "def_spell_val": 0,
       "tags": [],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/235.webp?v=1790174662"
     },
     {
       "id": 236,
@@ -1233,7 +1329,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/236.webp?v=1790174676"
     },
     {
       "id": 237,
@@ -1248,7 +1345,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/237.webp?v=1790174687"
     },
     {
       "id": 238,
@@ -1261,7 +1359,8 @@
       "tags": [],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/238.webp?v=1790174697"
     },
     {
       "id": 239,
@@ -1276,20 +1375,24 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/239.webp?v=1790174706"
     },
     {
       "id": 240,
       "name": "冰霜壁垒",
       "card_type": "MINION",
-      "cost": 5,
-      "base_dp": 6,
+      "cost": 4,
+      "base_dp": 5,
       "atk_spell_val": 0,
       "def_spell_val": 0,
-      "tags": [],
+      "tags": [
+        "FORTIFY_1"
+      ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/240.webp?v=1790174716"
     },
     {
       "id": 241,
@@ -1305,7 +1408,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/241.webp?v=1790174727"
     },
     {
       "id": 242,
@@ -1320,7 +1424,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/242.webp?v=1790174740"
     },
     {
       "id": 243,
@@ -1330,17 +1435,20 @@
       "base_dp": 4,
       "atk_spell_val": 0,
       "def_spell_val": 0,
-      "tags": [],
+      "tags": [
+        "FORTIFY_3"
+      ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/243.webp?v=1790174749"
     },
     {
       "id": 244,
       "name": "蔚蓝抽牌学者",
       "card_type": "MINION",
-      "cost": 2,
-      "base_dp": 2,
+      "cost": 3,
+      "base_dp": 3,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -1348,7 +1456,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/244.webp?v=1790174759"
     },
     {
       "id": 245,
@@ -1363,7 +1472,8 @@
       ],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/245.webp?v=1790174770"
     },
     {
       "id": 246,
@@ -1376,7 +1486,8 @@
       "tags": [],
       "factions": [
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/246.webp?v=1790174779"
     }
   ],
   "Green": [
@@ -1393,7 +1504,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/300.webp?v=1790174790"
     },
     {
       "id": 301,
@@ -1408,7 +1520,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/301.webp?v=1790174805"
     },
     {
       "id": 302,
@@ -1419,11 +1532,12 @@
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "DEGRADE_2"
+        "DEGRADE_1"
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/302.webp?v=1790174817"
     },
     {
       "id": 303,
@@ -1438,7 +1552,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/303.webp?v=1790174827"
     },
     {
       "id": 304,
@@ -1451,7 +1566,8 @@
       "tags": [],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/304.webp?v=1790174837"
     },
     {
       "id": 305,
@@ -1466,7 +1582,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/305.webp?v=1790174847"
     },
     {
       "id": 306,
@@ -1474,14 +1591,15 @@
       "card_type": "SPELL",
       "cost": 3,
       "base_dp": 0,
-      "atk_spell_val": 8,
+      "atk_spell_val": 6,
       "def_spell_val": 0,
       "tags": [
         "DEGRADE_1"
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/306.webp?v=1790174873"
     },
     {
       "id": 307,
@@ -1496,7 +1614,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/307.webp?v=1790174885"
     },
     {
       "id": 308,
@@ -1511,7 +1630,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/308.webp?v=1790174896"
     },
     {
       "id": 309,
@@ -1526,7 +1646,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/309.webp?v=1790174917"
     },
     {
       "id": 310,
@@ -1541,7 +1662,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/310.webp?v=1790174933"
     },
     {
       "id": 311,
@@ -1556,7 +1678,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/311.webp?v=1790174943"
     },
     {
       "id": 312,
@@ -1571,7 +1694,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/312.webp?v=1790174955"
     },
     {
       "id": 313,
@@ -1587,7 +1711,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/313.webp?v=1790174970"
     },
     {
       "id": 314,
@@ -1602,7 +1727,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/314.webp?v=1790174994"
     },
     {
       "id": 315,
@@ -1618,7 +1744,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/315.webp?v=1790175005"
     },
     {
       "id": 316,
@@ -1627,11 +1754,12 @@
       "cost": 3,
       "base_dp": 0,
       "atk_spell_val": 0,
-      "def_spell_val": 7,
+      "def_spell_val": 6,
       "tags": [],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/316.webp?v=1790175018"
     },
     {
       "id": 317,
@@ -1646,7 +1774,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/317.webp?v=1790175032"
     },
     {
       "id": 318,
@@ -1661,7 +1790,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/318.webp?v=1790175057"
     },
     {
       "id": 319,
@@ -1676,7 +1806,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/319.webp?v=1790175069"
     },
     {
       "id": 320,
@@ -1692,7 +1823,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/320.webp?v=1790175082"
     },
     {
       "id": 321,
@@ -1707,7 +1839,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/321.webp?v=1790175105"
     },
     {
       "id": 322,
@@ -1722,14 +1855,15 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/322.webp?v=1790175118"
     },
     {
       "id": 323,
       "name": "藤蔓突袭者",
       "card_type": "MINION",
       "cost": 4,
-      "base_dp": 4,
+      "base_dp": 5,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -1738,7 +1872,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/323.webp?v=1790175129"
     },
     {
       "id": 324,
@@ -1753,7 +1888,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/324.webp?v=1790175144"
     },
     {
       "id": 325,
@@ -1768,7 +1904,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/325.webp?v=1790175154"
     },
     {
       "id": 326,
@@ -1783,7 +1920,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/326.webp?v=1790175175"
     },
     {
       "id": 327,
@@ -1798,7 +1936,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/327.webp?v=1790175189"
     },
     {
       "id": 328,
@@ -1813,7 +1952,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/328.webp?v=1790175202"
     },
     {
       "id": 329,
@@ -1829,7 +1969,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/329.webp?v=1790175211"
     },
     {
       "id": 330,
@@ -1845,7 +1986,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/330.webp?v=1790175238"
     },
     {
       "id": 331,
@@ -1860,7 +2002,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/331.webp?v=1790175264"
     },
     {
       "id": 332,
@@ -1875,14 +2018,15 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/332.webp?v=1790175283"
     },
     {
       "id": 333,
       "name": "林间哨兵",
       "card_type": "MINION",
       "cost": 2,
-      "base_dp": 2,
+      "base_dp": 3,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
@@ -1891,7 +2035,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/333.webp?v=1790175293"
     },
     {
       "id": 334,
@@ -1906,7 +2051,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/334.webp?v=1790175312"
     },
     {
       "id": 335,
@@ -1921,7 +2067,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/335.webp?v=1790175322"
     },
     {
       "id": 336,
@@ -1937,20 +2084,24 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/336.webp?v=1790175332"
     },
     {
       "id": 337,
       "name": "翠绿守卫",
       "card_type": "MINION",
       "cost": 3,
-      "base_dp": 5,
+      "base_dp": 3,
       "atk_spell_val": 0,
       "def_spell_val": 0,
-      "tags": [],
+      "tags": [
+        "FORTIFY_2"
+      ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/337.webp?v=1790175348"
     },
     {
       "id": 338,
@@ -1966,7 +2117,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/338.webp?v=1790175361"
     },
     {
       "id": 339,
@@ -1981,7 +2133,8 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/339.webp?v=1790175370"
     },
     {
       "id": 340,
@@ -1994,7 +2147,8 @@
       "tags": [],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/340.webp?v=1790175379"
     },
     {
       "id": 341,
@@ -2002,30 +2156,31 @@
       "card_type": "SPELL",
       "cost": 4,
       "base_dp": 0,
-      "atk_spell_val": 8,
+      "atk_spell_val": 7,
       "def_spell_val": 0,
       "tags": [
         "DEGRADE_1"
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/341.webp?v=1790175389"
     },
     {
       "id": 342,
       "name": "翠绿反击者",
       "card_type": "MINION",
-      "cost": 3,
+      "cost": 4,
       "base_dp": 3,
       "atk_spell_val": 0,
       "def_spell_val": 0,
       "tags": [
-        "RUSH",
         "SUPPORT_ATK_1"
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/342.webp?v=1790175412"
     },
     {
       "id": 343,
@@ -2038,7 +2193,8 @@
       "tags": [],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/343.webp?v=1790175423"
     },
     {
       "id": 344,
@@ -2054,13 +2210,14 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/344.webp?v=1790175434"
     },
     {
       "id": 345,
       "name": "翠绿成长树苗",
       "card_type": "MINION",
-      "cost": 1,
+      "cost": 2,
       "base_dp": 2,
       "atk_spell_val": 0,
       "def_spell_val": 0,
@@ -2069,20 +2226,22 @@
       ],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/345.webp?v=1790175443"
     },
     {
       "id": 346,
       "name": "翠绿藤蔓缠绕",
       "card_type": "SPELL",
-      "cost": 1,
+      "cost": 2,
       "base_dp": 0,
-      "atk_spell_val": 5,
+      "atk_spell_val": 4,
       "def_spell_val": 0,
       "tags": [],
       "factions": [
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/346.webp?v=1790175460"
     }
   ],
   "Neutral": [
@@ -2099,7 +2258,8 @@
       ],
       "factions": [
         "Neutral"
-      ]
+      ],
+      "image_url": "/static/images/cards/900.webp?v=1790175712"
     },
     {
       "id": 901,
@@ -2112,7 +2272,8 @@
       "tags": [],
       "factions": [
         "Neutral"
-      ]
+      ],
+      "image_url": "/static/images/cards/901.webp?v=1790175723"
     },
     {
       "id": 902,
@@ -2127,7 +2288,8 @@
       ],
       "factions": [
         "Neutral"
-      ]
+      ],
+      "image_url": "/static/images/cards/902.webp?v=1790175733"
     },
     {
       "id": 903,
@@ -2143,7 +2305,8 @@
       ],
       "factions": [
         "Neutral"
-      ]
+      ],
+      "image_url": "/static/images/cards/903.webp?v=1790175744"
     },
     {
       "id": 904,
@@ -2159,7 +2322,8 @@
       ],
       "factions": [
         "Neutral"
-      ]
+      ],
+      "image_url": "/static/images/cards/904.webp?v=1790175761"
     },
     {
       "id": 905,
@@ -2174,7 +2338,8 @@
       ],
       "factions": [
         "Neutral"
-      ]
+      ],
+      "image_url": "/static/images/cards/905.webp?v=1790175771"
     },
     {
       "id": 906,
@@ -2189,7 +2354,8 @@
       ],
       "factions": [
         "Neutral"
-      ]
+      ],
+      "image_url": "/static/images/cards/906.webp?v=1790175781"
     },
     {
       "id": 907,
@@ -2205,7 +2371,8 @@
       ],
       "factions": [
         "Neutral"
-      ]
+      ],
+      "image_url": "/static/images/cards/907.webp?v=1790175791"
     },
     {
       "id": 908,
@@ -2220,7 +2387,8 @@
       ],
       "factions": [
         "Neutral"
-      ]
+      ],
+      "image_url": "/static/images/cards/908.webp?v=1790175803"
     },
     {
       "id": 909,
@@ -2235,7 +2403,8 @@
       ],
       "factions": [
         "Neutral"
-      ]
+      ],
+      "image_url": "/static/images/cards/909.webp?v=1790175812"
     },
     {
       "id": 910,
@@ -2248,7 +2417,8 @@
       "tags": [],
       "factions": [
         "Neutral"
-      ]
+      ],
+      "image_url": "/static/images/cards/910.webp?v=1790175825"
     },
     {
       "id": 911,
@@ -2263,7 +2433,8 @@
       ],
       "factions": [
         "Neutral"
-      ]
+      ],
+      "image_url": "/static/images/cards/911.webp?v=1790175835"
     },
     {
       "id": 912,
@@ -2278,7 +2449,8 @@
       ],
       "factions": [
         "Neutral"
-      ]
+      ],
+      "image_url": "/static/images/cards/912.webp?v=1790175846"
     },
     {
       "id": 913,
@@ -2291,7 +2463,8 @@
       "tags": [],
       "factions": [
         "Neutral"
-      ]
+      ],
+      "image_url": "/static/images/cards/913.webp?v=1790175856"
     },
     {
       "id": 914,
@@ -2304,7 +2477,8 @@
       "tags": [],
       "factions": [
         "Neutral"
-      ]
+      ],
+      "image_url": "/static/images/cards/914.webp?v=1790175865"
     }
   ],
   "Dual": [
@@ -2322,7 +2496,8 @@
       "factions": [
         "Red",
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/400.webp?v=1790175470"
     },
     {
       "id": 500,
@@ -2339,7 +2514,8 @@
       "factions": [
         "Blue",
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/500.webp?v=1790175543"
     },
     {
       "id": 600,
@@ -2356,7 +2532,8 @@
       "factions": [
         "Red",
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/600.webp?v=1790175623"
     },
     {
       "id": 401,
@@ -2372,7 +2549,8 @@
       "factions": [
         "Red",
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/401.webp?v=1790175479"
     },
     {
       "id": 501,
@@ -2389,7 +2567,8 @@
       "factions": [
         "Blue",
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/501.webp?v=1790175553"
     },
     {
       "id": 601,
@@ -2406,7 +2585,8 @@
       "factions": [
         "Red",
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/601.webp?v=1790175641"
     },
     {
       "id": 402,
@@ -2422,7 +2602,8 @@
       "factions": [
         "Red",
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/402.webp?v=1790175491"
     },
     {
       "id": 502,
@@ -2438,7 +2619,8 @@
       "factions": [
         "Blue",
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/502.webp?v=1790175563"
     },
     {
       "id": 602,
@@ -2455,7 +2637,8 @@
       "factions": [
         "Red",
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/602.webp?v=1790175651"
     },
     {
       "id": 403,
@@ -2472,7 +2655,8 @@
       "factions": [
         "Red",
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/403.webp?v=1790175501"
     },
     {
       "id": 503,
@@ -2489,7 +2673,8 @@
       "factions": [
         "Blue",
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/503.webp?v=1790175578"
     },
     {
       "id": 603,
@@ -2506,7 +2691,8 @@
       "factions": [
         "Red",
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/603.webp?v=1790175664"
     },
     {
       "id": 404,
@@ -2523,7 +2709,8 @@
       "factions": [
         "Red",
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/404.webp?v=1790175511"
     },
     {
       "id": 504,
@@ -2540,7 +2727,8 @@
       "factions": [
         "Blue",
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/504.webp?v=1790175589"
     },
     {
       "id": 604,
@@ -2557,7 +2745,8 @@
       "factions": [
         "Red",
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/604.webp?v=1790175675"
     },
     {
       "id": 405,
@@ -2574,7 +2763,8 @@
       "factions": [
         "Red",
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/405.webp?v=1790175522"
     },
     {
       "id": 505,
@@ -2591,7 +2781,8 @@
       "factions": [
         "Blue",
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/505.webp?v=1790175599"
     },
     {
       "id": 605,
@@ -2608,7 +2799,8 @@
       "factions": [
         "Red",
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/605.webp?v=1790175684"
     },
     {
       "id": 406,
@@ -2625,7 +2817,8 @@
       "factions": [
         "Red",
         "Blue"
-      ]
+      ],
+      "image_url": "/static/images/cards/406.webp?v=1790175532"
     },
     {
       "id": 506,
@@ -2642,7 +2835,8 @@
       "factions": [
         "Blue",
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/506.webp?v=1790175610"
     },
     {
       "id": 606,
@@ -2659,7 +2853,8 @@
       "factions": [
         "Red",
         "Green"
-      ]
+      ],
+      "image_url": "/static/images/cards/606.webp?v=1790175701"
     }
   ]
 }

@@ -23,6 +23,7 @@ ENV/
 
 # Sensitive configs
 .env
+llm_config.json
 *.pth
 
 # IDE Configs

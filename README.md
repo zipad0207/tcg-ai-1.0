@@ -223,73 +223,102 @@ flowchart TD
 
 ---
 
-## 快速开始
+## 💻 环境要求与安装部署
 
-### 1. 环境依赖与密钥配置
+### 1. 系统要求与运行环境
+* **必须要有 Python 环境么？**
+  * **是的**，本项目基于 Python 3.10+ 开发（推荐 **Python 3.10 或 3.11**）。请先确保系统已安装 Python（可通过终端输入 `python --version` 或 `py --version` 验证）。
+* **必须要有 NVIDIA 显卡 (CUDA) 么？**
+  * **不需要！项目已全面支持无显卡 (纯 CPU) 运行**。
+  * 所有强化学习训练、对局评估、批处理测试与 Web 对弈均内置**设备自动探测与优雅降级机制**：检测到 CUDA 则自动启用 GPU 硬件加速；未检测到 CUDA 时自动无缝回退至 CPU 运算，无需修改任何代码。
+  * 所有测试脚本均支持显式指定 `--device cpu` 强制以 CPU 运算模式启动。
+
+---
+
+### 2. 本地快速下载与一键部署
+
+#### 步骤一：克隆仓库至本地
+```bash
+git clone https://github.com/your-username/tcg-ai.git
+cd tcg-ai
+```
+
+#### 步骤二：创建并激活虚拟环境（推荐）
+```bash
+# Windows
+py -3.11 -m venv venv
+venv\Scripts\activate
+
+# Linux / macOS
+python3 -m venv venv
+source venv/bin/activate
+```
+
+#### 步骤三：安装核心依赖
+```bash
+pip install -r requirements.txt
+```
+> 若您拥有 NVIDIA 显卡并希望开启 CUDA 加速，可参考 [PyTorch 官网](https://pytorch.org/get-started/locally/) 安装对应 CUDA 版本的 PyTorch；纯 CPU 用户直接使用上述命令即可。
+
+---
+
+### 3. 一键启动 Web 可视化工作台（推荐体验方式）
+
+本项目内置了全功能现代 Web 控制台（包含**卡牌工坊、自选卡组构筑、实时 AI 对战与记牌器、平衡遥测仪表盘**）：
 
 ```bash
-pip install torch numpy matplotlib openai
+# 启动本地 Web 服务器 (支持热重载)
+py -m uvicorn web_app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
-如需调用 LLM 进行全自动扩展包生成与数值平衡，请在系统环境变量或当前终端配置 `DEEPSEEK_API_KEY`：
-```powershell
-$env:DEEPSEEK_API_KEY="your-deepseek-api-key"
-```
+启动成功后，在浏览器访问 **`http://127.0.0.1:8000`** 即可进入系统：
+1. **AI 服务配置**：可在左侧导航栏直观填入 `DeepSeek API Key` 与 `生图 Key (SiliconFlow / DashScope)`，并在下拉菜单中自由切换生图模型（Z-Image极速、可图Kolors、FLUX极速、通义万相），保存即时生效。
+2. **实机对弈与实时记牌器**：支持自定义红/蓝/绿构筑（合法性校验上限 6 套），实战中包含双方剩余牌库指示器（`30/30` 动态递减）与**战局记牌器**（展示我方牌库余牌费用分布、单卡悬停卡面提示，以及敌方已登场/施放明牌）。
+3. **平衡仪表盘**：包含标准 0%~100% 阵营平衡雷达图（中轴 50% 完美平衡基准环）与阵营对抗克制矩阵。
 
-### 2. 一键启动全自动流水线（推荐入口）
+---
 
-运行全自动印卡、构筑、AI 对战与数值平衡流水线：
+### 4. 终端脚本与命令行测试
 
+#### ⚡ 快速对抗评测（支持 CPU 纯算力秒级跑完）：
 ```bash
-# 全自动完整运行 (每轮 3,000 局混战测试)
+# 自动检测设备 (有显卡走 CUDA，无显卡自动走 CPU)
+py test_deck_matchup.py --episodes 500
+
+# 强制使用 CPU 进行 500 场对抗评估 (每秒可达 300+ 场)
+py test_deck_matchup.py --episodes 500 --device cpu --p0 Red --p1 Blue
+
+# 实机回合制终端回放演练
+py eval_play.py --stage tuned --device cpu
+```
+
+#### 🔄 全自动印卡、构筑、AI 对战与数值平衡流水线：
+```bash
+# 全自动完整流水线 (每轮 3,000 局混战自博弈收敛)
 py pipeline_orchestrator.py --pack-name "新补充包" --theme "根据环境数据调试"
 
-# 快速测试模式 (小规模局数快速跑通流程)
+# 极速测试流水线流程
 py pipeline_orchestrator.py --dry-run --skip-print
 ```
 
-**核心命令行参数说明**：
-
+**流水线核心参数**：
 | 参数 | 类型 | 默认值 | 参数说明 |
 | :--- | :---: | :---: | :--- |
-| `--episodes` | int | `3000` | 每轮混战对局数（局数越多样本越充分，统计误差越小） |
-| `--target-balance` | float | `5.0` | 目标偏离容差（百分点），三大阵营胜率均在 45% ~ 55% 之间即视为平衡 |
-| `--max-deck-attempts` | int | `2` | 同一卡池下 PPO 尝试微调卡组构筑的次数 |
-| `--severe-imbalance-threshold` | float | `10.0` | 严重失衡阈值。当胜率偏离超过 10% 时，直接修改卡牌数值，跳过卡组微调 |
-| `--severe-spread-threshold` | float | `15.0` | 胜率差过大阈值。最高与最低阵营胜率差距 >= 15% 时直接修改卡牌数值 |
-| `--max-outer-iterations` | int | `10` | 最大 DeepSeek 数值微调轮次上限 |
+| `--episodes` | int | `3000` | 每轮混战对局数 |
+| `--target-balance` | float | `5.0` | 目标偏离容差（百分点），三大阵营胜率均在 45% ~ 55% 之间视为平衡 |
+| `--device` | str | `auto` | 运算设备：`auto` (自动)、`cuda`、`cpu` |
+| `--severe-imbalance-threshold` | float | `10.0` | 严重失衡阈值，胜率偏离超 10% 直接由 LLM 修改卡牌数值 |
+| `--severe-spread-threshold` | float | `15.0` | 阵营胜率最大差距 >= 15% 直接触发数值微调 |
 | `--skip-print` | flag | `False` | 跳过阶段一印卡，直接基于当前卡池开启平衡微调 |
-| `--eval-only` | flag | `False` | 纯评估模式（跳过 PPO 模型训练） |
-| `--dry-run` | flag | `False` | 快速测试模式（极小局数快速验证流程） |
+| `--eval-only` | flag | `False` | 纯评估模式（跳过网络梯度反向传播，速度大幅提升） |
 
-### 3. 单独运行各功能模块
+#### 🛠️ 单独运行各子模块：
+```bash
+# 混战 PPO 训练与胜率评估
+py train_brawl.py --episodes 1000 --device cpu
 
-- **终端对局演示**：
-  ```bash
-  py eval_play.py --stage tuned
-  # 绿方 vs 红方 对战演示
-  py eval_play.py --p0 Green --p1 Red --decks decks_config.json
-  ```
-
-- **独立 PPO 训练 (1,000 局)**：
-  ```bash
-  py train.py --stage baseline --episodes 1000
-  py train.py --stage tuned --episodes 1000
-  ```
-
-- **独立多阵营混战测试**：
-  ```bash
-  py train_brawl.py --episodes 3000
-  ```
-
-- **PPO 卡组微调测试**：
-  ```bash
-  py deck_builder_ppo.py --factions Red,Blue,Green --generations 20 --games-per-gen 60 --samples 8
-  ```
-
-- **导出前端 UI 数据接口**：
-  ```bash
-  py export_ui_data.py
-  ```
+# PPO 自主选卡与卡组进化微调
+py deck_builder_ppo.py --factions Red,Blue,Green --generations 10 --device cpu
+```
 
 ---
 

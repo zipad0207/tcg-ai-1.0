@@ -1,4 +1,6 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
 import re
 import sys
 import json
@@ -17,6 +19,15 @@ if hasattr(sys.stdout, "reconfigure"):
 
 def get_api_key() -> str:
     key = os.environ.get("DEEPSEEK_API_KEY", "")
+    if not key:
+        cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_config.json")
+        if os.path.exists(cfg_path):
+            try:
+                with open(cfg_path, "r", encoding="utf-8") as f:
+                    cfg = json.load(f)
+                    key = cfg.get("api_key", "")
+            except Exception:
+                pass
     if not key and sys.platform == "win32":
         try:
             import winreg
@@ -188,6 +199,11 @@ def build_prompt(current_pool: dict, faction: str, count: int, theme: str) -> st
      b. 亏模随从（DP <= 费用）：必须携带足够强力或关键的战术词条（如 RUSH、FORTIFY、DEGRADE、BONUS_SCORE、DEATH_DRAW、SPAWN 等）作为亏模补偿。若 DP < 费用 - 1，其机制价值必须极其扎实，严禁低数值白板！
    - 法术数值模型基准：
      纯数值法术的总点数必须合理匹配费用（基础标准通常为 点数 >= 费用 * 1.5 到 2，如 1费直伤 2、2费直伤 3~4、3费护盾 5~6）。严禁出现 3 费仅提供 3 点护盾且无任何词条/跳费效果的极度亏模法术！
+   - **严禁“倒亏法力”与逻辑错乱的法力法术（绝对核心红线，违者直接判废）：**
+     - `TEMP_MANA_X` 为当前回合临时获得的法力水晶（打出当回合生效，如同炉石传说幸运币或激活）。
+     - **纯临时法力法术**（仅包含 `TEMP_MANA_X`，无直伤、无护盾、无抽牌）：其法力消耗 (cost) **必须严格小于获得的临时法力数值**！标准设计只能是 **0 费消耗获得 1~2 点临时法力**（用于前期抢节奏、打连携爆发）；
+     - **绝对严禁出现 `cost >= TEMP_MANA` 的反智倒亏设计**（例如：绝对严禁设计出「5 费法术仅提供 TEMP_MANA_2」、「2 费法术仅提供 TEMP_MANA_1」这种花更多费用换取更少临时法力、净亏费用还白白浪费手牌的荒谬智商税废卡）！
+     - 若一张法术的费用较高（如 2~5 费）且带有 `TEMP_MANA`，它必须作为高价值复合收益的返费润滑手段（例如：带有直伤打怪 `atk_spell_val`、强力护盾 `def_spell_val`，或者配合抽牌 `DRAW_2`），**绝不允许高费单挂一个 `TEMP_MANA` 却毫无其他任何正面效果**！
 7. **严禁重名（Unique-Naming Rule，绝对红线）**：
    - 每张新卡的中文名称必须全环境独一无二！
    - 严禁与已有卡池中任何卡牌重名，也严禁本次生成的卡牌之间重名！请起具有阵营特色的专属名字。

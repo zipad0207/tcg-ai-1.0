@@ -1,4 +1,6 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
 import re
 import sys
 import json
@@ -9,6 +11,15 @@ if hasattr(sys.stdout, "reconfigure"):
 
 def get_api_key() -> str:
     key = os.environ.get("DEEPSEEK_API_KEY", "")
+    if not key:
+        cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_config.json")
+        if os.path.exists(cfg_path):
+            try:
+                with open(cfg_path, "r", encoding="utf-8") as f:
+                    cfg = json.load(f)
+                    key = cfg.get("api_key", "")
+            except Exception:
+                pass
     if not key and sys.platform == "win32":
         try:
             import winreg
@@ -65,22 +76,74 @@ LEGAL_TAG_PATTERNS = [
 def is_legal_tag(tag: str) -> bool:
     return any(re.match(p, tag) for p in LEGAL_TAG_PATTERNS)
 
-def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client: OpenAI, history_metrics: dict = None) -> str:
+def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client: OpenAI, history_metrics: dict = None, target_tolerance: float = 5.0, target_pairwise_tolerance: float = 5.0, severe_threshold: float = 10.0) -> str:
     total = max(1, metrics_data.get("total_episodes", 1000))
     
     max_dev = 0.0
+    data_section = ""
+    pairwise_stats = {}
+    max_pairwise_dev = 0.0
+    pairwise_imbalanced = []
+
     if "faction_stats" in metrics_data:
         stats_lines = []
         deviations = {}
-        for f in ["Red", "Blue", "Green"]:
+        # 动态获取战报中的阵营列表，优先保持标准排序
+        f_keys = list(metrics_data["faction_stats"].keys())
+        factions = [f for f in ["Red", "Blue", "Green"] if f in f_keys]
+        for f in f_keys:
+            if f not in factions:
+                factions.append(f)
+        if not factions:
+            factions = ["Red", "Blue", "Green"]
+
+        for f in factions:
             s = metrics_data["faction_stats"].get(f, {"winrate": 50.0, "wins": 0, "matches": 0})
             wr = s.get("winrate", 50.0)
             dev = abs(wr - 50.0)
             deviations[f] = dev
             stats_lines.append(f"- 【{f}】阵营: 胜率 {wr:.1f}% ({s.get('wins', 0)} 胜 / {s.get('matches', 0)} 场) | 偏离 50% 基准: {dev:.1f}%")
         data_section = "\n".join(stats_lines)
-        if "matchups" in metrics_data:
-            data_section += f"\n- 两两交手战报: {json.dumps(metrics_data['matchups'], ensure_ascii=False)}"
+
+        # 动态提取并双向合并所有阵营两两对抗
+        if "matchups" in metrics_data and len(factions) >= 2:
+            pairs = []
+            for i in range(len(factions)):
+                for j in range(i + 1, len(factions)):
+                    pairs.append((factions[i], factions[j]))
+
+            pairwise_lines = []
+            for f1, f2 in pairs:
+                k1 = f"{f1}_vs_{f2}"
+                k2 = f"{f2}_vs_{f1}"
+                r1 = metrics_data["matchups"].get(k1, {})
+                r2 = metrics_data["matchups"].get(k2, {})
+                tot = r1.get("total", 0) + r2.get("total", 0)
+                f1_wins = r1.get(f"{f1}_wins", 0) + r2.get(f"{f1}_wins", 0)
+                f2_wins = tot - f1_wins
+                wr1 = (f1_wins / max(1, tot)) * 100.0 if tot > 0 else 50.0
+                wr2 = 100.0 - wr1
+                p_dev = abs(wr1 - 50.0)
+                if p_dev > max_pairwise_dev:
+                    max_pairwise_dev = p_dev
+                pairwise_stats[(f1, f2)] = {
+                    "total": tot, "f1_wins": f1_wins, "f2_wins": f2_wins,
+                    "wr1": wr1, "wr2": wr2, "dev": p_dev
+                }
+                is_p_ok = (target_pairwise_tolerance <= 0) or (p_dev <= target_pairwise_tolerance)
+                flag = "✅ 均势" if is_p_ok else f"🚨 严重偏离 (偏离 50% 达 ±{p_dev:.1f}%)"
+                pairwise_lines.append(
+                    f"  * 【{f1} vs {f2}】: {f1} 胜率 {wr1:.1f}% ({f1_wins} 胜) vs {f2} 胜率 {wr2:.1f}% ({f2_wins} 胜) / 共 {tot} 局 -> 偏离度: {p_dev:.1f}% [{flag}]"
+                )
+                if target_pairwise_tolerance > 0 and p_dev > target_pairwise_tolerance:
+                    dom = f1 if wr1 > 50 else f2
+                    udg = f2 if wr1 > 50 else f1
+                    d_w = wr1 if wr1 > 50 else wr2
+                    u_w = wr2 if wr1 > 50 else wr1
+                    pairwise_imbalanced.append((dom, udg, d_w, u_w, p_dev))
+
+            data_section += f"\n- 跨阵营两两对抗战报 (实机双向合并，攻守兼备，核心考核指标):\n" + "\n".join(pairwise_lines)
+
         max_dev = max(deviations.values()) if deviations else 0.0
     else:
         p0_wins = metrics_data.get("p0_wins", 500)
@@ -89,6 +152,12 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
         p1_rate = (p1_wins / total) * 100
         data_section = f"- 红方胜率 (P0 - 快攻冲锋): {p0_rate:.1f}% ({p0_wins} 胜)\n- 蓝方胜率 (P1 - 控制防守): {p1_rate:.1f}% ({p1_wins} 胜)"
         max_dev = abs(p0_rate - 50.0)
+
+    # 若开启两两对抗约束，则综合考量总胜率与两两对抗的最大偏离
+    if target_pairwise_tolerance > 0:
+        effective_max_dev = max(max_dev, max_pairwise_dev)
+    else:
+        effective_max_dev = max_dev
 
     history_section = ""
     if history_metrics and history_metrics != metrics_data:
@@ -104,9 +173,9 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
     if "faction_stats" in metrics_data:
         for f, s in metrics_data["faction_stats"].items():
             wr = s.get("winrate", 50.0)
-            if wr > 55.0:
+            if wr > (50.0 + target_tolerance):
                 overperforming.append((f, wr, wr - 50.0))
-            elif wr < 45.0:
+            elif wr < (50.0 - target_tolerance):
                 underperforming.append((f, wr, 50.0 - wr))
             else:
                 balanced.append((f, wr))
@@ -114,7 +183,7 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
     over_instructions = []
     for f, wr, diff in overperforming:
         over_instructions.append(f"""
-    * 【适度削弱超标阵营 —— {f} (当前胜率 {wr:.1f}%，超出 55% 健康上限 +{wr - 55.0:.1f}%)】：
+    * 【适度削弱大盘超标阵营 —— {f} (当前胜率 {wr:.1f}%，超出 50% 达 +{diff:.1f}%)】：
       - 阶梯式平衡逻辑（避免死砍身材）：
         1. 常规调整：优先通过适度提高费用 (+1 费) 或小幅下调身材 (-1~2 DP) 进行平滑抑制；
         2. 转向词条平衡：若发现削弱身材收效甚微，或者身材已达到该费用的合理底线（6费 >= 4 DP, 7~8费 >= 5 DP, 9费 >= 6 DP），说明问题根源在于机制而非白值，此时应果断转向削弱或剥离过于强势的词条（如剥离 BONUS_SCORE_1、将 RUSH 突袭改为蓄势、将双抽/双跳下调为单抽/单跳）；
@@ -123,44 +192,60 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
     under_instructions = []
     for f, wr, diff in underperforming:
         under_instructions.append(f"""
-   * 【适度补强落后阵营 —— {f} (当前胜率 {wr:.1f}%，低于 45% 健康底线 -{45.0 - wr:.1f}%)】：
-     - 若关键牌先前被过度削弱：适度回调费用 (-1 费) 或增强身材 (+1~+2 DP)；
-     - 前期直伤与解场手段：提高低费直伤 atk_spell_val (+1~+2 点) 或降低单解消耗 (-1 费)；
-     - 防守与阻挡能力：提升低费防守怪 base_dp 或赋予 FORTIFY_1/FORTIFY_2 坚守词条；
-     - 中后期制胜核心：适度降低费用 (-1 费) 提升出场率。""")
+    * 【适度补强大盘落后阵营 —— {f} (当前胜率 {wr:.1f}%，低于 50% 达 -{diff:.1f}%)】：
+      - 若关键牌先前被过度削弱：适度回调费用 (-1 费) 或增强身材 (+1~+2 DP)；
+      - 前期直伤与解场手段：提高低费直伤 atk_spell_val (+1~+2 点) 或降低单解消耗 (-1 费)；
+      - 防守与阻挡能力：提升低费防守怪 base_dp 或赋予 FORTIFY_1/FORTIFY_2 坚守词条；
+      - 中后期制胜核心：适度降低费用 (-1 费) 提升出场率。""")
 
-    over_text = "\n".join(over_instructions) if over_instructions else "   * 暂无超标阵营（各阵营均在 55% 安全线以内）。"
-    under_text = "\n".join(under_instructions) if under_instructions else "   * 暂无垫底阵营（各阵营均在 45% 安全线以上）。"
+    over_text = "\n".join(over_instructions) if over_instructions else "   * 暂无大盘总胜率超标阵营。"
+    under_text = "\n".join(under_instructions) if under_instructions else "   * 暂无大盘总胜率垫底阵营。"
 
-    if max_dev >= 10.0:
-        mode_banner = f"【大幅数值调整模式 (Major Overhaul Mode) | 胜率差距超过 10% (偏离度: {max_dev:.1f}%)】"
+    pairwise_instructions = []
+    for dom, udg, d_w, u_w, diff in pairwise_imbalanced:
+        pairwise_instructions.append(f"""
+    * ⚡【两两对抗克制失衡专项修正 —— {dom} 压制 {udg} (胜率 {d_w:.1f}% vs {u_w:.1f}%，偏离 ±{diff:.1f}% > 目标容差 ±{target_pairwise_tolerance:.1f}%)】：
+      - 诊断方向：
+        1. 【{dom}】是否存在令【{udg}】无力应对的过度压制机制（例如：低费高爆发突袭 RUSH、强力破甲 DEGRADE、或过快跳费 RAMP）？
+        2. 【{udg}】在面对【{dom}】特定战术时是否存在防守/对策真空期（例如：面对快攻缺乏 1~2 费坚守 FORTIFY 单位或低费护盾法术；面对大身材随从缺乏单解）？
+      - 调整指示：
+        1. 针对性下调【{dom}】压制【{udg}】最关键的单卡收益（+1 费、-1~2 DP 或调整过激词条）；
+        2. 补强【{udg}】的抗压/阻挡组件（降低抗压牌费用或提高驻守战力）；
+        3. 协同注意：调整时须顾及对第三阵营的平衡联动，切忌矫枉过正引发连锁失衡。""")
+    pairwise_text = "\n".join(pairwise_instructions) if pairwise_instructions else "   * 暂无两两对抗失衡（各组两两对战均在容差安全线以内）。"
+
+    if effective_max_dev >= severe_threshold:
+        mode_banner = f"【大幅数值调整模式 (含两两克制严重失衡) | 综合最大偏离度: {effective_max_dev:.1f}% >= {severe_threshold:.1f}% (总偏离: {max_dev:.1f}%, 两两最大偏离: {max_pairwise_dev:.1f}%)】"
         balance_instructions = f"""
 ### 【大幅数值调整说明 (Major Overhaul)】
-当前阵营间胜率差距较大（最大偏离度 {max_dev:.1f}% >= 10%，处于 40% 以下或 60% 以上）。
-需针对失衡阵营的关键卡牌进行适度调整：
-1. **调整规模**：针对性调整 3 ~ 6 张核心卡牌（超标阵营削弱 2~3 张，弱势阵营补强 2~3 张）。
-2. **阵营针对性调整**：
+当前阵营间存在严重失衡或极端对局克制（综合最大偏离度 {effective_max_dev:.1f}% >= {severe_threshold:.1f}%）。
+必须重点针对【两两对抗压制对局】及失衡阵营的关键卡牌进行实质性数值微调：
+1. **调整规模**：针对性调整 3 ~ 6 张核心卡牌（削弱过于压制对方的单卡，补强严重被压制的抗压牌）。
+2. **两两克制失衡修正专项（核心重点）**：
+{pairwise_text}
+3. **大盘阵营总胜率调整**：
 {over_text}
 {under_text}
 """
-    elif max_dev >= 5.0:
-        mode_banner = f"【轻量微调模式 | 偏离度: {max_dev:.1f}%】"
+    elif effective_max_dev >= target_tolerance or effective_max_dev >= target_pairwise_tolerance:
+        mode_banner = f"【轻量两两克制微调模式 | 综合最大偏离度: {effective_max_dev:.1f}% (总偏离: {max_dev:.1f}%, 两两偏离: {max_pairwise_dev:.1f}%)】"
         balance_instructions = f"""
 ### 【轻量微调说明】
-当前个别阵营胜率轻微浮出 45%~55% 平衡区间（偏离度 {max_dev:.1f}% 在 5%~10% 之间）。
-仅需对 1 ~ 3 张边际卡牌进行 ±1 费或 ±1 DP 的极小幅修剪，不要过度破坏卡组稳定性。
+当前部分阵营总胜率或两两交手胜率轻微浮出平衡容差（偏离度在目标容差至严重失衡线 ±{severe_threshold:.1f}% 之间）。
+仅需对 1 ~ 3 张关键对策卡牌进行 ±1 费或 ±1 DP 的极小幅修剪，重点解决两两对抗中的轻度克制倾向：
+{pairwise_text}
 {over_text}
 {under_text}
 """
     else:
-        mode_banner = f"【平衡维持模式 | 偏离度: {max_dev:.1f}% <= 5%】"
+        mode_banner = f"【全面平衡维持模式 | 阵营总偏离 {max_dev:.1f}% <= {target_tolerance}%, 两两对抗最大偏离 {max_pairwise_dev:.1f}% <= {target_pairwise_tolerance}%】"
         balance_instructions = f"""
 ### 【平衡维持说明】
-★ 当前三大阵营胜率均在 45% ~ 55% 的平衡区间内！
-各阵营胜率差距在 10% 以内属于完全健康的克制互动与阵营风格差异。
-**本轮原则上无需对数值进行大规模修改，保护当前稳定的牌池生态！**
-若无明显的恶性超模或玩家体验痛点，建议保持现状（输出空修改或仅对极个别超模卡进行轻微微调）。
+★ 当前各阵营综合胜率与两两实战对抗胜率全部进入了目标平衡带！
+各阵营对局胜率均在安全容差以内，属于健康的竞技互动与阵营风格差异。
+**本轮原则上无需对数值进行大规模修改，保护当前稳定的全量牌池生态！**
 """
+
 
     prompt = f"""
 你是一名经验丰富的 TCG 卡牌设计师兼数值策划。
@@ -208,6 +293,11 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
      b. 亏模随从（DP <= 费用）：必须携带足够强力或关键的战术词条（如 RUSH、FORTIFY、DEGRADE、BONUS_SCORE、DEATH_DRAW、SPAWN 等）作为亏模补偿。若 DP < 费用 - 1，其机制价值必须极其扎实，严禁低数值白板！
    - 法术数值模型基准：
      纯数值法术的总点数必须合理匹配费用（基础标准通常为 点数 >= 费用 * 1.5 到 2，如 1费直伤 2、2费直伤 3~4、3费护盾 5~6）。严禁出现 3 费仅提供 3 点护盾且无任何词条/跳费效果的极度亏模法术！
+   - **严禁“倒亏法力”与逻辑错乱的法力法术（绝对核心红线，违者直接判废）：**
+     - `TEMP_MANA_X` 为当前回合临时获得的法力水晶（打出当回合生效，如同炉石传说幸运币或激活）。
+     - **纯临时法力法术**（仅包含 `TEMP_MANA_X`，无直伤、无护盾、无抽牌）：其法力消耗 (cost) **必须严格小于获得的临时法力数值**！标准设计只能是 **0 费消耗获得 1~2 点临时法力**（用于前期抢节奏、打连携爆发）；
+     - **绝对严禁出现 `cost >= TEMP_MANA` 的反智倒亏设计**（例如：绝对严禁出现「5 费法术仅提供 TEMP_MANA_2」、「2 费法术仅提供 TEMP_MANA_1」这种花更多费用换取更少临时法力、净亏费用还白白浪费手牌的荒谬智商税废卡）！
+     - 若一张法术的费用较高（如 2~5 费）且带有 `TEMP_MANA`，它必须作为高价值复合收益的返费润滑手段（例如：带有直伤打怪 `atk_spell_val`、强力护盾 `def_spell_val`，或者配合抽牌 `DRAW_2`），**绝不允许高费单挂一个 `TEMP_MANA` 却毫无其他任何正面效果**！
    - 平衡调整核心原则：
      在削弱胜率过高的卡牌时，若剥离了其突袭（RUSH）或核心词条，绝不能把数值留在残缺低位使其沦为亏模白板废卡！若去掉核心词条，必须同步补足基础身材；若压低身材，必须保留功能性机制或降费。
 
@@ -284,6 +374,9 @@ def main():
     parser.add_argument("--metrics", type=str, default="training_metrics_brawl.json", help="输入的训练战报 JSON 文件")
     parser.add_argument("--output", type=str, default="cards_config_tuned.json", help="输出调优卡池文件路径")
     parser.add_argument("--history", type=str, default=None, help="基准/历史战报文件路径")
+    parser.add_argument("--target-balance", type=float, default=5.0, help="阵营总胜率平衡容差 (默认 5.0%%)")
+    parser.add_argument("--target-pairwise-balance", type=float, default=5.0, help="两两对抗平衡容差 (默认 5.0%%)")
+    parser.add_argument("--severe-threshold", "--severe-imbalance-threshold", type=float, default=10.0, help="严重失衡触发大改的偏离阈值 (默认 10.0%%)")
     args = parser.parse_args()
 
     if not DEEPSEEK_API_KEY:
@@ -309,7 +402,13 @@ def main():
     if history_file:
         print(f"参考战报: {history_file}")
 
-    raw_output = run_deepseek_balance_and_expand(metrics_data, current_cards, client, history_metrics=history_data)
+    raw_output = run_deepseek_balance_and_expand(
+        metrics_data, current_cards, client,
+        history_metrics=history_data,
+        target_tolerance=args.target_balance,
+        target_pairwise_tolerance=args.target_pairwise_balance,
+        severe_threshold=args.severe_threshold
+    )
     cleaned_json = clean_json_response(raw_output)
 
     new_card_pool = None
@@ -402,6 +501,15 @@ def main():
                         
                         orig_card[field] = new_val
                         updated_count += 1
+
+            # 临时法力倒亏安全拦截与修复
+            if orig_card.get("card_type") == "SPELL":
+                c_tags = orig_card.get("tags", [])
+                t_val = sum(int(t.split("_")[2]) for t in c_tags if isinstance(t, str) and t.startswith("TEMP_MANA_"))
+                has_other = (orig_card.get("atk_spell_val", 0) > 0 or orig_card.get("def_spell_val", 0) > 0 or any(isinstance(t, str) and (t.startswith("DRAW_") or t.startswith("RAMP_") or t.startswith("SPAWN_") or t == "SACRIFICE_1_KILL_1") for t in c_tags))
+                if t_val > 0 and not has_other and orig_card.get("cost", 0) >= t_val:
+                    print(f"  [安全兜底] 拦截到纯临时法力倒亏法术 ID {cid} {orig_card['name']} (cost={orig_card.get('cost')} >= 临时法力 {t_val})，自动修正为 0 费！")
+                    orig_card["cost"] = 0
 
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(updated_pool, f, indent=2, ensure_ascii=False)

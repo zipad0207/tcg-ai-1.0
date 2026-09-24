@@ -13,8 +13,30 @@ if hasattr(sys.stdout, "reconfigure"):
 from sandbox import DuelEnv, Faction
 from agent import CardNet
 
-def run_simulation(episodes: int = 500, decks_path: str = "decks_config.json", cards_path: str = "cards_config.json", model_path: str = "card_ppo_model_tuned.pth", p0_faction: str = "Red", p1_faction: str = "Blue"):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def get_device(req_device: str = "auto") -> torch.device:
+    req = (req_device or "auto").strip().lower()
+    if req == "cpu":
+        print("[运算设备] 已指定使用 CPU 模式运行。")
+        return torch.device("cpu")
+    elif req == "cuda":
+        if torch.cuda.is_available():
+            name = torch.cuda.get_device_name(0)
+            print(f"[运算设备] 已启用 CUDA GPU 加速: {name}")
+            return torch.device("cuda")
+        else:
+            print("[运算设备] 提示: 未检测到可用 CUDA GPU，自动回退至 CPU 运算模式。")
+            return torch.device("cpu")
+    else:  # auto
+        if torch.cuda.is_available():
+            name = torch.cuda.get_device_name(0)
+            print(f"[运算设备] 自动检测到 CUDA GPU 加速: {name}")
+            return torch.device("cuda")
+        else:
+            print("[运算设备] 未检测到可用 CUDA GPU，自动采用 CPU 模式运行。")
+            return torch.device("cpu")
+
+def run_simulation(episodes: int = 500, decks_path: str = "decks_config.json", cards_path: str = "cards_config.json", model_path: str = "card_ppo_model_tuned.pth", p0_faction: str = "Red", p1_faction: str = "Blue", device_name: str = "auto"):
+    device = get_device(device_name)
 
     def resolve_path(p):
         if not p or os.path.exists(p):
@@ -24,9 +46,19 @@ def run_simulation(episodes: int = 500, decks_path: str = "decks_config.json", c
             return alt2
         return p
 
+    def resolve_model_path(p):
+        res = resolve_path(p)
+        if res and os.path.exists(res):
+            return res
+        for cand in ["card_ppo_model_brawl.pth", "card_ppo_model_tuned.pth", "card_ppo_model.pth", "card_ppo_model_baseline.pth"]:
+            cand_p = resolve_path(cand)
+            if cand_p and os.path.exists(cand_p):
+                return cand_p
+        return res
+
     decks_path = resolve_path(decks_path)
     cards_path = resolve_path(cards_path)
-    model_path = resolve_path(model_path)
+    model_path = resolve_model_path(model_path)
 
     f_map = {"Red": Faction.RED, "Blue": Faction.BLUE, "Green": Faction.GREEN}
     p0_f = f_map.get(p0_faction, Faction.RED)
@@ -164,7 +196,8 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, default="card_ppo_model_tuned.pth", help="模型权重文件")
     parser.add_argument("--p0", "--f0", dest="p0_faction", type=str, default="Red", choices=["Red", "Blue", "Green"], help="先手 P0 阵营 (默认 Red)")
     parser.add_argument("--p1", "--f1", dest="p1_faction", type=str, default="Blue", choices=["Red", "Blue", "Green"], help="后手 P1 阵营 (默认 Blue)")
+    parser.add_argument("--device", type=str, default="auto", choices=["auto", "cuda", "cpu"], help="运算设备 (默认 auto: 检测到 cuda 则用 gpu，无 cuda 则自动回退 cpu)")
     args = parser.parse_args()
 
     run_simulation(episodes=args.episodes, decks_path=args.decks, cards_path=args.cards, model_path=args.model,
-                   p0_faction=args.p0_faction, p1_faction=args.p1_faction)
+                   p0_faction=args.p0_faction, p1_faction=args.p1_faction, device_name=args.device)

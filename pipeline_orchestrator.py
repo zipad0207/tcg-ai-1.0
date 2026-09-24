@@ -13,6 +13,8 @@ TCG-AI 多阵营扩展包生成与自平衡调度流水线
 import os
 import sys
 import json
+from dotenv import load_dotenv
+load_dotenv()
 import re
 import time
 import argparse
@@ -53,10 +55,21 @@ def get_subprocess_env() -> dict:
     if cur_pypath:
         all_paths.append(cur_pypath)
     env["PYTHONPATH"] = os.pathsep.join(all_paths)
+    env["PYTHONIOENCODING"] = "utf-8"
+    env["PYTHONUNBUFFERED"] = "1"
     return env
 
 def get_api_key() -> str:
     key = os.environ.get("DEEPSEEK_API_KEY", "")
+    if not key:
+        cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_config.json")
+        if os.path.exists(cfg_path):
+            try:
+                with open(cfg_path, "r", encoding="utf-8") as f:
+                    cfg = json.load(f)
+                    key = cfg.get("api_key", "")
+            except Exception:
+                pass
     if not key and sys.platform == "win32":
         try:
             import winreg
@@ -259,6 +272,11 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
      b. 亏模随从（DP <= 费用）：必须携带足够强力或关键的战术词条（如 RUSH、FORTIFY、DEGRADE、BONUS_SCORE、DEATH_DRAW、SPAWN 等）作为亏模补偿。若 DP < 费用 - 1，其机制价值必须极其扎实，严禁低数值白板！
    - 法术数值模型基准：
      纯数值法术的总点数必须合理匹配费用（基础标准通常为 点数 >= 费用 * 1.5 到 2，如 1费直伤 2、2费直伤 3~4、3费护盾 5~6）。严禁出现 3 费仅提供 3 点护盾且无任何词条/跳费效果的极度亏模法术！
+   - **严禁“倒亏法力”与逻辑错乱的法力法术（绝对核心红线，违者直接判废）：**
+     - `TEMP_MANA_X` 为当前回合临时获得的法力水晶（打出当回合生效，如同炉石传说幸运币或激活）。
+     - **纯临时法力法术**（仅包含 `TEMP_MANA_X`，无直伤、无护盾、无抽牌）：其法力消耗 (cost) **必须严格小于获得的临时法力数值**！标准设计只能是 **0 费消耗获得 1~2 点临时法力**（用于前期抢节奏、打连携爆发）；
+     - **绝对严禁出现 `cost >= TEMP_MANA` 的反智倒亏设计**（例如：绝对严禁设计出「5 费法术仅提供 TEMP_MANA_2」、「2 费法术仅提供 TEMP_MANA_1」这种花更多费用换取更少临时法力、净亏费用还白白浪费手牌的荒谬智商税废卡）！
+     - 若一张法术的费用较高（如 2~5 费）且带有 `TEMP_MANA`，它必须作为高价值复合收益的返费润滑手段（例如：带有直伤打怪 `atk_spell_val`、强力护盾 `def_spell_val`，或者配合抽牌 `DRAW_2`），**绝不允许高费单挂一个 `TEMP_MANA` 却毫无其他任何正面效果**！
    - 平衡调整核心准则：
      在削弱胜率过高的卡牌时，若剥离了其突袭（RUSH）或核心词条，绝不能把数值留在残缺低位使其沦为亏模白板废卡！若去掉核心词条，必须同步补足基础身材；若压低身材，必须保留功能性机制或降费。
 
@@ -416,26 +434,37 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
 
             cid = alloc_id(pfx)
             valid_tags = extract_valid_tags(c)
-            cost_val = max(1, min(8, int(c.get("cost", 2))))
+            raw_cost = int(c.get("cost", 2))
 
             if c_type == "MINION":
+                cost_val = max(1, min(8, raw_cost))
                 dp_val = max(1, min(8, raw_dp))
                 if dp_val == 0:
                     dp_val = cost_val + 1 if not valid_tags else max(1, cost_val - 1)
                 atk_val = 0
                 def_val = 0
             else:
+                cost_val = max(0, min(8, raw_cost))
                 dp_val = 0
                 atk_val = max(0, int(c.get("atk_spell_val", 0)))
                 def_val = max(0, int(c.get("def_spell_val", 0)))
                 # 兜底：若纯法术完全没有任何攻防点数和词条，按费用自动补足合理点数，绝不产生 0/0 空壳
                 if atk_val == 0 and def_val == 0 and not valid_tags:
+                    cost_val = max(1, cost_val)
                     if f_name == "Red":
                         atk_val = cost_val * 2
                     elif f_name == "Blue":
                         def_val = cost_val * 2
                     else:
                         def_val = cost_val + 2
+
+                # 倒亏法力防护：拦截纯临时法力法术（如花5费只给2点临时法力）
+                temp_mana_val = sum(int(t.split("_")[2]) for t in valid_tags if t.startswith("TEMP_MANA_"))
+                has_comp = (atk_val > 0 or def_val > 0 or any(t.startswith("DRAW_") or t.startswith("SPAWN_") or t.startswith("RAMP_") or t == "SACRIFICE_1_KILL_1" for t in valid_tags))
+                if temp_mana_val > 0 and not has_comp:
+                    if cost_val >= temp_mana_val:
+                        print(f"  [规则拦截] 发现纯临时法力倒亏卡牌 '{c.get('name')}' (费用 {cost_val} >= 临时法力 {temp_mana_val})，自动修正为 0 费爆发牌！")
+                        cost_val = 0
 
             card_dict = {
                 "id": cid,
@@ -544,39 +573,95 @@ def step4_run_brawl_audit(cards_file: str, decks_file: str, metrics_file: str, e
     with open(metrics_file, "r", encoding="utf-8") as f:
         metrics = json.load(f)
 
-    f_stats = metrics["faction_stats"]
+    f_stats = metrics.get("faction_stats", {})
+    factions = [f for f in ["Red", "Blue", "Green"] if f in f_stats]
+    for f in f_stats.keys():
+        if f not in factions:
+            factions.append(f)
+    if not factions:
+        factions = ["Red", "Blue", "Green"]
+
     print("\n" + "─" * 60)
     print("【对战遥测统计结果】")
-    for f_name in ["Red", "Blue", "Green"]:
-        s = f_stats[f_name]
-        print(f"  * {f_name:<6}: 对局 {s['matches']:<5} 胜场 {s['wins']:<5} 胜率: {s['winrate']:.2f}%")
+    for f_name in factions:
+        s = f_stats.get(f_name, {"matches": 0, "wins": 0, "winrate": 50.0})
+        print(f"  * {f_name:<6}: 对局 {s.get('matches', 0):<5} 胜场 {s.get('wins', 0):<5} 胜率: {s.get('winrate', 50.0):.2f}%")
     print("─" * 60)
     return metrics
 
 # ==============================================================================
 # Phase 5: 胜率偏离度判定与数值微调
 # ==============================================================================
-def check_balance_status(metrics: dict, target_tolerance: float = 5.0) -> Tuple[bool, float, float]:
+def check_balance_status(metrics: dict, target_tolerance: float = 5.0, target_pairwise_tolerance: float = 5.0) -> Tuple[bool, float, float, float]:
     f_stats = metrics.get("faction_stats", {})
-    deviations = {f: abs(f_stats.get(f, {}).get("winrate", 50.0) - 50.0) for f in ["Red", "Blue", "Green"]}
-    winrates = [f_stats.get(f, {}).get("winrate", 50.0) for f in ["Red", "Blue", "Green"]]
+    factions = [f for f in ["Red", "Blue", "Green"] if f in f_stats]
+    for f in f_stats.keys():
+        if f not in factions:
+            factions.append(f)
+    if not factions:
+        factions = ["Red", "Blue", "Green"]
+
+    deviations = {f: abs(f_stats.get(f, {}).get("winrate", 50.0) - 50.0) for f in factions}
+    winrates = [f_stats.get(f, {}).get("winrate", 50.0) for f in factions]
     max_dev = max(deviations.values()) if deviations else 0.0
     spread = (max(winrates) - min(winrates)) if winrates else 0.0
 
-    print(f"\n[胜率偏离检测] 最大偏离: {max_dev:.2f}% | 阵营极差: {spread:.2f}% | 目标容差: <= {target_tolerance:.2f}%")
-    for f in ["Red", "Blue", "Green"]:
+    # 跨阵营两两对抗双向合并统计
+    matchups = metrics.get("matchups", {})
+    pairs = []
+    for i in range(len(factions)):
+        for j in range(i + 1, len(factions)):
+            pairs.append((factions[i], factions[j]))
+
+    pairwise_results = {}
+    max_pairwise_dev = 0.0
+
+    for f1, f2 in pairs:
+        k1 = f"{f1}_vs_{f2}"
+        k2 = f"{f2}_vs_{f1}"
+        r1 = matchups.get(k1, {})
+        r2 = matchups.get(k2, {})
+        tot = r1.get("total", 0) + r2.get("total", 0)
+        f1_wins = r1.get(f"{f1}_wins", 0) + r2.get(f"{f1}_wins", 0)
+        wr = (f1_wins / max(1, tot)) * 100.0 if tot > 0 else 50.0
+        p_dev = abs(wr - 50.0)
+        if p_dev > max_pairwise_dev:
+            max_pairwise_dev = p_dev
+        pairwise_results[(f1, f2)] = (wr, tot, p_dev)
+
+    is_overall_balanced = max_dev <= target_tolerance
+    is_pairwise_balanced = (target_pairwise_tolerance <= 0) or (max_pairwise_dev <= target_pairwise_tolerance)
+    is_balanced = is_overall_balanced and is_pairwise_balanced
+
+    pairwise_info = f" | 两两对抗最大偏离: {max_pairwise_dev:.2f}% (容差: <={target_pairwise_tolerance:.2f}%)" if target_pairwise_tolerance > 0 else ""
+    print(f"\n[胜率偏离检测] 阵营总偏离: {max_dev:.2f}% (容差: <={target_tolerance:.2f}%){pairwise_info} | 阵营极差: {spread:.2f}%")
+    print("  【1. 各阵营综合胜率】:")
+    for f in factions:
         wr = f_stats.get(f, {}).get("winrate", 50.0)
         dev = deviations[f]
         flag = "✅" if dev <= target_tolerance else "❌"
-        print(f"  {flag} 【{f:<5}】当前胜率: {wr:5.1f}% (偏离 50% 达 {dev:4.1f}%)")
+        print(f"    {flag} 【{f:<5}】当前胜率: {wr:5.1f}% (偏离 50% 达 {dev:4.1f}%)")
 
-    if max_dev <= target_tolerance:
-        print(f"[判定通过] 三大阵营综合胜率均落入目标平衡区间 (最大偏离 <= {target_tolerance:.2f}%)")
-        return True, max_dev, spread
+    if target_pairwise_tolerance > 0:
+        print("  【2. 阵营两两对抗胜率 (双向合并实机对抗)】:")
+        for (f1, f2), (wr, tot, p_dev) in pairwise_results.items():
+            flag = "✅" if p_dev <= target_pairwise_tolerance else "❌"
+            print(f"    {flag} {f1:<5} vs {f2:<5}: {wr:5.1f}% vs {100.0 - wr:5.1f}% (共 {tot} 局, 偏离 {p_dev:4.1f}%)")
 
-    return False, max_dev, spread
+    if is_balanced:
+        print(f"[判定通过] 各阵营综合胜率与两两对抗均落入目标平衡区间！")
+        return True, max_dev, spread, max_pairwise_dev
+    else:
+        reasons = []
+        if not is_overall_balanced:
+            reasons.append(f"阵营总偏离 {max_dev:.2f}% > {target_tolerance:.2f}%")
+        if not is_pairwise_balanced:
+            reasons.append(f"两两对抗最大偏离 {max_pairwise_dev:.2f}% > {target_pairwise_tolerance:.2f}%")
+        print(f"[判定未达标] {', '.join(reasons)}")
 
-def step5_deepseek_rebalance_cards(cards_file: str, metrics_file: str):
+    return False, max_dev, spread, max_pairwise_dev
+
+def step5_deepseek_rebalance_cards(cards_file: str, metrics_file: str, target_balance: float = 5.0, target_pairwise_balance: float = 5.0, severe_threshold: float = 10.0):
     print("\n" + "═" * 80)
     print("【阶段五】根据遥测战报调整卡牌基础数值与费用")
     print("═" * 80)
@@ -586,7 +671,10 @@ def step5_deepseek_rebalance_cards(cards_file: str, metrics_file: str):
         sys.executable, balancer_script,
         "--cards", cards_file,
         "--metrics", metrics_file,
-        "--output", cards_file
+        "--output", cards_file,
+        "--target-balance", str(target_balance),
+        "--target-pairwise-balance", str(target_pairwise_balance),
+        "--severe-threshold", str(severe_threshold)
     ]
     print(f"  [执行指令] {' '.join(cmd)}")
     subprocess.run(cmd, check=True, env=get_subprocess_env())
@@ -699,6 +787,7 @@ def main():
     parser.add_argument("--theme", type=str, default="根据环境数据调试", help="设计主题")
     parser.add_argument("--episodes", type=int, default=3000, help="每轮对局规模 (默认 3000 局，保证样本充分)")
     parser.add_argument("--target-balance", type=float, default=5.0, help="目标平衡偏离容差 (默认 5.0 百分点，即 45%%~55%% 平衡区间)")
+    parser.add_argument("--target-pairwise-balance", type=float, default=5.0, help="两两跨阵营对抗胜率偏离容差 (默认 5.0 百分点，即 45%%~55%% 平衡区间)")
     parser.add_argument("--max-deck-attempts", type=int, default=2, help="同一卡池下 PPO 自主微调构筑的尝试次数 (默认 2 次)")
     parser.add_argument("--severe-imbalance-threshold", type=float, default=10.0, help="阵营胜率严重失衡偏离度阈值 (默认 10.0%%)")
     parser.add_argument("--severe-spread-threshold", type=float, default=15.0, help="阵营胜率极差严重失衡阈值 (默认 15.0%%)")
@@ -753,11 +842,7 @@ def main():
             f_stats = old_m.get("faction_stats", {})
             if f_stats:
                 latest_max_dev = max(abs(s.get("winrate", 50.0) - 50.0) for s in f_stats.values())
-            history_records.append({
-                "Red": f_stats.get("Red", {}).get("winrate", 50.0),
-                "Blue": f_stats.get("Blue", {}).get("winrate", 50.0),
-                "Green": f_stats.get("Green", {}).get("winrate", 50.0)
-            })
+            history_records.append({f: f_stats.get(f, {}).get("winrate", 50.0) for f in (list(f_stats.keys()) if f_stats else ["Red", "Blue", "Green"])})
         except Exception:
             history_records.append({"Red": 50.0, "Blue": 50.0, "Green": 50.0})
     else:
@@ -786,21 +871,21 @@ def main():
             metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=current_brawl_episodes, eval_only=args.eval_only)
             latest_metrics = metrics
 
-            curr_stats = {
-                "Red": metrics.get("faction_stats", {}).get("Red", {}).get("winrate", 50.0),
-                "Blue": metrics.get("faction_stats", {}).get("Blue", {}).get("winrate", 50.0),
-                "Green": metrics.get("faction_stats", {}).get("Green", {}).get("winrate", 50.0)
-            }
+            curr_stats = {f: metrics.get("faction_stats", {}).get(f, {}).get("winrate", 50.0) for f in (list(metrics.get("faction_stats", {}).keys()) if metrics.get("faction_stats") else ["Red", "Blue", "Green"])}
             history_records.append(curr_stats)
 
             # 3C: 平衡带审计判定
-            is_balanced, max_dev, spread = check_balance_status(metrics, target_tolerance=args.target_balance)
+            is_balanced, max_dev, spread, max_pairwise_dev = check_balance_status(
+                metrics,
+                target_tolerance=args.target_balance,
+                target_pairwise_tolerance=args.target_pairwise_balance
+            )
             latest_max_dev = max_dev
 
             if is_balanced:
                 print("\n" + "★" * 70)
                 print(f"[判定] 胜率达成平衡收敛条件 (第 {outer_round} 轮数值调整，第 {attempt} 次卡组微调)")
-                print(f"   三大阵营最大偏离度: {max_dev:.2f}% <= 目标阈值: {args.target_balance:.2f}% (胜率极差: {spread:.2f}%)")
+                print(f"   各阵营最大偏离度: {max_dev:.2f}% <= 目标阈值: {args.target_balance:.2f}% (两两最大偏离: {max_pairwise_dev:.2f}% <= {args.target_pairwise_balance:.2f}%, 胜率极差: {spread:.2f}%)")
                 if not args.dry_run and current_brawl_episodes < 3000:
                     print("   [验证] 执行 3,000 局全量对战验收遥测...")
                     metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=3000, eval_only=args.eval_only)
@@ -809,26 +894,31 @@ def main():
                 print("★" * 70)
                 break
             else:
-                is_severe = (max_dev >= args.severe_imbalance_threshold) or (spread >= args.severe_spread_threshold)
+                is_severe = (max_dev >= args.severe_imbalance_threshold) or (max_pairwise_dev >= args.severe_imbalance_threshold) or (spread >= args.severe_spread_threshold)
                 if is_severe:
                     print("\n" + "!" * 70)
                     print(f"[严重失衡熔断] 检测到阵营胜率严重失衡:")
-                    print(f"   最大偏离度: {max_dev:.2f}% (熔断阈值: >= {args.severe_imbalance_threshold:.1f}%) | 阵营极差: {spread:.2f}% (熔断阈值: >= {args.severe_spread_threshold:.1f}%)")
-                    print(f"   原因诊断: 存在显著的单卡数值/费用硬伤（非卡组构筑微调所能弥补）。")
+                    print(f"   阵营总偏离: {max_dev:.2f}% | 两两对抗最大偏离: {max_pairwise_dev:.2f}% (熔断阈值: >= {args.severe_imbalance_threshold:.1f}%) | 阵营极差: {spread:.2f}%")
+                    print(f"   原因诊断: 存在显著的单卡数值/费用硬伤或极端克制（非卡组构筑微调所能弥补）。")
                     print(f"   执行动作: 提前终止当前内环构筑探索 (当前第 {attempt}/{deck_attempts} 次)，直接快转至外环 DeepSeek 调卡牌数值！")
                     print("!" * 70)
                     break
                 elif attempt < deck_attempts:
-                    print(f"\n[检测] 当前偏离度 {max_dev:.2f}% > 目标 {args.target_balance:.2f}% (极差 {spread:.2f}%)，处于温和偏离区间，继续由 PPO 进行卡组微调 ({attempt + 1} / {deck_attempts})...")
+                    print(f"\n[检测] 当前偏离度 (总偏离 {max_dev:.2f}%, 两两偏离 {max_pairwise_dev:.2f}%) > 目标，处于温和偏离区间，继续由 PPO 进行卡组微调 ({attempt + 1} / {deck_attempts})...")
                 else:
-                    print(f"\n[检测] PPO 已完成全部 {deck_attempts} 次卡组构筑探索，偏离度仍为 {max_dev:.2f}% (极差 {spread:.2f}%)，触发外环卡牌数值微调。")
+                    print(f"\n[检测] PPO 已完成全部 {deck_attempts} 次卡组构筑探索，偏离度仍超标 (总偏离 {max_dev:.2f}%, 两两偏离 {max_pairwise_dev:.2f}%)，触发外环卡牌数值微调。")
 
         if is_balanced:
             break
 
         # 若内环尝试后依然失衡，执行数值调整
         if outer_round < max_outer:
-            step5_deepseek_rebalance_cards(cards_file, metrics_file)
+            step5_deepseek_rebalance_cards(
+                cards_file, metrics_file,
+                target_balance=args.target_balance,
+                target_pairwise_balance=args.target_pairwise_balance,
+                severe_threshold=args.severe_imbalance_threshold
+            )
             outer_round += 1
         else:
             print(f"\n[提示] 已达到最大迭代轮次 ({max_outer})，结束调优循环。")

@@ -332,6 +332,7 @@ class DuelEnv:
         acting_player = self.current_player
 
         self.last_bonus_score_pts = 0
+        self.last_sacrifice_event = None
         done = False
 
         mask = self.get_action_mask()
@@ -384,7 +385,67 @@ class DuelEnv:
                 r0 -= 10.0
 
         step_reward = r0 if acting_player == 0 else -r0
-        return self.get_observation(), step_reward, done, {"bonus_score_pts": getattr(self, "last_bonus_score_pts", 0), "winner": self.winner}
+        return self.get_observation(), step_reward, done, {
+            "bonus_score_pts": getattr(self, "last_bonus_score_pts", 0),
+            "winner": self.winner,
+            "sacrifice_event": getattr(self, "last_sacrifice_event", None)
+        }
+
+    def _execute_sacrifice_kill(self, player: Player, lane_id: int, current_instance: Optional[MinionInstance] = None) -> Optional[Tuple[str, str]]:
+        opp_id = 1 - player.player_id
+        lane = self.lanes[lane_id]
+
+        # 战术斩首：优先消灭敌方战力最高的目标（若战力相同，优先消灭防御区肉盾）
+        opp_units = [u for u in lane.defenders if u.owner == opp_id] + [u for u in lane.attackers if u.owner == opp_id]
+        if not opp_units:
+            return None
+
+        opp_units.sort(key=lambda u: (u.current_dp, 1 if u in lane.defenders else 0), reverse=True)
+        tgt = opp_units[0]
+
+        # 战术献祭：
+        # 1. 优先选择除当前入场随从以外的友军，且优先选择战力最低的单位（如 1/1 衍生物、残血小兵）
+        all_my_units = [u for u in lane.defenders if u.owner == player.player_id] + [u for u in lane.attackers if u.owner == player.player_id]
+        other_my_units = [u for u in all_my_units if u is not current_instance]
+
+        sac = None
+        if other_my_units:
+            other_my_units.sort(key=lambda u: (
+                u.current_dp,
+                -1 if any(t.startswith("DEATH_") for t in u.card.tags) else 0
+            ))
+            sac = other_my_units[0]
+        elif current_instance is not None and current_instance in all_my_units:
+            # 场上无其他友军时，战吼随从自身作为祭品自爆（以命换命）
+            sac = current_instance
+
+        if sac is None:
+            return None
+
+        if sac in lane.defenders:
+            lane.defenders.remove(sac)
+        elif sac in lane.attackers:
+            lane.attackers.remove(sac)
+
+        if tgt in lane.defenders:
+            lane.defenders.remove(tgt)
+        elif tgt in lane.attackers:
+            lane.attackers.remove(tgt)
+
+        player.graveyard.append(sac.card)
+        self.players[opp_id].graveyard.append(tgt.card)
+        self._trigger_deathrattle(sac)
+        self._trigger_deathrattle(tgt)
+
+        self.last_sacrifice_event = {
+            "sac_name": sac.card.name,
+            "sac_dp": sac.current_dp,
+            "tgt_name": tgt.card.name,
+            "tgt_dp": tgt.current_dp,
+            "lane_id": lane_id,
+            "is_self_destruct": (sac is current_instance)
+        }
+        return sac.card.name, tgt.card.name
 
     def _play_card(self, hand_idx: int, lane_id: int, is_attack: bool):
         player = self.players[self.current_player]
@@ -410,6 +471,10 @@ class DuelEnv:
                         instance.current_dp += bonus
                 lane.defenders.append(instance)
 
+            # 随从战吼献祭：若带有 SACRIFICE_1_KILL_1 则触发以小换大或舍身自爆
+            if "SACRIFICE_1_KILL_1" in card.tags:
+                self._execute_sacrifice_kill(player, lane_id, current_instance=instance)
+
             self._trigger_tags(card, player, lane_id, is_attack)
 
         elif card.card_type == CardType.SPELL:
@@ -417,23 +482,7 @@ class DuelEnv:
             opp_id = 1 - player.player_id
 
             if "SACRIFICE_1_KILL_1" in card.tags:
-                my_units = [u for u in lane.defenders if u.owner == player.player_id] + [u for u in lane.attackers if u.owner == player.player_id]
-                opp_units = [u for u in lane.defenders if u.owner == opp_id] + [u for u in lane.attackers if u.owner == opp_id]
-                if my_units and opp_units:
-                    sac = my_units[0]
-                    tgt = opp_units[0]
-                    if sac in lane.defenders:
-                        lane.defenders.remove(sac)
-                    elif sac in lane.attackers:
-                        lane.attackers.remove(sac)
-                    if tgt in lane.defenders:
-                        lane.defenders.remove(tgt)
-                    elif tgt in lane.attackers:
-                        lane.attackers.remove(tgt)
-                    player.graveyard.append(sac.card)
-                    self.players[opp_id].graveyard.append(tgt.card)
-                    self._trigger_deathrattle(sac)
-                    self._trigger_deathrattle(tgt)
+                self._execute_sacrifice_kill(player, lane_id, current_instance=None)
 
             for tag in card.tags:
                 if tag.startswith("TEMP_MANA_"):

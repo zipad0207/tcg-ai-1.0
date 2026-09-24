@@ -314,15 +314,16 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
         card_idle_turns = Counter()
         wins = 0
 
-        for _ in range(num_games):
-            opp_f = random.choice(opp_factions)
+        for game_idx in range(num_games):
+            # 对称均衡轮换对手阵营，确保对每个对手样本量严格相等，避免偏科
+            opp_f = opp_factions[game_idx % len(opp_factions)]
             opp_name = name_map[opp_f]
             opp_deck = None
             if existing_decks and opp_name in existing_decks and "decklist" in existing_decks[opp_name]:
                 opp_deck = existing_decks[opp_name]["decklist"]
 
-            # 随机决定测试卡组是先手还是后手，消除绝对先手带来的“伪平衡”
-            is_p0 = random.choice([True, False])
+            # 先手与后手严格交替对称分配，消除先后手胜率统计偏差
+            is_p0 = (game_idx % 2 == 0)
             
             p0_f = my_faction if is_p0 else opp_f
             p1_f = opp_f if is_p0 else my_faction
@@ -454,6 +455,7 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
     decision_logs = []
     introspections = []
     rejected_pairs = set()
+    rejected_actions = set()
 
     for gen in range(1, generations + 1):
         prev_winrate = best_winrate
@@ -495,9 +497,8 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
                 candidate_pool_sorted.append((cid, prior))
         candidate_pool_sorted.sort(key=lambda x: x[1], reverse=True)
 
-        best_candidate = None
-        worst_candidate = None
-
+        # 构建所有合规替换候选对
+        valid_pairs = []
         for w_cid in sorted_worst:
             w_cost = cand_by_id[w_cid]["cost"]
             for b_cid, _ in candidate_pool_sorted:
@@ -514,23 +515,70 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
                 if w_cost >= 5 and b_cost < 5 and cnt_high_cost <= min_high:
                     continue
 
-                worst_candidate = w_cid
-                best_candidate = b_cid
-                break
-            if best_candidate is not None:
-                break
+                curr_w_cnt = best_counts.get(w_cid, 0)
+                curr_b_cnt = best_counts.get(b_cid, 0)
+                max_can_add = MAX_COPIES_PER_CARD - curr_b_cnt
+                max_step = min(curr_w_cnt, max_can_add)
+                if max_step <= 0:
+                    continue
 
-        if best_candidate is None or worst_candidate is None:
-            print(f"   [代数 {gen}/{generations}] 所有组合已被探索或已达局部最优，停止变异。")
+                # 备选步长选项：支持渐进平滑 1 张，或整批替换
+                possible_steps = [max_step] if max_step == 1 else [1, max_step]
+                avail_steps = [s for s in possible_steps if (b_cid, w_cid, s) not in rejected_actions]
+                if not avail_steps:
+                    continue
+
+                fit_w = fitness_map.get(w_cid, 0.5)
+                prior_b = neural_dict.get(b_cid, {}).get("ppo_score", 50.0) / 100.0
+                pair_score = (1.0 - fit_w) * 0.55 + prior_b * 0.45
+
+                valid_pairs.append({
+                    "w_cid": w_cid,
+                    "b_cid": b_cid,
+                    "curr_w_cnt": curr_w_cnt,
+                    "max_step": max_step,
+                    "avail_steps": avail_steps,
+                    "pair_score": pair_score
+                })
+
+        if not valid_pairs:
+            print(f"   [代数 {gen}/{generations}] 所有可行组合已被探索或已达局部最优，停止变异。")
             break
+
+        # 按综合评分排序
+        valid_pairs.sort(key=lambda x: x["pair_score"], reverse=True)
+
+        # 机制一：温度退火 Softmax 概率采样（代数越小温度越高，探索范围越广）
+        top_k = min(len(valid_pairs), 6)
+        top_pairs = valid_pairs[:top_k]
+        temp = max(0.15, 1.0 * (1.0 - (gen - 1) / max(1, generations)))
+
+        scores_arr = np.array([p["pair_score"] for p in top_pairs], dtype=np.float64)
+        exp_scores = np.exp((scores_arr - np.max(scores_arr)) / temp)
+        probs = exp_scores / np.sum(exp_scores)
+        chosen_idx = int(np.random.choice(len(top_pairs), p=probs))
+        chosen_pair = top_pairs[chosen_idx]
+
+        worst_candidate = chosen_pair["w_cid"]
+        best_candidate = chosen_pair["b_cid"]
+        curr_w_cnt = chosen_pair["curr_w_cnt"]
+        avail_steps = chosen_pair["avail_steps"]
+
+        # 机制二：步长松动（退火与平滑单张微调）
+        if len(avail_steps) > 1:
+            swap_cnt = 1 if (random.random() < 0.55 or gen <= 3) else chosen_pair["max_step"]
+        else:
+            swap_cnt = avail_steps[0]
+
+        is_smooth_step = (swap_cnt < curr_w_cnt)
+        step_type_str = "平滑" if is_smooth_step else "整批"
 
         c_name_worst = cand_by_id[worst_candidate]["name"]
         c_name_best = cand_by_id[best_candidate]["name"]
 
-        swap_cnt = best_counts[worst_candidate]  
         candidate_counts = dict(best_counts)
-        candidate_counts[worst_candidate] = 0
-        candidate_counts[best_candidate] = min(MAX_COPIES_PER_CARD, candidate_counts.get(best_candidate, 0) + swap_cnt)
+        candidate_counts[worst_candidate] -= swap_cnt
+        candidate_counts[best_candidate] = candidate_counts.get(best_candidate, 0) + swap_cnt
         candidate_counts = normalize_deck_allocation(candidate_counts, candidate_ids, priority_order)
 
         test_winrate, t_p_win, t_p_tot, t_idles, t_hands = evaluate_decklist_performance(candidate_counts, games_per_gen)
@@ -551,21 +599,27 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
 
         if can_accept:
             rejected_pairs.add((best_candidate, worst_candidate))
-            thought_demote = f"[{c_name_worst}] 卡手率较高或收益偏弱，全数调减 {swap_cnt} 张。"
-            thought_promote = f"[{c_name_best}] 具有极佳节奏收益，全数增补 {swap_cnt} 张。"
-            log_entry = f"第 {gen} 代微调 (胜率 {best_winrate:.1f}% -> {test_winrate:.1f}%, {delta_wr:+.1f}%): 采纳大步长变异，+{swap_cnt}[{c_name_best}] / -{swap_cnt}[{c_name_worst}]"
+            remain_worst = candidate_counts.get(worst_candidate, 0)
+            now_best = candidate_counts.get(best_candidate, 0)
+            thought_demote = f"[{c_name_worst}] 卡手率较高或收益偏弱，调减 {swap_cnt} 张 (现保留 {remain_worst} 张)。"
+            thought_promote = f"[{c_name_best}] 具有极佳节奏收益，增补 {swap_cnt} 张 (现持有 {now_best} 张)。"
+            log_entry = f"第 {gen} 代微调 (胜率 {best_winrate:.1f}% -> {test_winrate:.1f}%, {delta_wr:+.1f}%): 采纳{step_type_str}变异，+{swap_cnt}[{c_name_best}] / -{swap_cnt}[{c_name_worst}]"
 
-            print(f"   [代数 {gen}/{generations}] 采纳新构筑！实战胜率: {test_winrate:5.1f}% ({delta_wr:+5.1f}%) | +{swap_cnt}[{c_name_best}] / -{swap_cnt}[{c_name_worst}]")
+            print(f"   [代数 {gen}/{generations}] 采纳{step_type_str}新构筑！实战胜率: {test_winrate:5.1f}% ({delta_wr:+5.1f}%) | +{swap_cnt}[{c_name_best}] / -{swap_cnt}[{c_name_worst}] (原卡余 {remain_worst} 张)")
             best_counts = candidate_counts
             best_winrate = test_winrate
             best_p_win, best_p_tot, best_idles, best_hands = t_p_win, t_p_tot, t_idles, t_hands
         else:
-            rejected_pairs.add((best_candidate, worst_candidate))
+            rejected_actions.add((best_candidate, worst_candidate, swap_cnt))
+            all_possible = [chosen_pair["max_step"]] if chosen_pair["max_step"] == 1 else [1, chosen_pair["max_step"]]
+            if all((best_candidate, worst_candidate, s) in rejected_actions for s in all_possible):
+                rejected_pairs.add((best_candidate, worst_candidate))
+
             thought_demote = f"[{c_name_best}] 导致构筑节奏崩坏 ({test_winrate:.1f}%)，触发保护回滚！"
             thought_promote = f"维持原构筑，保留 [{c_name_worst}] 的卡位。"
-            log_entry = f"第 {gen} 代微调 (实测胜率 {test_winrate:.1f}%, 下跌 {abs(delta_wr):.1f}%): 拒绝该变异并列入禁忌表，回滚保留原有构筑。"
+            log_entry = f"第 {gen} 代微调 (实测胜率 {test_winrate:.1f}%, 下跌 {abs(delta_wr):.1f}%): 拒绝{step_type_str}变异并列入禁忌表，回滚保留原有构筑。"
 
-            print(f"   [代数 {gen}/{generations}] 拒绝变异并列入禁忌表！实测胜率暴跌: {test_winrate:5.1f}% ({delta_wr:+5.1f}%) | 转向探索其他卡位")
+            print(f"   [代数 {gen}/{generations}] 拒绝{step_type_str}变异并列入禁忌表！实测胜率暴跌: {test_winrate:5.1f}% ({delta_wr:+5.1f}%) | 转向探索其他卡位")
             gen_reflection["winrate"] = best_winrate
 
         gen_reflection["promoted"] = {"id": best_candidate, "name": c_name_best, "thought": thought_promote}
@@ -748,9 +802,27 @@ def main():
     parser.add_argument("--generations", type=int, default=20, help="自博弈进化代数 (默认 20)")
     parser.add_argument("--games-per-gen", type=int, default=60, help="每代自博弈实机局数 (默认 60)")
     parser.add_argument("--samples", type=int, default=8, help="候选卡神经网络采样次数 (默认 8，速度提升 2.5x)")
+    parser.add_argument("--device", type=str, default="auto", choices=["auto", "cuda", "cpu"], help="运算设备 (默认 auto: 检测到 cuda 则用 gpu，无 cuda 则自动回退 cpu)")
     args = parser.parse_args()
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    req_dev = (args.device or "auto").strip().lower()
+    if req_dev == "cpu":
+        device = torch.device("cpu")
+        print("[运算设备] 已指定使用 CPU 模式运行。")
+    elif req_dev == "cuda":
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+            print(f"[运算设备] 已启用 CUDA GPU 加速: {torch.cuda.get_device_name(0)}")
+        else:
+            device = torch.device("cpu")
+            print("[运算设备] 提示: 未检测到可用 CUDA GPU，自动回退至 CPU 运算模式。")
+    else:
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+            print(f"[运算设备] 自动检测到 CUDA GPU 加速: {torch.cuda.get_device_name(0)}")
+        else:
+            device = torch.device("cpu")
+            print("[运算设备] 未检测到可用 CUDA GPU，自动采用 CPU 模式运行。")
     
     model_path = find_model_path(args.model, args.stage)
     print("=" * 85)
