@@ -884,10 +884,7 @@ def main():
     parser.add_argument("--max-iterations", type=int, default=None, help="(兼容旧参数) 等价于 --max-outer-iterations")
     parser.add_argument("--skip-print", action="store_true", help="跳过印卡阶段，直接基于现有卡池开始调优")
     parser.add_argument("--skip-art", action="store_true", help="跳过新卡原画插图自动后台生成")
-    parser.add_argument("--skip-ppo-decks", action="store_true", default=True, help="跳过高耗能 PPO 暴力演化卡组，保持成熟/DeepSeek痛点定向卡组")
-    parser.add_argument("--enable-ppo-decks", action="store_true", default=False, help="强制启用 PPO 暴力演化卡组 (高 CPU 消耗)")
-    parser.add_argument("--eval-only", action="store_true", default=True, help="纯评估模式 (跳过 PPO 模型梯度更新，极速且不占 CPU)")
-    parser.add_argument("--train-ppo-model", action="store_true", default=False, help="强制开启 PPO 模型梯度反向传播训练 (高 CPU 消耗)")
+    parser.add_argument("--eval-only", action="store_true", help="纯评估模式 (跳过 PPO 模型梯度更新)")
     parser.add_argument("--dry-run", action="store_true", help="快速测试模式 (小规模局数快速跑通流程)")
     parser.add_argument("--skip-final-audit", action="store_true", help="跳过达成平衡后的 3000 局终验对局 (用于高频压测加速)")
     args = parser.parse_args()
@@ -896,9 +893,6 @@ def main():
     cards_file = resolve_path("cards_config.json")
     decks_file = resolve_path("decks_config.json")
     metrics_file = resolve_path("training_metrics_brawl.json")
-
-    skip_ppo_decks = not getattr(args, "enable_ppo_decks", False)
-    eval_only_mode = not getattr(args, "train_ppo_model", False)
 
     brawl_episodes = 60 if args.dry_run else args.episodes
     ppo_gens = 2 if args.dry_run else 20
@@ -909,8 +903,7 @@ def main():
     print("=" * 85)
     print(" TCG-AI 多阵营扩展包生成与平衡调度流水线启动")
     print(f" 模式: {'[快速演练]' if args.dry_run else '[全量执行]'}")
-    print(f" 混战规模: {brawl_episodes} 局/轮 (PPO 强化学习: {'纯对战评估 (平稳快速 · 不抢占CPU)' if eval_only_mode else '反向传播训练 (重负载)'}) | 目标平衡偏离度: <= {args.target_balance:.1f}%")
-    print(f" 卡组策略: {'保留 DeepSeek 痛点定向构筑 (平稳)' if skip_ppo_decks else 'PPO 暴力遗传演化 (高负载)'}")
+    print(f" 混战规模: {brawl_episodes} 局/轮 (PPO 强化学习: {'纯评估' if args.eval_only else '真自博弈训练'}) | 目标平衡偏离度: <= {args.target_balance:.1f}%")
     print(f" 迭代配置: 卡组微调尝试 {deck_attempts} 次 | 数值微调上限 {max_outer} 轮")
     print(f" 熔断机制: 最大偏离度 >= {args.severe_imbalance_threshold:.1f}% 或 胜率极差 >= {args.severe_spread_threshold:.1f}% 自动快转至 DeepSeek 数值微调")
     print("=" * 85)
@@ -973,14 +966,11 @@ def main():
             print("─" * 70)
 
             # 3A: PPO 智能体调构筑 (增量演化)
-            if not skip_ppo_decks:
-                step3_ppo_deck_evolution(cards_file, decks_file, generations=ppo_gens, games_per_gen=ppo_games, samples=ppo_samples)
-            else:
-                print("  [*] [构筑保持] 严格保持现有成熟/DeepSeek痛点定向卡组，跳过高耗能 PPO 暴力演化。")
+            step3_ppo_deck_evolution(cards_file, decks_file, generations=ppo_gens, games_per_gen=ppo_games, samples=ppo_samples)
 
             # 3B: 实机混战对抗遥测兼 PPO 强化学习演化 (按设定规模全量采样，保证统计置信度)
             current_brawl_episodes = 60 if args.dry_run else args.episodes
-            metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=current_brawl_episodes, eval_only=eval_only_mode)
+            metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=current_brawl_episodes, eval_only=args.eval_only)
             latest_metrics = metrics
 
             curr_stats = {f: metrics.get("faction_stats", {}).get(f, {}).get("winrate", 50.0) for f in (list(metrics.get("faction_stats", {}).keys()) if metrics.get("faction_stats") else ["Red", "Blue", "Green"])}
@@ -1000,7 +990,7 @@ def main():
                 print(f"   各阵营最大偏离度: {max_dev:.2f}% <= 目标阈值: {args.target_balance:.2f}% (两两最大偏离: {max_pairwise_dev:.2f}% <= {args.target_pairwise_balance:.2f}%, 胜率极差: {spread:.2f}%)")
                 if not args.dry_run and not args.skip_final_audit and current_brawl_episodes < 3000:
                     print("   [验证] 执行 3,000 局全量对战验收遥测...")
-                    metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=3000, eval_only=eval_only_mode)
+                    metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=3000, eval_only=args.eval_only)
                     latest_metrics = metrics
                 print("   已达成收敛，退出迭代循环。")
                 print("=" * 70)

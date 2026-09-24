@@ -75,30 +75,26 @@ class PipelineRunner:
                 "--skip-print",
                 "--episodes", str(episodes),
                 "--target-balance", str(target_balance),
-                "--target-pairwise-balance", str(target_pairwise_balance),
-                "--eval-only"
+                "--target-pairwise-balance", str(target_pairwise_balance)
             ])
         elif mode == "fast_demo":
             cmd.extend([
                 "--skip-print",
                 "--dry-run",
                 "--target-balance", str(target_balance),
-                "--target-pairwise-balance", str(target_pairwise_balance),
-                "--eval-only"
+                "--target-pairwise-balance", str(target_pairwise_balance)
             ])
         elif mode == "full_pack":
             cmd.extend([
                 "--episodes", str(episodes),
                 "--target-balance", str(target_balance),
-                "--target-pairwise-balance", str(target_pairwise_balance),
-                "--eval-only"
+                "--target-pairwise-balance", str(target_pairwise_balance)
             ])
         else:
             cmd.extend([
                 "--skip-print",
                 "--dry-run",
-                "--target-pairwise-balance", str(target_pairwise_balance),
-                "--eval-only"
+                "--target-pairwise-balance", str(target_pairwise_balance)
             ])
 
         env = os.environ.copy()
