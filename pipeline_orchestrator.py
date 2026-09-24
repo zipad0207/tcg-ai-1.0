@@ -863,6 +863,7 @@ def main():
     parser.add_argument("--eval-only", action="store_true", help="纯评估模式 (跳过 PPO 模型梯度更新)")
     parser.add_argument("--dry-run", action="store_true", help="快速测试模式 (小规模局数快速跑通流程)")
     parser.add_argument("--skip-final-audit", action="store_true", help="跳过达成平衡后的 3000 局终验对局 (用于高频压测加速)")
+    parser.add_argument("--skip-ppo-decks", action="store_true", help="跳过高耗能 PPO 卡组演化，严格保留 DeepSeek 定向痛点换卡/成熟构筑")
     args = parser.parse_args()
 
     max_outer = args.max_iterations if args.max_iterations is not None else args.max_outer_iterations
@@ -874,13 +875,14 @@ def main():
     ppo_gens = 2 if args.dry_run else 20
     ppo_games = 15 if args.dry_run else 50
     ppo_samples = 4 if args.dry_run else 15
-    deck_attempts = 1 if args.dry_run else args.max_deck_attempts
+    deck_attempts = 1 if (args.dry_run or args.skip_ppo_decks) else args.max_deck_attempts
 
     print("=" * 85)
     print(" TCG-AI 多阵营扩展包生成与平衡调度流水线启动")
     print(f" 模式: {'[快速演练]' if args.dry_run else '[全量执行]'}")
     print(f" 混战规模: {brawl_episodes} 局/轮 (PPO 强化学习: {'纯评估' if args.eval_only else '真自博弈训练'}) | 目标平衡偏离度: <= {args.target_balance:.1f}%")
     print(f" 迭代配置: 卡组微调尝试 {deck_attempts} 次 | 数值微调上限 {max_outer} 轮")
+    print(f" 构筑策略: {'[痛点定向保留] 严格沿用 DeepSeek 痛点增量换卡/成熟套牌' if args.skip_ppo_decks else '[PPO演化微调] 允许 PPO 随机变异微调构筑'}")
     print(f" 熔断机制: 最大偏离度 >= {args.severe_imbalance_threshold:.1f}% 或 胜率极差 >= {args.severe_spread_threshold:.1f}% 自动快转至 DeepSeek 数值微调")
     print("=" * 85)
 
@@ -938,11 +940,11 @@ def main():
 
         for attempt in range(1, deck_attempts + 1):
             print("\n" + "─" * 70)
-            print(f"  ▶ [卡组自适应] 第 {attempt} / {deck_attempts} 次微调")
-            print("─" * 70)
-
             # 3A: PPO 智能体调构筑 (增量演化)
-            step3_ppo_deck_evolution(cards_file, decks_file, generations=ppo_gens, games_per_gen=ppo_games, samples=ppo_samples)
+            if not args.skip_ppo_decks:
+                step3_ppo_deck_evolution(cards_file, decks_file, generations=ppo_gens, games_per_gen=ppo_games, samples=ppo_samples)
+            else:
+                print("  [*] [构筑保持] 严格保持现有成熟/DeepSeek痛点定向卡组，跳过高耗能 PPO 暴力演化。")
 
             # 3B: 实机混战对抗遥测兼 PPO 强化学习演化 (按设定规模全量采样，保证统计置信度)
             current_brawl_episodes = 60 if args.dry_run else args.episodes
@@ -1013,10 +1015,9 @@ def main():
             if q_status.get("is_running"):
                 rem = q_status["total"] - q_status["current"]
                 print("\n" + "═" * 85)
-                print(f" [后台生图队列] 平衡收敛调优已完成，后台当前剩余 {rem} 张新卡插图正在排队生成中...")
-                print(f"               (系统将继续等待出图队列完毕，以确保卡牌全部具备原画；若需立刻退出可按 Ctrl+C)")
+                print(f" [后台生图队列] 🎨 平衡调优已圆满收敛！后台当前剩余 {rem} 张新卡插图正在排队异步生成中...")
+                print(f"               (插图将在后台自动处理并在 Web 界面即时显示，流水线主任务正常收尾，无需等待阻塞。)")
                 print("═" * 85)
-                art_queue.wait_until_done(timeout=300)
         except Exception:
             pass
 

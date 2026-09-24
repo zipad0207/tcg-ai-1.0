@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TCG-AI Studio</title>
-    <link rel="stylesheet" href="/static/css/styles.css?v=v8.2">
+    <link rel="stylesheet" href="/static/css/styles.css?v=v8.3">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -500,14 +500,17 @@
                         <div class="control-item flex-2">
                             <label>调优模式:</label>
                             <select id="pipe-mode">
-                                <option value="tune_only" selected>纯数值微调 (保留现有卡牌 · 专调身材与费用)</option>
-                                <option value="full_pack">扩展包完整流程 (全新印卡 + 3000局微调)</option>
+                                <option value="tune_only" selected>纯数值微调 (保留现有卡牌与成熟卡组 · 专调身材与费用)</option>
+                                <option value="full_pack">扩展包全流程 (DeepSeek印卡 + 痛点定向增量换卡 + 快速对战收敛)</option>
                             </select>
                         </div>
                         <div class="control-item">
                             <label>对局规模 (局/轮):</label>
                             <select id="pipe-episodes">
-                                <option value="3000" selected>3,000 局 (严谨全量)</option>
+                                <option value="600" selected>600 局 (推荐 · 快速高置信度 ~15秒)</option>
+                                <option value="1500">1,500 局 (高精度全量 ~35秒)</option>
+                                <option value="3000">3,000 局 (严谨极值 ~70秒)</option>
+                                <option value="200">200 局 (极速体验 · 秒级出结果)</option>
                             </select>
                         </div>
                         <div class="control-item">
@@ -604,9 +607,9 @@
             </section>
         </main>
     </div>
-    <script src="/static/js/app.js?v=v8.2"></script>
-    <script src="/static/js/studio.js?v=v8.2"></script>
-    <script src="/static/js/arena.js?v=v8.2"></script>
-    <script src="/static/js/analytics.js?v=v8.2"></script>
+    <script src="/static/js/app.js?v=v8.3"></script>
+    <script src="/static/js/studio.js?v=v8.3"></script>
+    <script src="/static/js/arena.js?v=v8.3"></script>
+    <script src="/static/js/analytics.js?v=v8.3"></script>
 </body>
 </html>

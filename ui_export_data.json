@@ -5020,69 +5020,69 @@
     },
     "faction_stats": {
         "Red": {
-            "matches": 1998,
-            "wins": 1031,
-            "winrate": 51.6
+            "matches": 33,
+            "wins": 17,
+            "winrate": 51.52
         },
         "Blue": {
-            "matches": 1937,
-            "wins": 995,
-            "winrate": 51.37
+            "matches": 47,
+            "wins": 22,
+            "winrate": 46.81
         },
         "Green": {
-            "matches": 2065,
-            "wins": 974,
-            "winrate": 47.17
+            "matches": 40,
+            "wins": 21,
+            "winrate": 52.5
         }
     },
     "matchups": {
         "Blue_vs_Blue": {
-            "total": 308,
-            "p0_first_wins": 139,
-            "p1_second_wins": 169,
+            "total": 8,
+            "p0_first_wins": 3,
+            "p1_second_wins": 5,
             "winrate": 50.0
         },
-        "Red_vs_Green": {
-            "total": 332,
-            "Red_wins": 172,
-            "Green_wins": 160
+        "Blue_vs_Green": {
+            "total": 11,
+            "Blue_wins": 5,
+            "Green_wins": 6
+        },
+        "Green_vs_Blue": {
+            "total": 8,
+            "Green_wins": 5,
+            "Blue_wins": 3
+        },
+        "Red_vs_Blue": {
+            "total": 3,
+            "Red_wins": 1,
+            "Blue_wins": 2
+        },
+        "Blue_vs_Red": {
+            "total": 9,
+            "Blue_wins": 4,
+            "Red_wins": 5
         },
         "Green_vs_Green": {
-            "total": 352,
-            "p0_first_wins": 183,
-            "p1_second_wins": 169,
+            "total": 7,
+            "p0_first_wins": 2,
+            "p1_second_wins": 5,
             "winrate": 50.0
         },
         "Red_vs_Red": {
-            "total": 347,
-            "p0_first_wins": 192,
-            "p1_second_wins": 155,
+            "total": 7,
+            "p0_first_wins": 3,
+            "p1_second_wins": 4,
             "winrate": 50.0
         },
+        "Red_vs_Green": {
+            "total": 3,
+            "Red_wins": 2,
+            "Green_wins": 1
+        },
         "Green_vs_Red": {
-            "total": 340,
-            "Green_wins": 153,
-            "Red_wins": 187
-        },
-        "Blue_vs_Red": {
-            "total": 303,
-            "Blue_wins": 134,
-            "Red_wins": 169
-        },
-        "Blue_vs_Green": {
-            "total": 338,
-            "Blue_wins": 175,
-            "Green_wins": 163
-        },
-        "Red_vs_Blue": {
-            "total": 329,
-            "Red_wins": 156,
-            "Blue_wins": 173
-        },
-        "Green_vs_Blue": {
-            "total": 351,
-            "Green_wins": 146,
-            "Blue_wins": 205
+            "total": 4,
+            "Green_wins": 2,
+            "Red_wins": 2
         }
     },
     "pairwise_matchups": {
@@ -5098,28 +5098,28 @@
         "Red_vs_Blue": {
             "f1": "Red",
             "f2": "Blue",
-            "total": 632,
-            "wins": 325,
-            "winrate": 51.42,
-            "dev": 1.42,
+            "total": 12,
+            "wins": 6,
+            "winrate": 50.0,
+            "dev": 0.0,
             "is_mirror": false
         },
         "Red_vs_Green": {
             "f1": "Red",
             "f2": "Green",
-            "total": 672,
-            "wins": 359,
-            "winrate": 53.42,
-            "dev": 3.42,
+            "total": 7,
+            "wins": 4,
+            "winrate": 57.14,
+            "dev": 7.14,
             "is_mirror": false
         },
         "Blue_vs_Red": {
             "f1": "Blue",
             "f2": "Red",
-            "total": 632,
-            "wins": 307,
-            "winrate": 48.58,
-            "dev": 1.42,
+            "total": 12,
+            "wins": 6,
+            "winrate": 50.0,
+            "dev": 0.0,
             "is_mirror": false
         },
         "Blue_vs_Blue": {
@@ -5134,28 +5134,28 @@
         "Blue_vs_Green": {
             "f1": "Blue",
             "f2": "Green",
-            "total": 689,
-            "wins": 380,
-            "winrate": 55.15,
-            "dev": 5.15,
+            "total": 19,
+            "wins": 8,
+            "winrate": 42.11,
+            "dev": 7.89,
             "is_mirror": false
         },
         "Green_vs_Red": {
             "f1": "Green",
             "f2": "Red",
-            "total": 672,
-            "wins": 313,
-            "winrate": 46.58,
-            "dev": 3.42,
+            "total": 7,
+            "wins": 3,
+            "winrate": 42.86,
+            "dev": 7.14,
             "is_mirror": false
         },
         "Green_vs_Blue": {
             "f1": "Green",
             "f2": "Blue",
-            "total": 689,
-            "wins": 309,
-            "winrate": 44.85,
-            "dev": 5.15,
+            "total": 19,
+            "wins": 11,
+            "winrate": 57.89,
+            "dev": 7.89,
             "is_mirror": false
         },
         "Green_vs_Green": {
@@ -5168,6 +5168,6 @@
             "is_mirror": true
         }
     },
-    "max_pairwise_dev": 5.15,
-    "total_episodes": 3000
+    "max_pairwise_dev": 7.89,
+    "total_episodes": 60
 }

@@ -73,6 +73,8 @@ class PipelineRunner:
         if mode == "tune_only":
             cmd.extend([
                 "--skip-print",
+                "--skip-ppo-decks",
+                "--eval-only",
                 "--episodes", str(episodes),
                 "--target-balance", str(target_balance),
                 "--target-pairwise-balance", str(target_pairwise_balance)
@@ -80,12 +82,16 @@ class PipelineRunner:
         elif mode == "fast_demo":
             cmd.extend([
                 "--skip-print",
+                "--skip-ppo-decks",
+                "--eval-only",
                 "--dry-run",
                 "--target-balance", str(target_balance),
                 "--target-pairwise-balance", str(target_pairwise_balance)
             ])
         elif mode == "full_pack":
             cmd.extend([
+                "--skip-ppo-decks",
+                "--eval-only",
                 "--episodes", str(episodes),
                 "--target-balance", str(target_balance),
                 "--target-pairwise-balance", str(target_pairwise_balance)
@@ -93,6 +99,8 @@ class PipelineRunner:
         else:
             cmd.extend([
                 "--skip-print",
+                "--skip-ppo-decks",
+                "--eval-only",
                 "--dry-run",
                 "--target-pairwise-balance", str(target_pairwise_balance)
             ])
