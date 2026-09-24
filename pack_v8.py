@@ -6,17 +6,22 @@ import time
 def create_v8_zip():
     zip_name = "tcg-ai-v8.zip"
     source_dir = os.path.abspath(os.path.dirname(__file__))
-    zip_path = os.path.join(source_dir, zip_name)
+    # 输出到 D:\dowload 根目录下，绝不放在工程目录内
+    target_dir = os.path.dirname(source_dir)
+    zip_path = os.path.join(target_dir, zip_name)
     
     exclude_dirs = {".git", "__pycache__", ".venv", "node_modules", "scratch", ".gemini", ".vs"}
     exclude_files = {
         zip_name, "tcg-ai-v6.zip", "tcg-ai-v8.zip",
-        "card_ppo_model_brawl_user_backup.pth", "patch_cards.py"
+        "run_stress_test.bat", "stress_test_balancer.py",
+        "pack_v8.py", "patch_cards.py", ".env"
     }
     
     print(f"==================================================")
     print(f" 开始打包 TCG-AI v8 独立全能整合包: {zip_name}")
-    print(f" 根目录: {source_dir}")
+    print(f" 源目录: {source_dir}")
+    print(f" 目标输出路径: {zip_path}")
+    print(f" 规则: 无权重文件(*.pth), 无压力测试, 无私钥配置, 保留嵌入式Python标准库")
     print(f"==================================================")
     
     start_time = time.time()
@@ -28,7 +33,22 @@ def create_v8_zip():
             dirs[:] = [d for d in dirs if d not in exclude_dirs and not d.startswith('.')]
             
             for file in files:
-                if file in exclude_files or file.endswith('.zip') or file.endswith('.log') or file.endswith('.tmp'):
+                # 排除规则
+                if file in exclude_files:
+                    continue
+                if file.endswith('.log') or file.endswith('.tmp'):
+                    continue
+                # 排除所有模型权重文件
+                if file.endswith('.pth') or file.endswith('.pt'):
+                    continue
+                # 排除压力测试相关脚本及日志
+                if "stress_test" in file:
+                    continue
+                # 排除打包类临时脚本
+                if file.startswith("pack_") or file.startswith("repack_") or file.startswith("patch_"):
+                    continue
+                # 必须保留便携 Python 运行时必需的核心标准库 python310.zip，排除其他外部 zip
+                if file.endswith('.zip') and file != "python310.zip":
                     continue
                 
                 file_path = os.path.join(root, file)
@@ -49,7 +69,7 @@ def create_v8_zip():
     print(f" 归档文件数: {count} 个")
     print(f" 压缩包体积: {size_mb:.2f} MB")
     print(f" 打包总耗时: {elapsed:.2f} 秒")
-    print(f" 绝对路径: {zip_path}")
+    print(f" 最终绝对路径: {zip_path}")
     print(f"==================================================")
 
 if __name__ == "__main__":
