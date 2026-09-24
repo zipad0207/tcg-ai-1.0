@@ -170,7 +170,7 @@ def clean_json_response(raw_text: str) -> str:
 # ==============================================================================
 # Phase 1: 卡牌扩展设计
 # ==============================================================================
-def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: str, theme: str) -> Tuple[dict, List[dict]]:
+def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: str, theme: str, auto_art: bool = True) -> Tuple[dict, List[dict]]:
     print("\n" + "═" * 80)
     print(f"【阶段一】卡牌扩展设计: 《{pack_name}》 (主题: {theme})")
     print("═" * 80)
@@ -507,6 +507,15 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
         print(f"{c['id']:<6}{fac_str:<14}{c['name']:<16}{c['card_type']:<8}{c['cost']:<6}{val_str:<12}{tags_str:<28}")
     print("═" * 105 + "\n")
 
+    # 异步触发后台卡图自动排队生成（非阻塞独立子线程，与后续预构筑与强化学习 PPO 自博弈并行）
+    if auto_art and final_pack:
+        try:
+            from web_app.services.image_gen import art_queue
+            art_queue.enqueue(final_pack)
+            print(f"[后台生图队列] 🚀 已将本次印制的全部 {len(final_pack)} 张新卡加入后台自动排队出图队列 (与对战调优完全并行，无需等待)。\n")
+        except Exception as img_err:
+            print(f"[后台生图队列] ⚠️ 触发后台出图提示: {img_err}\n")
+
     return current_pool, final_pack
 
 # ==============================================================================
@@ -794,6 +803,7 @@ def main():
     parser.add_argument("--max-outer-iterations", type=int, default=10, help="最大 DeepSeek 数值微调迭代轮次 (默认 10 轮)")
     parser.add_argument("--max-iterations", type=int, default=None, help="(兼容旧参数) 等价于 --max-outer-iterations")
     parser.add_argument("--skip-print", action="store_true", help="跳过印卡阶段，直接基于现有卡池开始调优")
+    parser.add_argument("--skip-art", action="store_true", help="跳过新卡原画插图自动后台生成")
     parser.add_argument("--eval-only", action="store_true", help="纯评估模式 (跳过 PPO 模型梯度更新)")
     parser.add_argument("--dry-run", action="store_true", help="快速测试模式 (小规模局数快速跑通流程)")
     args = parser.parse_args()
@@ -819,7 +829,7 @@ def main():
 
     # 1. 阶段一：卡牌扩展设计
     if not args.skip_print:
-        step1_print_expansion_pack(cards_file, metrics_file, args.pack_name, args.theme)
+        step1_print_expansion_pack(cards_file, metrics_file, args.pack_name, args.theme, auto_art=not args.skip_art)
     else:
         print("\n[*] 跳过印卡阶段，沿用当前卡池。")
 
@@ -926,6 +936,21 @@ def main():
 
     # 5. 阶段六：导出成果与报表
     step6_export_reports_and_charts(cards_file, metrics_file, history_records)
+
+    # 6. 后台生图状态检查与收尾
+    if not args.skip_art:
+        try:
+            from web_app.services.image_gen import art_queue
+            q_status = art_queue.get_status()
+            if q_status.get("is_running"):
+                rem = q_status["total"] - q_status["current"]
+                print("\n" + "═" * 85)
+                print(f" [后台生图队列] 🎨 平衡收敛调优已完成，后台当前剩余 {rem} 张新卡插图正在排队生成中...")
+                print(f"               (系统将继续等待出图队列完毕，以确保卡牌全部具备原画；若需立刻退出可按 Ctrl+C)")
+                print("═" * 85)
+                art_queue.wait_until_done(timeout=300)
+        except Exception:
+            pass
 
     print("\n" + "═" * 85)
     print(" [完成] 流水线执行结束，所有数据与图表已生成。")

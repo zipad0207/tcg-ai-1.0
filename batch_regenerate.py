@@ -13,35 +13,60 @@ if sys.platform == "win32":
 root_dir = os.path.dirname(__file__)
 sys.path.append(root_dir)
 
+import argparse
 from web_app.services.image_gen import ZImageTurboGenerator
 
 def main():
+    parser = argparse.ArgumentParser(description="卡牌卡图批量生成与重绘工具")
+    parser.add_argument("--all", action="store_true", help="强制全量重绘全部卡牌 (默认仅为缺失卡图的卡牌生成)")
+    args = parser.parse_args()
+
+    gen = ZImageTurboGenerator()
     config_path = os.path.join(root_dir, "cards_config.json")
     with open(config_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    cards_to_gen = []
-    for f, l in data.items():
-        if isinstance(l, list):
-            for c in l:
-                cards_to_gen.append({
-                    "id": c["id"],
-                    "name": c["name"],
-                    "faction": f,
-                    "tags": c.get("tags", []),
-                    "dp": c.get("base_dp", 0)
-                })
+    if args.all:
+        cards_to_gen = []
+        for f, l in data.items():
+            if isinstance(l, list):
+                for c in l:
+                    cards_to_gen.append({
+                        "id": c["id"],
+                        "name": c["name"],
+                        "faction": f,
+                        "tags": c.get("tags", []),
+                        "dp": c.get("base_dp", 0)
+                    })
+    else:
+        missing_cards = gen.get_missing_cards()
+        cards_to_gen = []
+        for c in missing_cards:
+            cards_to_gen.append({
+                "id": c["id"],
+                "name": c.get("name", f"卡牌_{c['id']}"),
+                "faction": c.get("faction") or (c.get("factions", ["Neutral"])[0] if c.get("factions") else "Neutral"),
+                "tags": c.get("tags", []),
+                "dp": c.get("base_dp", 0)
+            })
 
     cards_to_gen.sort(key=lambda x: x["id"])
     total = len(cards_to_gen)
+
+    if total == 0:
+        print("==================================================")
+        print("🎉 卡池中所有卡牌均已具备原画插图，无需补充生成！")
+        print("💡 如需强制覆盖全量重画，请执行: py batch_regenerate.py --all")
+        print("==================================================")
+        return
+
+    mode_desc = "全量强制重绘" if args.all else "补全缺失卡图"
     print(f"==================================================")
-    print(f"🚀 开始全量生成/重画全部 {total} 张卡牌原画")
+    print(f"🚀 开始【{mode_desc}】共 {total} 张卡牌原画")
     print(f"🎯 使用模型: Tongyi-MAI/Z-Image-Turbo (急速超清)")
     print(f"==================================================")
 
-    gen = ZImageTurboGenerator()
     progress_file = os.path.join(root_dir, "web_app", "static", "batch_progress.json")
-
     success_count = 0
     fail_count = 0
 
@@ -88,7 +113,7 @@ def main():
             fail_count += 1
             print(f"   -> ❌ 失败: {e}")
 
-        time.sleep(0.3)
+        time.sleep(2.0)
 
     # Final progress write
     final_info = {

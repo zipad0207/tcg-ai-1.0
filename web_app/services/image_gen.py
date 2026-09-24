@@ -3,7 +3,7 @@ import sys
 import json
 import requests
 import uuid
-from typing import List
+from typing import List, Optional, Dict, Set
 import dashscope
 from dotenv import load_dotenv
 
@@ -237,18 +237,46 @@ class ZImageTurboGenerator:
         if os.path.exists(config_path):
             with open(config_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
+            
+            cards_dir = os.path.join(root_dir, "web_app", "static", "images", "cards")
+            updated = False
             for faction, cards in data.items():
                 if isinstance(cards, list):
                     for c in cards:
+                        cid = c.get("id")
                         img_url = c.get("image_url", "")
                         has_file = False
+                        
+                        # 1. Check if img_url points to a real file on disk (strip version query param ?v=)
                         if img_url:
-                            local_path = os.path.join(root_dir, "web_app", img_url.lstrip("/"))
+                            clean_rel = img_url.split("?")[0].lstrip("/")
+                            local_path = os.path.join(root_dir, "web_app", clean_rel)
                             if os.path.exists(local_path):
                                 has_file = True
+
+                        # 2. Check if webp or png already exists on disk by card ID
+                        if not has_file and cid is not None:
+                            webp_path = os.path.join(cards_dir, f"{cid}.webp")
+                            png_path = os.path.join(cards_dir, f"{cid}.png")
+                            if os.path.exists(webp_path):
+                                c["image_url"] = f"/static/images/cards/{cid}.webp"
+                                has_file = True
+                                updated = True
+                            elif os.path.exists(png_path):
+                                c["image_url"] = f"/static/images/cards/{cid}.png"
+                                has_file = True
+                                updated = True
+
                         if not has_file:
                             c["faction"] = faction
                             missing.append(c)
+
+            if updated:
+                try:
+                    with open(config_path, "w", encoding="utf-8") as f:
+                        json.dump(data, f, indent=2, ensure_ascii=False)
+                except Exception:
+                    pass
         return missing
 
     def batch_generate_missing(self, progress_callback=None) -> dict:
@@ -281,3 +309,164 @@ class ZImageTurboGenerator:
             "errors": errors,
             "results": results
         }
+
+
+import threading
+import queue
+
+class BackgroundArtQueue:
+    """
+    Background worker that sequentially generates card art in a dedicated daemon thread.
+    - Thread-safe, non-blocking: allows training and pipeline to run parallelly
+    - Paces requests to prevent SiliconFlow 429 RPM/IPM limits
+    - Writes progress to batch_progress.json, cards_config.json, and syncs UI export data
+    - Live console logs seamlessly broadcast to Web UI and CLI
+    """
+    def __init__(self, generator: Optional['ZImageTurboGenerator'] = None):
+        self.generator = generator or ZImageTurboGenerator()
+        self.queue = queue.Queue()
+        self.queued_ids = set()
+        self.lock = threading.Lock()
+        self.worker_thread: Optional[threading.Thread] = None
+        self.is_running = False
+        self.current_card: Optional[dict] = None
+        self.current_index = 0
+        self.total_count = 0
+        self.success_count = 0
+        self.failed_count = 0
+        self.last_error = ""
+        self.root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        self.progress_file = os.path.join(self.root_dir, "web_app", "static", "batch_progress.json")
+
+    def _write_progress(self, status: str = "generating", done: bool = False, card_name: str = "", card_id: Optional[int] = None):
+        pct = round((self.current_index / max(1, self.total_count)) * 100, 1) if self.total_count > 0 else 0.0
+        data = {
+            "current": self.current_index,
+            "total": self.total_count,
+            "card_id": card_id,
+            "card_name": card_name,
+            "status": status,
+            "done": done,
+            "success": self.success_count,
+            "failed": self.failed_count,
+            "percentage": pct if not done else 100.0,
+            "last_error": self.last_error
+        }
+        try:
+            with open(self.progress_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False)
+        except Exception:
+            pass
+
+    def enqueue(self, cards: Optional[List[dict]] = None) -> dict:
+        """Enqueues cards for background art generation and starts the worker thread if not running."""
+        with self.lock:
+            # If no cards specified, scan cards_config.json for truly missing cards
+            if cards is None:
+                cards = self.generator.get_missing_cards()
+
+            cards_dir = os.path.join(self.root_dir, "web_app", "static", "images", "cards")
+            added_count = 0
+            for c in cards:
+                cid = c.get("id")
+                if cid is not None and cid not in self.queued_ids:
+                    # Skip if already exists on disk
+                    webp_path = os.path.join(cards_dir, f"{cid}.webp")
+                    png_path = os.path.join(cards_dir, f"{cid}.png")
+                    if os.path.exists(webp_path) or os.path.exists(png_path):
+                        continue
+                    self.queued_ids.add(cid)
+                    self.queue.put(c)
+                    added_count += 1
+
+            if added_count > 0:
+                self.total_count += added_count
+                if not self.is_running:
+                    self._write_progress(status="queued", done=False)
+
+            if not self.is_running and not self.queue.empty():
+                self.is_running = True
+                self.worker_thread = threading.Thread(target=self._worker_loop, daemon=True)
+                self.worker_thread.start()
+
+        return {
+            "success": True,
+            "added": added_count,
+            "total_queued": self.total_count,
+            "status": "running" if self.is_running else "idle"
+        }
+
+    def _worker_loop(self):
+        print(f"\n[后台生图队列] 🚀 自动排队出图已启动！待生成卡图: {self.queue.qsize()} 张 (与对战调优完全并行，无需等待)...", flush=True)
+        import time
+        while not self.queue.empty():
+            try:
+                card = self.queue.get_nowait()
+            except queue.Empty:
+                break
+
+            with self.lock:
+                self.current_index += 1
+                self.current_card = card
+
+            c_id = card.get("id")
+            c_name = card.get("name", f"新卡_{c_id}")
+            c_faction = card.get("faction") or (card.get("factions", ["Neutral"])[0] if card.get("factions") else "Neutral")
+            c_tags = card.get("tags", [])
+            c_dp = card.get("base_dp", 0)
+
+            self._write_progress(status="generating", done=False, card_name=c_name, card_id=c_id)
+            print(f"[后台生图队列] 🎨 [{self.current_index}/{self.total_count}] 正在为 #{c_id} 【{c_name}】({c_faction}) 绘制插图...", flush=True)
+
+            try:
+                res = self.generator.generate_image(c_id, c_name, c_faction, c_tags, c_dp)
+                with self.lock:
+                    self.success_count += 1
+                print(f"[后台生图队列] ✅ #{c_id} 【{c_name}】绘制成功: {res['url']}", flush=True)
+            except Exception as e:
+                err_msg = str(e)
+                with self.lock:
+                    self.failed_count += 1
+                    self.last_error = err_msg
+                print(f"[后台生图队列] ❌ #{c_id} 【{c_name}】绘制失败: {err_msg}", flush=True)
+
+            self.queue.task_done()
+            self._write_progress(status="generating", done=False, card_name=c_name, card_id=c_id)
+            # Pacing between generations to avoid SiliconFlow rate limit spikes
+            time.sleep(2.0)
+
+        with self.lock:
+            self.is_running = False
+            self.current_card = None
+            self._write_progress(status="finished", done=True)
+            self.queued_ids.clear()
+
+        print(f"\n[后台生图队列] 🎉 全部新卡卡图绘制完毕！成功: {self.success_count} 张, 失败: {self.failed_count} 张。\n", flush=True)
+
+    def get_status(self) -> dict:
+        with self.lock:
+            pct = round((self.current_index / max(1, self.total_count)) * 100, 1) if self.total_count > 0 else (100.0 if not self.is_running and self.total_count > 0 else 0.0)
+            return {
+                "is_running": self.is_running,
+                "current": self.current_index,
+                "total": self.total_count,
+                "success": self.success_count,
+                "failed": self.failed_count,
+                "percentage": pct,
+                "current_card": self.current_card,
+                "status": "generating" if self.is_running else ("finished" if self.total_count > 0 else "idle"),
+                "done": not self.is_running and self.total_count > 0,
+                "queue_size": self.queue.qsize(),
+                "last_error": self.last_error
+            }
+
+    def wait_until_done(self, timeout: Optional[float] = None) -> bool:
+        """Blocks until current queue is empty, or timeout reached."""
+        if self.worker_thread and self.worker_thread.is_alive():
+            self.worker_thread.join(timeout=timeout)
+            return not self.worker_thread.is_alive()
+        return True
+
+# Global background queue singleton
+art_queue = BackgroundArtQueue()
+

@@ -448,6 +448,8 @@ def main():
                         help="印卡后自动实机运行对局评估轮数 (默认 1000 局，设为 0 跳过)")
     parser.add_argument("--auto-balance", action="store_true",
                         help="若检测到新卡导致严重失衡，提示或启动闭环调优")
+    parser.add_argument("--auto-art", action="store_true",
+                        help="印卡完成后自动启动后台队列生成原画插图")
     args = parser.parse_args()
 
     if not DEEPSEEK_API_KEY:
@@ -583,6 +585,16 @@ def main():
         with open(args.merge_into, "w", encoding="utf-8") as f:
             json.dump(expanded_pool, f, indent=2, ensure_ascii=False)
         print(f"已同步更新至卡池: {args.merge_into}")
+
+    # 自动启动后台生图队列
+    if args.auto_art and any(len(cards) > 0 for cards in all_printed_cards.values()):
+        try:
+            from web_app.services.image_gen import art_queue
+            flat_cards = [c for c_list in all_printed_cards.values() for c in c_list]
+            art_queue.enqueue(flat_cards)
+            print(f"[后台生图队列] 🚀 已将本次印制的 {len(flat_cards)} 张新卡加入后台自动排队出图队列。")
+        except Exception as img_err:
+            print(f"[后台生图队列] 提示: {img_err}")
 
     # 印完卡后立即先跑 1000 局对抗压力测试，严密监控平衡性
     if args.test_episodes > 0 and any(len(cards) > 0 for cards in all_printed_cards.values()):

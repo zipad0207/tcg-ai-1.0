@@ -584,26 +584,81 @@ document.getElementById('btn-deck-battle').onclick = async () => {
     }
 };
 
-// ----------------- Batch Art Modal -----------------
+// ----------------- Batch Art Modal & Background Queue -----------------
 const batchModal = document.getElementById('batch-art-modal');
 const btnOpenBatch = document.getElementById('btn-open-batch-art');
-if (btnOpenBatch) {
-    btnOpenBatch.onclick = async () => {
-        if (!batchModal) return;
-        batchModal.classList.remove('hidden');
-        const descEl = document.getElementById('batch-art-desc');
-        const statusText = document.getElementById('batch-status-text');
-        const bar = document.getElementById('batch-progress-bar');
-        if (bar) bar.style.width = '0%';
+let batchPollTimer = null;
 
+function stopBatchArtPolling() {
+    if (batchPollTimer) {
+        clearInterval(batchPollTimer);
+        batchPollTimer = null;
+    }
+}
+
+function startBatchArtPolling() {
+    stopBatchArtPolling();
+    const descEl = document.getElementById('batch-art-desc');
+    const statusText = document.getElementById('batch-status-text');
+    const bar = document.getElementById('batch-progress-bar');
+    const startBtn = document.getElementById('btn-start-batch-art');
+
+    const check = async () => {
         try {
             const res = await fetch('/api/batch_generate_art/status');
             const data = await res.json();
-            if (descEl) descEl.innerText = `卡池中共有 ${data.missing_count} 张卡牌缺少原画插图。`;
-            if (statusText) statusText.innerText = data.missing_count > 0 ? "点击下方按钮开始批量绘制" : "太棒了！所有卡牌的原画已全部绘制完毕！";
+            const q = data.queue_status || {};
+            const isRunning = q.is_running;
+
+            if (startBtn) startBtn.disabled = isRunning;
+
+            if (isRunning) {
+                const currentName = q.current_card ? (q.current_card.name || `新卡_${q.current_card.id}`) : '新卡';
+                const pct = q.percentage || 0;
+                if (bar) bar.style.width = `${pct}%`;
+                if (statusText) {
+                    statusText.innerHTML = `🎨 [${q.current}/${q.total}] 正在生成 <strong>${currentName}</strong> (${pct}%)... ⏳`;
+                }
+                if (descEl) {
+                    descEl.innerText = `后台队列运行中：已成功 ${q.success} 张，失败 ${q.failed} 张。`;
+                }
+            } else {
+                if (q.done) {
+                    if (bar) bar.style.width = '100%';
+                    if (statusText) {
+                        statusText.innerHTML = `🎉 后台生图完成！共成功绘制 <strong>${q.success}</strong> 张卡图！`;
+                    }
+                    if (startBtn) startBtn.disabled = false;
+                    stopBatchArtPolling();
+                    // Refresh data to show new art immediately
+                    const dataRes = await fetch('/api/data');
+                    if (dataRes.ok) {
+                        window.tcgData = await dataRes.json();
+                        document.dispatchEvent(new Event('tcgDataLoaded'));
+                    }
+                } else {
+                    const missingCount = data.missing_count || 0;
+                    if (bar) bar.style.width = '0%';
+                    if (descEl) descEl.innerText = `卡池中共有 ${missingCount} 张卡牌缺少原画插图。`;
+                    if (statusText) statusText.innerText = missingCount > 0 ? "点击下方按钮开始后台排队绘制" : "太棒了！所有卡牌的原画已全部绘制完毕！";
+                    if (startBtn) startBtn.disabled = (missingCount === 0);
+                    stopBatchArtPolling();
+                }
+            }
         } catch (e) {
-            if (descEl) descEl.innerText = "获取状态失败: " + e.message;
+            console.warn("Poll batch art failed:", e);
         }
+    };
+
+    check();
+    batchPollTimer = setInterval(check, 1500);
+}
+
+if (btnOpenBatch) {
+    btnOpenBatch.onclick = () => {
+        if (!batchModal) return;
+        batchModal.classList.remove('hidden');
+        startBatchArtPolling();
     };
 }
 
@@ -611,6 +666,7 @@ const btnCloseBatch = document.getElementById('btn-close-batch-art');
 if (btnCloseBatch) {
     btnCloseBatch.onclick = () => {
         if (batchModal) batchModal.classList.add('hidden');
+        stopBatchArtPolling();
     };
 }
 
@@ -621,24 +677,20 @@ if (btnStartBatch) {
         const bar = document.getElementById('batch-progress-bar');
 
         btnStartBatch.disabled = true;
-        if (bar) bar.style.width = '30%';
-        if (statusText) statusText.innerHTML = "🎨 正在排队逐张调用 <strong>Tongyi-MAI Z-Image-Turbo</strong> 绘制中，请稍候... ⏳";
+        if (bar) bar.style.width = '5%';
+        if (statusText) statusText.innerHTML = "🚀 正在向后台提交排队生图请求... ⏳";
 
         try {
             const res = await fetch('/api/batch_generate_art', { method: 'POST' });
             const data = await res.json();
-            if (bar) bar.style.width = '100%';
-            if (statusText) statusText.innerHTML = `🎉 批量生成完成！共成功绘制 <strong>${data.generated || 0}</strong> 张卡图！`;
-
-            // Refresh data
-            const dataRes = await fetch('/api/data');
-            if (dataRes.ok) {
-                window.tcgData = await dataRes.json();
-                document.dispatchEvent(new Event('tcgDataLoaded'));
+            if (data.success) {
+                startBatchArtPolling();
+            } else {
+                if (statusText) statusText.innerHTML = `<span style="color:red">启动失败: ${data.detail || data.message}</span>`;
+                btnStartBatch.disabled = false;
             }
         } catch (e) {
-            if (statusText) statusText.innerHTML = `<span style="color:red">批量生成失败: ${e.message}</span>`;
-        } finally {
+            if (statusText) statusText.innerHTML = `<span style="color:red">请求失败: ${e.message}</span>`;
             btnStartBatch.disabled = false;
         }
     };

@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from .services.image_gen import ZImageTurboGenerator
+from .services.image_gen import ZImageTurboGenerator, art_queue
 from .services.game_session import GameSession
 from .services.card_printer import DeepSeekCardPrinter
 from .services.pipeline_runner import runner as pipeline_runner
@@ -128,15 +128,26 @@ def generate_new_cards(req: GenerateCardsRequest):
 @app.post("/api/batch_generate_art")
 def batch_generate_art():
     try:
-        res = image_generator.batch_generate_missing()
-        return res
+        # Enqueue missing cards into background queue asynchronously (non-blocking)
+        res = art_queue.enqueue()
+        return {
+            "success": True,
+            "message": "已成功启动后台排队生图队列",
+            "queue": res,
+            "status": art_queue.get_status()
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/batch_generate_art/status")
 def batch_generate_art_status():
     missing = image_generator.get_missing_cards()
-    return {"missing_count": len(missing), "missing_cards": missing}
+    q_status = art_queue.get_status()
+    return {
+        "missing_count": len(missing),
+        "missing_cards": missing,
+        "queue_status": q_status
+    }
 
 from typing import Optional, List
 
