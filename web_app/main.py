@@ -511,7 +511,7 @@ async def websocket_arena(websocket: WebSocket):
 # ----------------- Pipeline Orchestrator API & WebSocket -----------------
 class PipelineStartRequest(BaseModel):
     mode: str = "tune_only"
-    episodes: int = 60
+    episodes: int = 3000
     target_balance: float = 5.0
     target_pairwise_balance: float = 8.0
 

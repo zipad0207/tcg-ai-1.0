@@ -36,7 +36,7 @@ class PipelineRunner:
             except Exception:
                 pass
 
-    def start(self, mode: str = "tune_only", episodes: int = 60, target_balance: float = 5.0, target_pairwise_balance: float = 8.0) -> dict:
+    def start(self, mode: str = "tune_only", episodes: int = 3000, target_balance: float = 5.0, target_pairwise_balance: float = 8.0) -> dict:
         if self.is_running and self.process and self.process.poll() is None:
             return {"success": False, "message": "流水线当前正在运行中，请勿重复启动"}
 
