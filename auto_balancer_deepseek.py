@@ -4,130 +4,162 @@ load_dotenv()
 import re
 import sys
 import json
+import copy
+import argparse
+from typing import Optional
 from openai import OpenAI
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def _clean_secret(val) -> str:
+    if not isinstance(val, str):
+        return ""
+    s = val.strip()
+    if not s or "••••" in s or s.startswith("sk-•••"):
+        return ""
+    return s
+
+
+def _load_llm_config() -> dict:
+    cfg_path = os.path.join(SCRIPT_DIR, "llm_config.json")
+    if not os.path.exists(cfg_path):
+        return {}
+    try:
+        with open(cfg_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def get_base_url() -> str:
+    url = (os.environ.get("DEEPSEEK_BASE_URL") or "").strip()
+    if not url:
+        cfg = _load_llm_config()
+        url = (cfg.get("base_url") or "").strip() if isinstance(cfg.get("base_url"), str) else ""
+    return url or "https://api.deepseek.com"
+
+
 def get_api_key() -> str:
-    key = (os.environ.get("DEEPSEEK_API_KEY", "") or os.environ.get("SILICONFLOW_API_KEY", "")).strip()
-    if not key or "••••" in key or key.startswith("sk-•••"):
-        key = ""
-        cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_config.json")
-        if os.path.exists(cfg_path):
-            try:
-                with open(cfg_path, "r", encoding="utf-8") as f:
-                    cfg = json.load(f)
-                    raw_k = (cfg.get("deepseek_api_key") or cfg.get("api_key", "")).strip()
-                    if raw_k and "••••" not in raw_k and not raw_k.startswith("sk-•••"):
-                        key = raw_k
-            except Exception:
-                pass
+    key = _clean_secret(os.environ.get("DEEPSEEK_API_KEY", ""))
+    if not key:
+        cfg = _load_llm_config()
+        key = _clean_secret(cfg.get("deepseek_api_key")) or _clean_secret(cfg.get("api_key"))
     if not key and sys.platform == "win32":
         try:
             import winreg
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment") as env_key:
                 raw_k, _ = winreg.QueryValueEx(env_key, "DEEPSEEK_API_KEY")
-                raw_k = (raw_k or "").strip()
-                if raw_k and "••••" not in raw_k and not raw_k.startswith("sk-•••"):
-                    key = raw_k
+                key = _clean_secret(raw_k)
         except Exception:
             pass
+    # Only reuse SILICONFLOW_API_KEY when base_url targets SiliconFlow; otherwise it is the image-gen key.
+    if not key and "siliconflow" in get_base_url().lower():
+        key = _clean_secret(os.environ.get("SILICONFLOW_API_KEY", ""))
     return key
 
-def get_base_url() -> str:
-    url = os.environ.get("DEEPSEEK_BASE_URL", "")
-    if not url:
-        cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_config.json")
-        if os.path.exists(cfg_path):
-            try:
-                with open(cfg_path, "r", encoding="utf-8") as f:
-                    cfg = json.load(f)
-                    url = cfg.get("base_url", "")
-            except Exception:
-                pass
-    return url or "https://api.deepseek.com"
 
 def get_model_name() -> str:
-    model = os.environ.get("DEEPSEEK_MODEL", "")
+    model = (os.environ.get("DEEPSEEK_MODEL") or "").strip()
     if not model:
-        cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_config.json")
-        if os.path.exists(cfg_path):
-            try:
-                with open(cfg_path, "r", encoding="utf-8") as f:
-                    cfg = json.load(f)
-                    model = cfg.get("model") or cfg.get("deepseek_model", "")
-            except Exception:
-                pass
+        cfg = _load_llm_config()
+        raw_m = cfg.get("model") or cfg.get("deepseek_model")
+        model = raw_m.strip() if isinstance(raw_m, str) else ""
     if not model:
         base_url = get_base_url()
         model = "deepseek-ai/DeepSeek-V3" if "siliconflow" in base_url.lower() else "deepseek-flash"
     return model
 
-MODEL_NAME = get_model_name()
 
+MODEL_NAME = get_model_name()
 DEEPSEEK_API_KEY = get_api_key()
 
-CONFIG_FILE = "cards_config_baseline.json" if os.path.exists("cards_config_baseline.json") else "cards_config.json"
-METRICS_FILE = "training_metrics_baseline.json" if os.path.exists("training_metrics_baseline.json") else "training_metrics.json"
-OUTPUT_TUNED_FILE = "cards_config_tuned.json"
-EXPANDED_FILE = "cards_config.json"
-
-import argparse
 
 def load_json(filepath: str) -> dict:
-    if not os.path.exists(filepath):
+    if not filepath or not os.path.exists(filepath):
         return {}
     with open(filepath, "r", encoding="utf-8") as f:
         return json.load(f)
 
+
 def clean_json_response(raw_text: str) -> str:
-    if not raw_text:
+    if not raw_text or not isinstance(raw_text, str):
         return "{}"
-    match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw_text, re.DOTALL)
-    if match:
-        return match.group(1).strip()
-    match = re.search(r"(\{.*\})", raw_text, re.DOTALL)
-    if match:
-        return match.group(1).strip()
-    return raw_text.strip()
+    match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", raw_text)
+    candidate = match.group(1).strip() if match else raw_text.strip()
+    obj_start, obj_end = candidate.find("{"), candidate.rfind("}")
+    arr_start, arr_end = candidate.find("["), candidate.rfind("]")
+    if arr_start != -1 and arr_end > arr_start and (obj_start == -1 or arr_start < obj_start):
+        return candidate[arr_start:arr_end + 1]
+    if obj_start != -1 and obj_end > obj_start:
+        return candidate[obj_start:obj_end + 1]
+    return candidate or "{}"
+
 
 LEGAL_TAG_PATTERNS = [
     r"^RUSH$",
-    r"^FORTIFY_\d+$",
-    r"^DEGRADE_\d+$",
-    r"^SUPPORT_ATK_\d+$",
-    r"^BONUS_SCORE_\d+$",
-    r"^SPAWN_\d+_\d+$",
-    r"^DEATH_DRAW_\d+$",
-    r"^DEATH_MANA_\d+$",
+    r"^FORTIFY_[1-9]\d*$",
+    r"^DEGRADE_[1-9]\d*$",
+    r"^SUPPORT_ATK_[1-9]\d*$",
+    r"^BONUS_SCORE_[1-9]\d*$",
+    r"^SPAWN_[1-9]\d*_[1-9]\d*$",
+    r"^DEATH_DRAW_[1-9]\d*$",
+    r"^DEATH_MANA_[1-9]\d*$",
     r"^SACRIFICE_1_KILL_1$",
     r"^ATTACK_ONLY$",
-    r"^DRAW_\d+$",
-    r"^RAMP_\d+$",
-    r"^TEMP_MANA_\d+$",
-    r"^DISCARD_\d+$",
+    r"^DRAW_[1-9]\d*$",
+    r"^RAMP_[1-9]\d*$",
+    r"^TEMP_MANA_[1-9]\d*$",
+    r"^DISCARD_[1-9]\d*$",
 ]
 
+
 def is_legal_tag(tag: str) -> bool:
-    return any(re.match(p, tag) for p in LEGAL_TAG_PATTERNS)
+    if not isinstance(tag, str):
+        return False
+    normalized = tag.strip().upper()
+    return any(re.match(p, normalized) for p in LEGAL_TAG_PATTERNS)
 
-def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client: OpenAI, history_metrics: dict = None, target_tolerance: float = 5.0, target_pairwise_tolerance: float = 8.0, target_pairwise_balance: float = None, severe_threshold: float = 10.0, tabu_list: dict = None, weak_factions: list = None) -> str:
-    if target_pairwise_balance is not None:
-        target_pairwise_tolerance = target_pairwise_balance
-    total = max(1, metrics_data.get("total_episodes", 1000))
-    
-    max_dev = 0.0
-    data_section = ""
+
+def _to_int(val) -> Optional[int]:
+    if val is None or isinstance(val, bool):
+        return None
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        return None
+
+
+def _to_int_default(val, default: int = 0) -> int:
+    parsed = _to_int(val)
+    return default if parsed is None else parsed
+
+
+def _to_float(val, default: float = 0.0) -> float:
+    if val is None or isinstance(val, bool):
+        return default
+    try:
+        return float(val)
+    except (TypeError, ValueError):
+        return default
+
+
+def _compute_balance_metrics(metrics_data: dict, target_pairwise_tolerance: float) -> dict:
+    raw_total = _to_int(metrics_data.get("total_episodes"))
+    total = max(1, 1000 if raw_total is None else raw_total)
+    factions = []
+    deviations = {}
     pairwise_stats = {}
+    max_dev = 0.0
     max_pairwise_dev = 0.0
-    pairwise_imbalanced = []
 
-    if "faction_stats" in metrics_data:
-        stats_lines = []
-        deviations = {}
-        # 动态获取战报中的阵营列表，优先保持标准排序
-        f_keys = list(metrics_data["faction_stats"].keys())
+    f_stats = metrics_data.get("faction_stats")
+    if isinstance(f_stats, dict):
+        f_keys = list(f_stats.keys())
         factions = [f for f in ["Red", "Blue", "Green"] if f in f_keys]
         for f in f_keys:
             if f not in factions:
@@ -136,38 +168,123 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
             factions = ["Red", "Blue", "Green"]
 
         for f in factions:
-            s = metrics_data["faction_stats"].get(f, {"winrate": 50.0, "wins": 0, "matches": 0})
-            wr = s.get("winrate", 50.0)
-            dev = abs(wr - 50.0)
-            deviations[f] = dev
-            stats_lines.append(f"- 【{f}】阵营: 胜率 {wr:.1f}% ({s.get('wins', 0)} 胜 / {s.get('matches', 0)} 场) | 偏离 50% 基准: {dev:.1f}%")
-        data_section = "\n".join(stats_lines)
+            s = f_stats.get(f) or {}
+            wr = _to_float(s.get("winrate"), 50.0)
+            deviations[f] = abs(wr - 50.0)
+        max_dev = max(deviations.values()) if deviations else 0.0
 
-        # 动态提取并双向合并所有阵营两两对抗
-        if "matchups" in metrics_data and len(factions) >= 2:
-            pairs = []
+        matchups = metrics_data.get("matchups")
+        if isinstance(matchups, dict) and len(factions) >= 2:
             for i in range(len(factions)):
                 for j in range(i + 1, len(factions)):
-                    pairs.append((factions[i], factions[j]))
+                    f1, f2 = factions[i], factions[j]
+                    k1 = f"{f1}_vs_{f2}"
+                    k2 = f"{f2}_vs_{f1}"
+                    r1 = matchups.get(k1) or {}
+                    r2 = matchups.get(k2) or {}
+                    tot = _to_int_default(r1.get("total"), 0) + _to_int_default(r2.get("total"), 0)
+                    f1_wins = _to_int_default(r1.get(f"{f1}_wins"), 0) + _to_int_default(r2.get(f"{f1}_wins"), 0)
+                    f2_wins = max(0, tot - f1_wins)
+                    wr1 = (f1_wins / max(1, tot)) * 100.0 if tot > 0 else 50.0
+                    wr2 = 100.0 - wr1
+                    p_dev = abs(wr1 - 50.0)
+                    if p_dev > max_pairwise_dev:
+                        max_pairwise_dev = p_dev
+                    pairwise_stats[(f1, f2)] = {
+                        "total": tot,
+                        "f1_wins": f1_wins,
+                        "f2_wins": f2_wins,
+                        "wr1": wr1,
+                        "wr2": wr2,
+                        "dev": p_dev,
+                    }
+    else:
+        p0_wins = _to_int_default(metrics_data.get("p0_wins"), 500)
+        p0_rate = (p0_wins / total) * 100.0
+        max_dev = abs(p0_rate - 50.0)
 
+    effective_max_dev = max(max_dev, max_pairwise_dev) if target_pairwise_tolerance > 0 else max_dev
+    return {
+        "total": total,
+        "factions": factions,
+        "deviations": deviations,
+        "pairwise_stats": pairwise_stats,
+        "max_dev": max_dev,
+        "max_pairwise_dev": max_pairwise_dev,
+        "effective_max_dev": effective_max_dev,
+    }
+
+
+def _strip_cards_for_prompt(cards_data: dict) -> dict:
+    keep_fields = ("id", "name", "card_type", "cost", "base_dp", "atk_spell_val", "def_spell_val", "tags", "factions")
+    stripped = {}
+    for k, v in cards_data.items():
+        if isinstance(v, list):
+            stripped[k] = [
+                {fld: c[fld] for fld in keep_fields if fld in c}
+                for c in v if isinstance(c, dict)
+            ]
+        else:
+            stripped[k] = v
+    return stripped
+
+
+def _build_card_role_maps(cards_data: dict) -> tuple:
+    excluded_names = {"幸运币", "法力过载"}
+    dual_names = set()
+    for category, card_list in cards_data.items():
+        if not isinstance(card_list, list):
+            continue
+        for c in card_list:
+            if not isinstance(c, dict):
+                continue
+            name = c.get("name", "")
+            f_list = c.get("factions") or []
+            if c.get("is_token") or category == "Neutral" or f_list == ["Neutral"]:
+                if name:
+                    excluded_names.add(name)
+            elif category == "Dual" or len(f_list) > 1:
+                if name:
+                    dual_names.add(name)
+    return excluded_names, dual_names
+
+def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client: OpenAI, history_metrics: dict = None, target_tolerance: float = 5.0, target_pairwise_tolerance: float = 8.0, target_pairwise_balance: float = None, severe_threshold: float = 10.0, tabu_list: dict = None, weak_factions: list = None) -> str:
+    if target_pairwise_balance is not None:
+        target_pairwise_tolerance = target_pairwise_balance
+
+    summary = _compute_balance_metrics(metrics_data, target_pairwise_tolerance)
+    total = summary["total"]
+    factions = summary["factions"]
+    deviations = summary["deviations"]
+    pairwise_stats = summary["pairwise_stats"]
+    max_dev = summary["max_dev"]
+    max_pairwise_dev = summary["max_pairwise_dev"]
+    effective_max_dev = summary["effective_max_dev"]
+
+    data_section = ""
+    pairwise_imbalanced = []
+
+    f_stats_raw = metrics_data.get("faction_stats")
+    if isinstance(f_stats_raw, dict):
+        stats_lines = []
+        for f in factions:
+            s = f_stats_raw.get(f) or {}
+            wr = _to_float(s.get("winrate"), 50.0)
+            wins_cnt = _to_int_default(s.get("wins"), 0)
+            matches_cnt = _to_int_default(s.get("matches"), 0)
+            dev = deviations.get(f, abs(wr - 50.0))
+            stats_lines.append(f"- 【{f}】阵营: 胜率 {wr:.1f}% ({wins_cnt} 胜 / {matches_cnt} 场) | 偏离 50% 基准: {dev:.1f}%")
+        data_section = "\n".join(stats_lines)
+
+        if pairwise_stats:
             pairwise_lines = []
-            for f1, f2 in pairs:
-                k1 = f"{f1}_vs_{f2}"
-                k2 = f"{f2}_vs_{f1}"
-                r1 = metrics_data["matchups"].get(k1, {})
-                r2 = metrics_data["matchups"].get(k2, {})
-                tot = r1.get("total", 0) + r2.get("total", 0)
-                f1_wins = r1.get(f"{f1}_wins", 0) + r2.get(f"{f1}_wins", 0)
-                f2_wins = tot - f1_wins
-                wr1 = (f1_wins / max(1, tot)) * 100.0 if tot > 0 else 50.0
-                wr2 = 100.0 - wr1
-                p_dev = abs(wr1 - 50.0)
-                if p_dev > max_pairwise_dev:
-                    max_pairwise_dev = p_dev
-                pairwise_stats[(f1, f2)] = {
-                    "total": tot, "f1_wins": f1_wins, "f2_wins": f2_wins,
-                    "wr1": wr1, "wr2": wr2, "dev": p_dev
-                }
+            for (f1, f2), ps in pairwise_stats.items():
+                tot = ps["total"]
+                f1_wins = ps["f1_wins"]
+                f2_wins = ps["f2_wins"]
+                wr1 = ps["wr1"]
+                wr2 = ps["wr2"]
+                p_dev = ps["dev"]
                 is_p_ok = (target_pairwise_tolerance <= 0) or (p_dev <= target_pairwise_tolerance)
                 flag = "均势" if is_p_ok else f"偏离 (偏离 50% 达 ±{p_dev:.1f}%)"
                 pairwise_lines.append(
@@ -180,22 +297,13 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
                     u_w = wr2 if wr1 > 50 else wr1
                     pairwise_imbalanced.append((dom, udg, d_w, u_w, p_dev))
 
-            data_section += f"\n- 跨阵营两两对抗战报 (实机双向合并，攻守兼备，核心考核指标):\n" + "\n".join(pairwise_lines)
-
-        max_dev = max(deviations.values()) if deviations else 0.0
+            data_section += "\n- 跨阵营两两对抗战报 (实机双向合并，攻守兼备，核心考核指标):\n" + "\n".join(pairwise_lines)
     else:
-        p0_wins = metrics_data.get("p0_wins", 500)
-        p1_wins = metrics_data.get("p1_wins", 500)
+        p0_wins = _to_int_default(metrics_data.get("p0_wins"), 500)
+        p1_wins = _to_int_default(metrics_data.get("p1_wins"), 500)
         p0_rate = (p0_wins / total) * 100
         p1_rate = (p1_wins / total) * 100
         data_section = f"- 红方胜率 (P0 - 快攻冲锋): {p0_rate:.1f}% ({p0_wins} 胜)\n- 蓝方胜率 (P1 - 控制防守): {p1_rate:.1f}% ({p1_wins} 胜)"
-        max_dev = abs(p0_rate - 50.0)
-
-    # 若开启两两对抗约束，则综合考量总胜率与两两对抗的最大偏离
-    if target_pairwise_tolerance > 0:
-        effective_max_dev = max(max_dev, max_pairwise_dev)
-    else:
-        effective_max_dev = max_dev
 
     history_section = ""
     if history_metrics and history_metrics != metrics_data:
@@ -206,17 +314,14 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
 
     overperforming = []
     underperforming = []
-    balanced = []
-    
-    if "faction_stats" in metrics_data:
-        for f, s in metrics_data["faction_stats"].items():
-            wr = s.get("winrate", 50.0)
+
+    if isinstance(f_stats_raw, dict):
+        for f, s in f_stats_raw.items():
+            wr = _to_float((s or {}).get("winrate"), 50.0)
             if wr > (50.0 + target_tolerance):
                 overperforming.append((f, wr, wr - 50.0))
             elif wr < (50.0 - target_tolerance):
                 underperforming.append((f, wr, 50.0 - wr))
-            else:
-                balanced.append((f, wr))
 
     over_instructions = []
     for f, wr, diff in overperforming:
@@ -252,20 +357,24 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
         3. 协同注意：调整时须顾及对第三阵营的平衡联动，切忌矫枉过正引发连锁失衡。""")
     pairwise_text = "\n".join(pairwise_instructions) if pairwise_instructions else "   * 暂无两两对抗失衡（各组两两对战均在容差安全线以内）。"
 
+    is_overall_imbalanced = max_dev > target_tolerance
+    is_pairwise_imbalanced = (target_pairwise_tolerance > 0) and (max_pairwise_dev > target_pairwise_tolerance)
+    is_maintenance = False
+
     if effective_max_dev >= severe_threshold:
         mode_banner = f"【大幅数值调整模式 (含两两克制严重失衡) | 综合最大偏离度: {effective_max_dev:.1f}% >= {severe_threshold:.1f}% (总偏离: {max_dev:.1f}%, 两两最大偏离: {max_pairwise_dev:.1f}%)】"
         balance_instructions = f"""
 ### 【大幅数值调整说明 (Major Overhaul)】
 当前阵营间存在严重失衡或极端对局克制（综合最大偏离度 {effective_max_dev:.1f}% >= {severe_threshold:.1f}%）。
 必须重点针对【两两对抗压制对局】及失衡阵营的关键卡牌进行实质性数值微调：
-1. **调整规模**：针对性调整 3 ~ 6 张核心卡牌（削弱过于压制对方的单卡，补强严重被压制的抗压牌）。
+1. **调整规模（强制硬性要求）**：必须针对性调整 4 ~ 6 张核心卡牌（严禁仅调整 1~2 张！必须包含至少 2 张强势阵营核心削弱牌与至少 2 张弱势阵营补强牌）。
 2. **两两克制失衡修正专项（核心重点）**：
 {pairwise_text}
 3. **大盘阵营总胜率调整**：
 {over_text}
 {under_text}
 """
-    elif effective_max_dev >= target_tolerance or effective_max_dev >= target_pairwise_tolerance:
+    elif is_overall_imbalanced or is_pairwise_imbalanced:
         mode_banner = f"【轻量两两克制微调模式 | 综合最大偏离度: {effective_max_dev:.1f}% (总偏离: {max_dev:.1f}%, 两两偏离: {max_pairwise_dev:.1f}%)】"
         balance_instructions = f"""
 ### 【轻量微调说明】
@@ -276,6 +385,7 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
 {under_text}
 """
     else:
+        is_maintenance = True
         mode_banner = f"【全面平衡维持模式 | 阵营总偏离 {max_dev:.1f}% <= {target_tolerance}%, 两两对抗最大偏离 {max_pairwise_dev:.1f}% <= {target_pairwise_tolerance}%】"
         balance_instructions = f"""
 ### 【平衡维持说明】
@@ -284,13 +394,47 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
 **本轮原则上无需对数值进行大规模修改，保护当前稳定的全量牌池生态！**
 """
 
+    excluded_names, dual_names = _build_card_role_maps(cards_data)
+    f_card_plays = metrics_data.get("faction_card_plays", {})
+    card_plays_section = ""
+    if f_card_plays:
+        play_lines = []
+        for f, c_dict in f_card_plays.items():
+            filtered = [
+                (name, cnt) for name, cnt in c_dict.items()
+                if name not in excluded_names and not name.endswith("的小兵")
+            ]
+            top_cards = sorted(filtered, key=lambda x: x[1], reverse=True)[:5]
+            if top_cards:
+                top_str = ", ".join([
+                    f"{name}{'[双色]' if name in dual_names else ''}(出场{cnt}次)"
+                    for name, cnt in top_cards
+                ])
+                play_lines.append(f"  - 【{f}】本阵营实战高频出牌 Top 5: {top_str}")
+        if play_lines:
+            card_plays_section = "\n### 各阵营实战高频出牌遥测 (已剔除中立与衍生物，Top 5 核心支柱):\n" + "\n".join(play_lines) + "\n"
+
+    constraints = []
     tabu_ids = list(tabu_list.keys()) if tabu_list else []
-    tabu_str = f"4. **Tabu记忆冻结**：以下卡牌刚在近期被调整过，本轮强制冷却，绝对禁止任何改动: {tabu_ids}" if tabu_ids else ""
-    weak_str = f"5. **弱势阵营绝对保护**：禁止削弱综合胜率最低的弱势阵营（{weak_factions}）。对这些阵营的卡牌，强制只能加数值或降费，严禁增加 cost 或降低 base_dp/atk_spell_val/def_spell_val！" if weak_factions else ""
+    if tabu_ids:
+        constraints.append(f"**Tabu记忆冻结（严禁选中）**：以下卡牌刚在近期被调整过，本轮强制冷却，绝对禁止任何改动: {tabu_ids}。系统将硬拦截这些卡牌，请务必从其它卡牌中选取调整目标！")
+    if weak_factions:
+        constraints.append(f"**弱势阵营绝对保护**：禁止削弱综合胜率最低的弱势阵营（{weak_factions}）。对这些阵营的卡牌，强制只能加数值或降费，严禁增加 cost、降低 base_dp/atk_spell_val/def_spell_val 或剥离正面词条！")
+    if overperforming and not is_maintenance:
+        over_names = [x[0] for x in overperforming]
+        constraints.append(f"**定向削弱指引**：强势胜率超标阵营（{over_names}），请优先从其上述【本阵营实战高频出牌 Top 5】的非双色单阵营卡中挑选削弱对象（除 Tabu 冻结卡牌外），削弱其费用(+1费)或身材(-1~2 DP)，切断其过度压制对手的节奏点！")
 
-    balance_instructions += f"\n### 特殊硬性约束：\n{tabu_str}\n{weak_str}\n"
+    if constraints:
+        numbered = "\n".join(f"{idx}. {txt}" for idx, txt in enumerate(constraints, 1))
+        balance_instructions += f"\n### 特殊硬性约束：\n{numbered}\n"
 
+    mod_count_instruction = (
+        "若判定为【全面平衡维持模式】无需修改任何卡牌，请直接输出 `{\"modifications\": []}`；如需微调，请仅调整 1~2 张。"
+        if is_maintenance else
+        "严禁改动卡牌的 id 与 card_type；仅针对性调整选中的 2~8 张卡牌的 cost, base_dp, atk_spell_val, def_spell_val, tags。"
+    )
 
+    prompt_cards = _strip_cards_for_prompt(cards_data)
 
     prompt = f"""
 你是一名经验丰富的 TCG 卡牌设计师兼数值策划。
@@ -299,7 +443,8 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
 ### 1. 训练对局数据:
 - 总训练对局: {total} 局
 {data_section}
-- 卡牌使用频次统计: {json.dumps(metrics_data.get("card_play_count", {}), ensure_ascii=False)}
+{card_plays_section}
+- 卡牌全局使用频次统计: {json.dumps(metrics_data.get("card_play_count", {}), ensure_ascii=False)}
 {history_section}
 
 ### 2. 核心机制特性与设计规则：
@@ -326,7 +471,7 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
    - `DEATH_MANA_X`：亡语跳费，阵亡后永久上限 +X。
    - `SACRIFICE_1_KILL_1`：献祭己方一名单位，强制消灭敌方一名单位。
    - `ATTACK_ONLY`：限定只能打入进攻区。
-   - `DRAW_X` / `RAMP_X` / `TEMP_MANA_1` / `DISCARD_X`：常规法术/战吼词条。
+   - `DRAW_X` / `RAMP_X` / `TEMP_MANA_X` / `DISCARD_X`：常规法术/战吼词条。
 6. **严禁恶性完爆（Anti-Strict-Outclassing Rule，绝对红线）**：
    - 严禁调出同费用、同阵营下的绝对完爆关系！
    - 严禁出现一张卡在同费用下，身材、词条以及机制全方位被另一张卡绝对碾压（如同样 3 费，一张 3 DP 生 1/1 能攻能守，另一张 1 DP 生 1/1 且仅能进攻）；
@@ -347,7 +492,7 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
      在削弱胜率过高的卡牌时，若剥离了其突袭（RUSH）或核心词条，绝不能把数值留在残缺低位使其沦为亏模白板废卡！若去掉核心词条，必须同步补足基础身材；若压低身材，必须保留功能性机制或降费。
 
 ### 3. 待调整卡池配置:
-{json.dumps(cards_data, indent=2, ensure_ascii=False)}
+{json.dumps(prompt_cards, indent=2, ensure_ascii=False)}
 
 ---
 ### 调优工作指示:
@@ -370,13 +515,13 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
     }}
   ]
 }}
-3. 严禁改动卡牌的 id 与 card_type；仅针对性调整选中的 2~8 张卡牌的 cost, base_dp, atk_spell_val, def_spell_val, tags。
+3. {mod_count_instruction}
 4. 严禁输出任何解释性废话。
 """
 
     print(f"\n调用 [{get_model_name()}] 读取训练战报，执行卡池数值调优...")
     print(f"模式: {mode_banner}")
-    extra = {"thinking": {"type": "disabled"}} if "deepseek.com" in get_base_url() else {}
+    extra = {"thinking": {"type": "disabled"}} if "deepseek.com" in get_base_url().lower() else {}
     response = client.chat.completions.create(
         model=get_model_name(),
         messages=[
@@ -388,31 +533,250 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
         response_format={"type": "json_object"},
         extra_body=extra if extra else None
     )
-    return response.choices[0].message.content
+    return response.choices[0].message.content or ""
+
 
 def extract_card_list(data) -> list:
     cards = []
-    if isinstance(data, list):
-        for item in data:
-            if isinstance(item, dict) and "id" in item:
-                cards.append(item)
-    elif isinstance(data, dict):
-        for k, v in data.items():
-            if isinstance(v, list):
-                for item in v:
-                    if isinstance(item, dict) and "id" in item:
-                        cards.append(item)
-            elif isinstance(v, dict) and "id" in v:
-                cards.append(v)
+
+    def _collect(node):
+        if isinstance(node, dict):
+            if "id" in node:
+                cards.append(node)
+            else:
+                for v in node.values():
+                    _collect(v)
+        elif isinstance(node, list):
+            for item in node:
+                _collect(item)
+
+    _collect(data)
     return cards
+
 
 def resolve_path(p):
     if not p or os.path.exists(p):
         return p
-    alt2 = os.path.join(os.path.dirname(__file__), os.path.basename(p))
+    alt2 = os.path.join(SCRIPT_DIR, os.path.basename(p))
     if os.path.exists(alt2):
         return alt2
+    if not os.path.isabs(p) and not os.path.dirname(p):
+        return os.path.join(SCRIPT_DIR, p)
     return p
+
+_POS_BOOL_TAGS = {"RUSH", "SACRIFICE_1_KILL_1"}
+_POS_PREFIX_TAGS = (
+    "FORTIFY_", "DEGRADE_", "SUPPORT_ATK_", "BONUS_SCORE_",
+    "DEATH_DRAW_", "DEATH_MANA_", "DRAW_", "RAMP_", "TEMP_MANA_",
+)
+
+
+def _tag_profile(tags: list) -> dict:
+    bool_pos = set()
+    val_pos = {}
+    spawn_dp = 0
+    attack_only = False
+    discard = 0
+    for raw_t in tags or []:
+        if not isinstance(raw_t, str):
+            continue
+        t = raw_t.strip().upper()
+        if not is_legal_tag(t):
+            continue
+        if t in _POS_BOOL_TAGS:
+            bool_pos.add(t)
+        elif t == "ATTACK_ONLY":
+            attack_only = True
+        elif t.startswith("DISCARD_"):
+            val = _to_int(t.split("_", 1)[1])
+            if val:
+                discard += val
+        elif t.startswith("SPAWN_"):
+            parts = t.split("_")
+            if len(parts) == 3:
+                x_val, y_val = _to_int(parts[1]), _to_int(parts[2])
+                if x_val and y_val:
+                    spawn_dp += x_val * y_val
+        else:
+            for pfx in _POS_PREFIX_TAGS:
+                if t.startswith(pfx):
+                    val = _to_int(t[len(pfx):])
+                    if val:
+                        val_pos[pfx] = val_pos.get(pfx, 0) + val
+                    break
+    return {
+        "bool_pos": bool_pos,
+        "val_pos": val_pos,
+        "spawn_dp": spawn_dp,
+        "attack_only": attack_only,
+        "discard": discard,
+    }
+
+
+def _is_protected_weak_card(orig_f: str, orig_card: dict, weak_factions: list) -> bool:
+    if not weak_factions:
+        return False
+    if orig_f in weak_factions:
+        return True
+    f_list = orig_card.get("factions") or []
+    if orig_f == "Dual" and f_list:
+        return all(f in weak_factions for f in f_list)
+    return False
+
+
+def _is_nerf_for_weak_faction(orig_card: dict, new_c: dict) -> bool:
+    if "cost" in new_c:
+        nc = _to_int(new_c["cost"])
+        oc = _to_int(orig_card.get("cost"))
+        if nc is not None and oc is not None and nc > oc:
+            return True
+    for fld in ("base_dp", "atk_spell_val", "def_spell_val"):
+        if fld in new_c:
+            nv = _to_int(new_c[fld])
+            ov = _to_int(orig_card.get(fld)) or 0
+            if nv is not None and nv < ov:
+                return True
+    if "tags" in new_c and isinstance(new_c["tags"], list):
+        orig_p = _tag_profile(orig_card.get("tags") or [])
+        new_p = _tag_profile(new_c["tags"])
+        if not orig_p["bool_pos"].issubset(new_p["bool_pos"]):
+            return True
+        for k, v in orig_p["val_pos"].items():
+            if new_p["val_pos"].get(k, 0) < v:
+                return True
+        if new_p["spawn_dp"] < orig_p["spawn_dp"]:
+            return True
+        if new_p["attack_only"] and not orig_p["attack_only"]:
+            return True
+        if new_p["discard"] > orig_p["discard"]:
+            return True
+    return False
+
+
+def _apply_candidates(candidates: list, updated_pool: dict, id_index: dict, weak_factions: list, tabu_list: dict) -> tuple:
+    applied_cards = 0
+    updated_fields = 0
+
+    for cid, new_c in candidates:
+        orig_f, orig_idx = id_index[cid]
+        orig_card = updated_pool[orig_f][orig_idx]
+
+        if _is_protected_weak_card(orig_f, orig_card, weak_factions) and _is_nerf_for_weak_faction(orig_card, new_c):
+            print(f"  [保护] ID {cid} 属于弱势阵营 {orig_f}，拦截任何形式的削弱（数值、费用或词条）。")
+            continue
+
+        before_card = copy.deepcopy(orig_card)
+        is_spell = (orig_card.get("card_type") == "SPELL")
+        card_name = orig_card.get("name", f"ID_{cid}")
+        orig_cost = _to_int_default(before_card.get("cost"), 1)
+
+        for field in ["tags", "cost", "base_dp", "atk_spell_val", "def_spell_val"]:
+            if field not in new_c:
+                continue
+            new_val = new_c[field]
+
+            if field == "tags":
+                if not isinstance(new_val, list):
+                    continue
+                norm_tags = []
+                for t in new_val:
+                    if isinstance(t, str) and is_legal_tag(t):
+                        nt = t.strip().upper()
+                        if nt not in norm_tags:
+                            norm_tags.append(nt)
+                new_val = norm_tags
+            elif field == "cost":
+                parsed = _to_int(new_val)
+                if parsed is None:
+                    continue
+                has_temp_mana = any(
+                    isinstance(t, str) and t.startswith("TEMP_MANA_")
+                    for t in (orig_card.get("tags") or [])
+                )
+                min_cost = 0 if (is_spell and (has_temp_mana or orig_cost == 0)) else 1
+                new_val = min(10, max(min_cost, parsed))
+            elif field == "base_dp":
+                parsed = _to_int(new_val)
+                if parsed is None:
+                    continue
+                if is_spell:
+                    new_val = 0
+                else:
+                    o_dp = _to_int_default(orig_card.get("base_dp"), 0)
+                    if parsed == o_dp:
+                        new_val = o_dp
+                    else:
+                        cost = _to_int_default(orig_card.get("cost"), 1)
+                        floor = 5 if cost >= 8 else (3 if cost >= 6 else (2 if cost >= 4 else 1))
+                        if parsed < o_dp and o_dp <= floor:
+                            parsed = o_dp
+                        elif parsed < floor:
+                            parsed = floor
+                        new_val = min(15, parsed)
+            elif field in ("atk_spell_val", "def_spell_val"):
+                parsed = _to_int(new_val)
+                if parsed is None:
+                    continue
+                new_val = max(0, parsed)
+
+            if field != "tags":
+                o_val = _to_int_default(orig_card.get(field), 0)
+                if abs(new_val - o_val) > 1:
+                    new_val = o_val + (1 if new_val > o_val else -1)
+
+            orig_card[field] = new_val
+
+        # 临时法力倒亏安全拦截与修复
+        if is_spell:
+            c_tags = orig_card.get("tags") or []
+            t_val = 0
+            for t in c_tags:
+                if isinstance(t, str) and t.startswith("TEMP_MANA_"):
+                    tv = _to_int(t.split("_", 2)[2]) if len(t.split("_")) == 3 else None
+                    if tv:
+                        t_val += tv
+            has_other = (
+                _to_int_default(orig_card.get("atk_spell_val"), 0) > 0
+                or _to_int_default(orig_card.get("def_spell_val"), 0) > 0
+                or any(
+                    isinstance(t, str) and (
+                        t.startswith("DRAW_") or t.startswith("RAMP_") or t.startswith("SPAWN_") or t == "SACRIFICE_1_KILL_1"
+                    )
+                    for t in c_tags
+                )
+            )
+            curr_cost = _to_int_default(orig_card.get("cost"), 0)
+            if t_val > 0 and not has_other and curr_cost >= t_val:
+                print(f"  [安全兜底] 拦截到纯临时法力倒亏法术 ID {cid} {card_name} (cost={curr_cost} >= 临时法力 {t_val})，自动修正为 0 费！")
+                orig_card["cost"] = 0
+
+        card_changed = False
+        for field in ["cost", "base_dp", "atk_spell_val", "def_spell_val", "tags"]:
+            if field == "tags":
+                old_v = before_card.get("tags") or []
+                new_v = orig_card.get("tags") or []
+                old_norm = [t.strip().upper() for t in old_v if isinstance(t, str)]
+                if len(new_v) == len(old_norm) and set(new_v) == set(old_norm):
+                    orig_card["tags"] = old_v
+                    continue
+                if new_v != old_v:
+                    print(f"  [词条调整] ID {cid} {card_name}: {field} 从 {old_v} -> {new_v}")
+                    card_changed = True
+                    updated_fields += 1
+            else:
+                old_v = _to_int_default(before_card.get(field), 0)
+                new_v = _to_int_default(orig_card.get(field), 0)
+                if new_v != old_v:
+                    print(f"  [数值调整] ID {cid} {card_name}: {field} 从 {old_v} -> {new_v}")
+                    card_changed = True
+                    updated_fields += 1
+
+        if card_changed:
+            applied_cards += 1
+            tabu_list[str(cid)] = 2
+
+    return applied_cards, updated_fields
+
 
 def main():
     parser = argparse.ArgumentParser(description="TCG 卡牌数值自动平衡调优工具")
@@ -425,13 +789,14 @@ def main():
     parser.add_argument("--severe-threshold", "--severe-imbalance-threshold", type=float, default=10.0, help="严重失衡触发大改的偏离阈值 (默认 10.0%%)")
     args = parser.parse_args()
 
-    if not DEEPSEEK_API_KEY:
+    api_key = DEEPSEEK_API_KEY or get_api_key()
+    if not api_key:
         print("\n" + "!" * 70)
         print("[致命错误] 未找到有效 DEEPSEEK_API_KEY，无法调用大模型执行数值调优！")
         print("!" * 70)
         sys.exit(1)
 
-    client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=get_base_url())
+    client = OpenAI(api_key=api_key, base_url=get_base_url())
 
     cards_file = resolve_path(args.cards)
     metrics_file = resolve_path(args.metrics)
@@ -441,8 +806,15 @@ def main():
     if not os.path.exists(cards_file):
         print(f"找不到卡池配置文件: {cards_file}")
         return
+    if not os.path.exists(metrics_file):
+        print(f"找不到训练战报文件: {metrics_file}")
+        return
 
     current_cards = load_json(cards_file)
+    if not isinstance(current_cards, dict) or not current_cards:
+        print(f"卡池配置为空或格式非法: {cards_file}")
+        return
+
     metrics_data = load_json(metrics_file)
     history_data = load_json(history_file) if history_file else None
 
@@ -450,18 +822,26 @@ def main():
     if history_file:
         print(f"参考战报: {history_file}")
 
-    tabu_file = "balancer_tabu_list.json"
-    tabu_list = load_json(tabu_file) if os.path.exists(tabu_file) else {}
-    new_tabu = {}
-    for cid, wait in tabu_list.items():
-        if wait > 1:
-            new_tabu[cid] = wait - 1
-    tabu_list = new_tabu
+    tabu_file = os.path.join(os.path.dirname(os.path.abspath(output_file)), "balancer_tabu_list.json")
+    raw_tabu = {}
+    if os.path.exists(tabu_file):
+        try:
+            raw_tabu = load_json(tabu_file)
+        except Exception:
+            raw_tabu = {}
+    tabu_list = {}
+    if isinstance(raw_tabu, dict):
+        for cid, wait in raw_tabu.items():
+            w = _to_int(wait)
+            if w is not None and w > 1:
+                tabu_list[str(cid)] = w - 1
 
+    weak_threshold = 50.0 - args.target_balance
     weak_factions = []
-    if "faction_stats" in metrics_data:
-        for f, s in metrics_data["faction_stats"].items():
-            if s.get("winrate", 50.0) < 45.0:
+    f_stats = metrics_data.get("faction_stats")
+    if isinstance(f_stats, dict):
+        for f, s in f_stats.items():
+            if _to_float((s or {}).get("winrate"), 50.0) < weak_threshold:
                 weak_factions.append(f)
 
     try:
@@ -477,6 +857,8 @@ def main():
     except Exception as e:
         print(f"\n[警告] DeepSeek 模型调用异常 ({e})！保持当前卡池不变，平滑进入下一阶段。")
         return
+
+    raw_output = raw_output or ""
     cleaned_json = clean_json_response(raw_output)
 
     new_card_pool = None
@@ -484,7 +866,7 @@ def main():
         new_card_pool = json.loads(cleaned_json)
     except json.JSONDecodeError as e:
         print(f"[*] 遇到 JSON 局部格式异常 ({e})，启动自适应单卡特征正则修复提取...")
-        cand_matches = re.findall(r'\{[^{}]*"id"\s*:\s*\d+[^}]*\}', raw_output)
+        cand_matches = re.findall(r'\{[^{}]*"id"\s*:\s*"?\d+"?[^{}]*\}', raw_output)
         if cand_matches:
             recovered_cards = []
             for m in cand_matches:
@@ -505,107 +887,77 @@ def main():
 
     updated_pool = {}
     for f, card_list in current_cards.items():
-        updated_pool[f] = [dict(c) for c in card_list]
+        if isinstance(card_list, list):
+            updated_pool[f] = [copy.deepcopy(c) for c in card_list if isinstance(c, dict)]
+        else:
+            updated_pool[f] = copy.deepcopy(card_list)
 
     id_index = {}
     for f, card_list in updated_pool.items():
+        if not isinstance(card_list, list):
+            continue
         for idx, c in enumerate(card_list):
-            id_index[c["id"]] = (f, idx)
+            cid_key = _to_int(c.get("id"))
+            if cid_key is not None:
+                id_index[cid_key] = (f, idx)
 
-    updated_count = 0
+    summary = _compute_balance_metrics(metrics_data, args.target_pairwise_balance)
+    effective_max_dev = summary["effective_max_dev"]
+
     cand_cards = extract_card_list(new_card_pool)
     print(f"[*] 成功提取 {len(cand_cards)} 张调整卡牌，正在校验合规性...")
+
+    dedup_candidates = []
+    seen_cids = set()
     for new_c in cand_cards:
-        cid = new_c.get("id")
-        
-        if str(cid) in tabu_list or cid in tabu_list:
-            print(f"  [保护] ID {cid} 处于 Tabu 冷却期，跳过调整。")
+        if not isinstance(new_c, dict):
             continue
-            
-        if cid in id_index:
-            orig_f, orig_idx = id_index[cid]
-            orig_card = updated_pool[orig_f][orig_idx]
-            
-            if orig_f in weak_factions:
-                is_nerf = False
-                if "cost" in new_c and int(new_c["cost"]) > orig_card.get("cost", 1): is_nerf = True
-                if "base_dp" in new_c and int(new_c["base_dp"]) < orig_card.get("base_dp", 0): is_nerf = True
-                if "atk_spell_val" in new_c and int(new_c["atk_spell_val"]) < orig_card.get("atk_spell_val", 0): is_nerf = True
-                if "def_spell_val" in new_c and int(new_c["def_spell_val"]) < orig_card.get("def_spell_val", 0): is_nerf = True
-                if is_nerf:
-                    print(f"  [保护] ID {cid} 属于弱势阵营 {orig_f}，拦截任何形式的削弱（数值或费用）。")
-                    continue
-            
-            card_modified = False
-            for field in ["cost", "base_dp", "atk_spell_val", "def_spell_val", "tags"]:
-                if field in new_c:
-                    new_val = new_c[field]
-                    if field == "cost":
-                        try:
-                            new_val = min(10, max(1, int(new_val)))
-                        except Exception:
-                            continue
-                    elif field == "base_dp":
-                        try:
-                            val = int(new_val)
-                            cost = orig_card.get("cost", 1)
-                            if orig_card.get("card_type") == "MINION":
-                                if cost >= 8: val = max(5, val)
-                                elif cost >= 6: val = max(3, val)
-                                elif cost >= 4: val = max(2, val)
-                                else: val = max(1, val)
-                            new_val = min(15, val)
-                        except Exception:
-                            continue
-                    elif field in ["atk_spell_val", "def_spell_val"]:
-                        try:
-                            new_val = max(0, int(new_val))
-                        except Exception:
-                            continue
-                    elif field == "tags":
-                        if isinstance(new_val, list):
-                            new_val = [t for t in new_val if isinstance(t, str) and is_legal_tag(t)]
-                        else:
-                            continue
+        cid = _to_int(new_c.get("id"))
+        if cid is None or cid not in id_index or cid in seen_cids:
+            continue
+        seen_cids.add(cid)
+        dedup_candidates.append((cid, new_c))
 
-                    if new_val != orig_card.get(field):
-                        if field != "tags":
-                            orig_val = orig_card.get(field)
-                            if orig_val is None:
-                                orig_val = 0
-                            try:
-                                n_val = int(new_val)
-                                o_val = int(orig_val)
-                                if abs(n_val - o_val) > 1:
-                                    new_val = o_val + (1 if n_val > o_val else -1)
-                            except Exception:
-                                pass
-                            print(f"  [数值调整] ID {cid} {orig_card['name']}: {field} 从 {orig_val} -> {new_val}")
-                        else:
-                            print(f"  [词条调整] ID {cid} {orig_card['name']}: {field} 从 {orig_card.get(field)} -> {new_val}")
-                        
-                        orig_card[field] = new_val
-                        card_modified = True
-                        updated_count += 1
+    non_tabu = []
+    tabu_skipped = []
+    for cid, new_c in dedup_candidates:
+        if str(cid) in tabu_list:
+            tabu_skipped.append((cid, new_c))
+        else:
+            non_tabu.append((cid, new_c))
 
-            # 临时法力倒亏安全拦截与修复
-            if orig_card.get("card_type") == "SPELL":
-                c_tags = orig_card.get("tags", [])
-                t_val = sum(int(t.split("_")[2]) for t in c_tags if isinstance(t, str) and t.startswith("TEMP_MANA_"))
-                has_other = (orig_card.get("atk_spell_val", 0) > 0 or orig_card.get("def_spell_val", 0) > 0 or any(isinstance(t, str) and (t.startswith("DRAW_") or t.startswith("RAMP_") or t.startswith("SPAWN_") or t == "SACRIFICE_1_KILL_1") for t in c_tags))
-                if t_val > 0 and not has_other and orig_card.get("cost", 0) >= t_val:
-                    print(f"  [安全兜底] 拦截到纯临时法力倒亏法术 ID {cid} {orig_card['name']} (cost={orig_card.get('cost')} >= 临时法力 {t_val})，自动修正为 0 费！")
-                    orig_card["cost"] = 0
-                    card_modified = True
+    applied_cards_count, updated_count = _apply_candidates(
+        non_tabu, updated_pool, id_index, weak_factions, tabu_list
+    )
 
-            if card_modified:
-                tabu_list[str(cid)] = 2
-                
+    # Aspiration Criterion: unlock Tabu cards if non-Tabu candidates yield 0 changes or <2 during severe imbalance.
+    if tabu_skipped and (
+        applied_cards_count == 0
+        or (applied_cards_count < 2 and effective_max_dev >= args.severe_threshold)
+    ):
+        print(f"  [特赦准则激活 (Aspiration Criterion)] 触发 Tabu 特赦解除保护，强制采纳 {len(tabu_skipped)} 张冷却中卡牌的必要数值调整，防止系统死锁！")
+        extra_cards, extra_fields = _apply_candidates(
+            tabu_skipped, updated_pool, id_index, weak_factions, tabu_list
+        )
+        applied_cards_count += extra_cards
+        updated_count += extra_fields
+    elif tabu_skipped:
+        for cid, _ in tabu_skipped:
+            print(f"  [保护] ID {cid} 处于 Tabu 冷却期，跳过调整。")
+
+    if updated_count == 0:
+        print("  [死锁防范] 本轮有效卡牌调整数为 0，自动清空 Tabu 禁忌列表，解除下一轮潜在死锁。")
+        tabu_list.clear()
+
+    out_dir = os.path.dirname(os.path.abspath(output_file))
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+
     try:
         with open(tabu_file, "w", encoding="utf-8") as f:
             json.dump(tabu_list, f, indent=2)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"  [警告] 保存 Tabu 列表失败 ({tabu_file}): {e}")
 
     tmp_out = output_file + ".tmp"
     try:
@@ -620,8 +972,9 @@ def main():
                 os.remove(tmp_out)
             except OSError:
                 pass
-        
+
     print(f"已完成卡池数值调优 (共更新 {updated_count} 处属性/词条)，已保存至: {output_file}")
+
 
 if __name__ == "__main__":
     main()

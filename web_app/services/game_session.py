@@ -9,8 +9,9 @@ from sandbox import DuelEnv, Faction
 from agent import CardNet
 
 class GameSession:
-    def __init__(self, p0_faction="Red", p1_faction="Blue", p0_decklist=None, p1_decklist=None, mode="pve", started=True):
+    def __init__(self, p0_faction="Red", p1_faction="Blue", p0_decklist=None, p1_decklist=None, mode="pve", started=True, first_player=0):
         self.device = torch.device("cpu")
+        self.first_player = int(first_player)
         
         f_map = {"Red": Faction.RED, "Blue": Faction.BLUE, "Green": Faction.GREEN}
         self.p0_faction = f_map.get(p0_faction, Faction.RED)
@@ -41,7 +42,7 @@ class GameSession:
 
         self.logs = []
         if self.started:
-            self.reset(p0_faction, p1_faction, p0_decklist, p1_decklist, mode)
+            self.reset(p0_faction, p1_faction, p0_decklist, p1_decklist, mode, first_player=self.first_player)
         else:
             self.done = False
             self.obs = None
@@ -63,8 +64,9 @@ class GameSession:
                 pass
         return images
 
-    def reset(self, p0_faction=None, p1_faction=None, p0_decklist=None, p1_decklist=None, mode=None):
+    def reset(self, p0_faction=None, p1_faction=None, p0_decklist=None, p1_decklist=None, mode=None, first_player=0):
         self.started = True
+        self.first_player = int(first_player)
         f_map = {"Red": Faction.RED, "Blue": Faction.BLUE, "Green": Faction.GREEN}
         if p0_faction:
             self.p0_faction = f_map.get(p0_faction, self.p0_faction)
@@ -84,7 +86,7 @@ class GameSession:
             p0_decklist=self.p0_decklist,
             p1_decklist=self.p1_decklist
         )
-        self.obs = self.env.reset()
+        self.obs = self.env.reset(first_player=self.first_player)
         self.done = False
         self.p0_initial_decklist = [int(c.id) for c in self.env.players[0].deck] + [int(c.id) for c in self.env.players[0].hand]
         self.p1_initial_decklist = [int(c.id) for c in self.env.players[1].deck] + [int(c.id) for c in self.env.players[1].hand]
@@ -93,7 +95,11 @@ class GameSession:
         f1_name = "红方" if self.p1_faction == Faction.RED else ("蓝方" if self.p1_faction == Faction.BLUE else "绿方")
         mode_name = "玩家对战 AI" if self.mode == "pve" else "AI 全自动推演"
         deck_info = " (自选卡组)" if self.p0_decklist else ""
-        self.logs = [f"对局初始化完成【{mode_name}】：P0 {f0_name}{deck_info} VS P1 {f1_name} (AI)"]
+        if self.mode == "pve":
+            order_info = "我方先手 (起手3张)" if self.first_player == 0 else "我方后手 (起手4张+幸运币)"
+        else:
+            order_info = f"P{self.first_player} 先手"
+        self.logs = [f"对局初始化完成【{mode_name} · {order_info}】：P0 {f0_name}{deck_info} VS P1 {f1_name} (AI)"]
         return self.get_state_dict()
 
     def format_action_desc(self, action_id, player_id):
@@ -353,6 +359,7 @@ class GameSession:
         state = {
             "is_started": True,
             "mode": self.mode,
+            "first_player": int(getattr(self, "first_player", 0)),
             "turn": int(self.env.turn_count),
             "current_player": int(self.env.current_player),
             "done": bool(self.done),

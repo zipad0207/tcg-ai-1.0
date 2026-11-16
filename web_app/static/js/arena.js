@@ -121,7 +121,9 @@ window.startMatchWithSettings = async function(autoStartAi = false) {
     let p0Decklist = null;
     let p1Decklist = null;
 
+    let firstPlayerChoice = "random";
     if (currentMode === "pve") {
+        firstPlayerChoice = document.getElementById('pve-first-player')?.value || "random";
         const p0DeckChoice = document.getElementById('pve-p0-deck')?.value || "preset_Red";
         const p1DeckChoice = document.getElementById('pve-p1-deck')?.value || "preset_Blue";
 
@@ -160,6 +162,7 @@ window.startMatchWithSettings = async function(autoStartAi = false) {
             p1Decklist = window.tcgData.decks[f1].decklist;
         }
     } else {
+        firstPlayerChoice = document.getElementById('aivai-first-player')?.value || "random";
         p0Faction = document.getElementById('aivai-p0-faction').value;
         p1Faction = document.getElementById('aivai-p1-faction').value;
         if (window.tcgData && window.tcgData.decks) {
@@ -178,6 +181,7 @@ window.startMatchWithSettings = async function(autoStartAi = false) {
         p1_faction: p1Faction,
         p0_decklist: p0Decklist,
         p1_decklist: p1Decklist,
+        first_player: firstPlayerChoice,
         auto_start: autoStartAi
     }));
 };
@@ -774,18 +778,24 @@ function renderArena(state) {
         }
     }
 
-    // Faction labels
+    // Faction labels & Turn-order badges
     const fNames = { "Red": "🔴 赤红", "Blue": "🔵 蔚蓝", "Green": "🟢 翠绿" };
     const p0Badge = document.getElementById('p0-faction-badge');
     const p1Badge = document.getElementById('p1-faction-badge');
 
-    const p0Role = state.mode === 'pve' ? '玩家' : 'AI (P0)';
+    const isP0First = (state.first_player === undefined || state.first_player === 0);
+    const p0TurnTag = isP0First ? ' · [先手]' : ' · [后手 · 获幸运币]';
+    const p1TurnTag = isP0First ? ' · [后手 · 获幸运币]' : ' · [先手]';
+
+    const p0Role = state.mode === 'pve' ? `玩家${p0TurnTag}` : `AI (P0)${p0TurnTag}`;
+    const p1Role = `AI (P1)${p1TurnTag}`;
+
     if (p0Badge) {
         const deckTag = state.is_custom_deck ? ' [自构筑]' : '';
         p0Badge.innerText = `${fNames[state.p0_faction] || state.p0_faction} ${p0Role}${deckTag}`;
     }
     if (p1Badge) {
-        p1Badge.innerText = `${fNames[state.p1_faction] || state.p1_faction} AI (P1)`;
+        p1Badge.innerText = `${fNames[state.p1_faction] || state.p1_faction} ${p1Role}`;
     }
 
     // Turn & Round Indicators
@@ -793,8 +803,17 @@ function renderArena(state) {
     if (roundEl) roundEl.innerText = `回合 ${state.turn || 1}`;
 
     if (state.turn && state.turn !== lastAnnouncedTurn && !state.done) {
+        const isFirstTurn = (lastAnnouncedTurn === 0);
         lastAnnouncedTurn = state.turn;
         showTurnBanner(`回合 ${state.turn}`, "turn");
+
+        if (isFirstTurn && state.mode === 'pve') {
+            if (isP0First) {
+                showGameToast("🎲 掷骰判定：我方【先手】！(起手3张牌，率先行动)", "info");
+            } else {
+                showGameToast("🎲 掷骰判定：我方【后手】！(起手4张牌并获得【幸运币】)", "spell");
+            }
+        }
     }
 
     const turnBadge = document.getElementById('turn-badge');

@@ -247,29 +247,32 @@ class DuelEnv:
         random.shuffle(deck)
         return deck
 
-    def reset(self) -> np.ndarray:
+    def reset(self, first_player: int = 0) -> np.ndarray:
+        self.first_player = int(first_player)
+        second_player = 1 - self.first_player
+
         self.players = {
             0: Player(player_id=0, faction=self.p0_faction, deck=self._build_deck(self.p0_faction, self.p0_decklist)),
             1: Player(player_id=1, faction=self.p1_faction, deck=self._build_deck(self.p1_faction, self.p1_decklist))
         }
-        self.players[1].max_mana = 0
-        self.players[1].mana = 0
+        self.players[second_player].max_mana = 0
+        self.players[second_player].mana = 0
 
         self.lanes = {
             0: Lane(lane_id=0),
             1: Lane(lane_id=1)
         }
-        self.current_player = 0
+        self.current_player = self.first_player
         self.turn_count = 1
 
         for _ in range(3):
-            self._draw_card(self.players[0])
+            self._draw_card(self.players[self.first_player])
         for _ in range(4):
-            self._draw_card(self.players[1])
+            self._draw_card(self.players[second_player])
 
         coin = Card(id=996, name="幸运币", card_type=CardType.SPELL, cost=0, base_dp=0, atk_spell_val=0, def_spell_val=0, tags=["TEMP_MANA_1"], factions=["System"], is_token=True)
-        if len(self.players[1].hand) < self.MAX_HAND_SIZE:
-            self.players[1].hand.append(coin)
+        if len(self.players[second_player].hand) < self.MAX_HAND_SIZE:
+            self.players[second_player].hand.append(coin)
 
         self.last_bonus_score_pts = 0
         self.winner = None

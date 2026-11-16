@@ -127,6 +127,13 @@
                                     <option value="preset_Green">翠绿 · 成长构筑 (30张)</option>
                                 </select>
                             </label>
+                            <label>先后手:
+                                <select id="pve-first-player">
+                                    <option value="random" selected>🎲 随机掷骰</option>
+                                    <option value="0">🔴 我方先手 (3张牌)</option>
+                                    <option value="1">🔵 我方后手 (4张+幸运币)</option>
+                                </select>
+                            </label>
                             <button id="btn-start-game" class="btn primary">开始对局</button>
                             <button id="btn-restart-game" class="btn secondary">重新开始</button>
                         </div>
@@ -146,6 +153,13 @@
                                     <option value="Blue" selected>🔵 蔚蓝</option>
                                     <option value="Red">🔴 赤红</option>
                                     <option value="Green">🟢 翠绿</option>
+                                </select>
+                            </label>
+                            <label>先后手:
+                                <select id="aivai-first-player">
+                                    <option value="random" selected>🎲 随机掷骰</option>
+                                    <option value="0">P0 先手</option>
+                                    <option value="1">P1 先手</option>
                                 </select>
                             </label>
                             <button id="btn-aivai-toggle" class="btn primary">开始推演</button>
@@ -518,7 +532,7 @@
                             <span class="title-sep">/</span>
                             <span class="title-en">Balance Console</span>
                         </h1>
-                        <p class="subtitle">支持强化学习 PPO 自博弈评估与 DeepSeek-V3 自动数值微调收敛闭环</p>
+                        <p class="subtitle">支持强化学习 PPO 自博弈评估与 DeepSeek-V4.1 Flash 自动数值微调收敛闭环</p>
                     </div>
                 </header>
 

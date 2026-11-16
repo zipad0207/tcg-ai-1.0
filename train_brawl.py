@@ -514,6 +514,9 @@ def main():
         metrics["total_episodes"] += 1
         all_lengths.append(ep_len)
 
+        # 主动给系统让渡微观时间片 (避免 Windows DWM 掉帧与桌面卡死)
+        time.sleep(0.001)
+
         p0_won = (env.winner == 0) if env.winner is not None else (env.players[0].score >= env.WIN_SCORE)
         winner_faction = name0 if p0_won else name1
 

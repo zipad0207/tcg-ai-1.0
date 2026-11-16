@@ -493,11 +493,41 @@ async def websocket_arena(websocket: WebSocket):
                 p1_f = data.get("p1_faction", "Blue")
                 p0_deck = data.get("p0_decklist")
                 p1_deck = data.get("p1_decklist")
-                mode = data.get("mode", "pve")
+                mode = data.get("mode", session.mode if hasattr(session, "mode") else "pve")
                 auto_start = data.get("auto_start", False)
+                raw_fp = data.get("first_player", "random")
+                if raw_fp == "random":
+                    import random
+                    actual_fp = random.choice([0, 1])
+                else:
+                    try:
+                        actual_fp = int(raw_fp)
+                    except Exception:
+                        actual_fp = 0
 
-                state = session.reset(p0_faction=p0_f, p1_faction=p1_f, p0_decklist=p0_deck, p1_decklist=p1_deck, mode=mode)
+                state = session.reset(
+                    p0_faction=p0_f,
+                    p1_faction=p1_f,
+                    p0_decklist=p0_deck,
+                    p1_decklist=p1_deck,
+                    mode=mode,
+                    first_player=actual_fp
+                )
                 await websocket.send_json({"type": "state", "data": state})
+
+                if mode == "pve" and session.env.current_player == 1 and not session.done:
+                    async def run_ai_turn():
+                        import asyncio
+                        await asyncio.sleep(play_delay)
+                        while not session.done and session.env.current_player == 1:
+                            ai_action = session.get_ai_action()
+                            if ai_action is not None:
+                                s = session.step(ai_action)
+                                await websocket.send_json({"type": "state", "data": s})
+                                await asyncio.sleep(play_delay)
+                            else:
+                                break
+                    asyncio.create_task(run_ai_turn())
 
                 if mode == "aivai" and auto_start and not session.done:
                     import asyncio
@@ -507,6 +537,12 @@ async def websocket_arena(websocket: WebSocket):
         if autoplay_task and not autoplay_task.done():
             autoplay_task.cancel()
         print("Client disconnected from Arena.")
+    except Exception as e:
+        if autoplay_task and not autoplay_task.done():
+            autoplay_task.cancel()
+        import traceback
+        traceback.print_exc()
+        print(f"[Arena] Error in websocket loop: {e}")
 
 # ----------------- Pipeline Orchestrator API & WebSocket -----------------
 class PipelineStartRequest(BaseModel):

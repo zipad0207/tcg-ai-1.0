@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import time
 import argparse
 import random
 import torch
@@ -396,6 +397,9 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
                 wins += 1
                 for cid in played_this_game:
                     card_played_win[cid] += 1
+
+            if (game_idx + 1) % 5 == 0:
+                time.sleep(0.001)
 
         wr = (wins / num_games) * 100.0
         return wr, card_played_win, card_played_total, card_idle_turns, card_hand_turns

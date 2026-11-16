@@ -918,6 +918,15 @@ def main():
         print("!" * 80 + "\n")
         sys.exit(1)
 
+    # 启动时清理历史残留的 Tabu 禁忌列表，保证全新调优周期正常运转
+    tabu_file = resolve_path("balancer_tabu_list.json")
+    if os.path.exists(tabu_file):
+        try:
+            os.remove(tabu_file)
+            print("  [Tabu重置] 已清理旧周期残留的 Tabu 禁忌列表，保证全新调优周期正常运转。")
+        except Exception:
+            pass
+
     # 1. 阶段一：卡牌扩展设计
     final_pack = []
     if not args.skip_print:
@@ -997,12 +1006,11 @@ def main():
                 break
             else:
                 is_severe = (max_dev >= args.severe_imbalance_threshold) or (max_pairwise_dev >= args.severe_imbalance_threshold) or (spread >= args.severe_spread_threshold)
-                # Suppress fusion on the first attempt so PPO gets at least one full chance to adapt
-                if is_severe and attempt > 1:
+                if is_severe:
                     print("\n" + "=" * 70)
-                    print(f"[失衡触发] 检测到阵营胜率偏离较大:")
+                    print(f"[失衡熔断] 检测到阵营胜率严重失衡:")
                     print(f"   阵营总偏离: {max_dev:.2f}% | 两两对抗最大偏离: {max_pairwise_dev:.2f}% (阈值: >= {args.severe_imbalance_threshold:.1f}%) | 阵营极差: {spread:.2f}%")
-                    print(f"   原因: 存在卡牌数值/费用或克制差距，结束当前构筑调整，进入卡牌数值微调。")
+                    print(f"   判定: 阵营间存在明显的卡牌数值/机制差距，提前熔断构筑探索，立即进入 DeepSeek 数值微调！")
                     print("=" * 70)
                     break
                 elif attempt < deck_attempts:
