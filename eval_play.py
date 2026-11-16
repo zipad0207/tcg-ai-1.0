@@ -7,7 +7,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 from sandbox import DuelEnv, Faction
-from agent import CardNet
+from agent import CardNet, load_cardnet_compatible
 def get_faction_meta(faction_val, player_id):
     f_str = str(faction_val).lower()
     if "green" in f_str or "绿" in f_str:
@@ -172,9 +172,8 @@ def evaluate():
     env = DuelEnv(p0_faction=p0_f, p1_faction=p1_f, cards_path=cards_path,
                   p0_decklist=p0_decklist, p1_decklist=p1_decklist)
     
-    model = CardNet(action_dim=env.action_space_size).to(device)
-    state_dict = torch.load(model_path, map_location=device, weights_only=True)
-    model.load_state_dict(state_dict)
+    model = CardNet(action_dim=env.action_space_size, obs_shape=env.obs_shape).to(device)
+    load_cardnet_compatible(model, model_path, device)
     model.eval()
 
     obs = env.reset()

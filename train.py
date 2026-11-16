@@ -15,7 +15,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 # 导入沙盒环境、阵营枚举与神经网络模型
 from sandbox import DuelEnv, Faction
-from agent import CardNet
+from agent import CardNet, compute_zero_sum_gae
 
 # ==========================================
 # 0. 实验阶段配置 (动态识别 baseline/tuned)
@@ -71,8 +71,8 @@ class RolloutBuffer:
 # 3. PPO 优化与更新器
 # ==========================================
 class PPOTrainer:
-    def __init__(self, action_dim=29):
-        self.policy = CardNet(action_dim=action_dim).to(DEVICE)
+    def __init__(self, action_dim=29, obs_shape=DuelEnv.OBS_SHAPE):
+        self.policy = CardNet(action_dim=action_dim, obs_shape=obs_shape).to(DEVICE)
         self.optimizer = optim.Adam(self.policy.parameters(), lr=LR)
         self.buffer = RolloutBuffer()
 
@@ -94,30 +94,25 @@ class PPOTrainer:
             _, value = self.policy(state_t, mask_t)
         return value.item()
 
-    def update(self, last_val: float = 0.0):
+    def update(self, last_val: float = 0.0, last_player=None):
         states = torch.FloatTensor(np.array(self.buffer.states)).to(DEVICE)
         actions = torch.LongTensor(self.buffer.actions).to(DEVICE)
         masks = torch.FloatTensor(np.array(self.buffer.masks)).to(DEVICE)
         old_log_probs = torch.FloatTensor(self.buffer.log_probs).to(DEVICE)
-        rewards = self.buffer.rewards
-        dones = self.buffer.dones
-        values = self.buffer.values
-        acting_players = self.buffer.acting_players
 
-        advantages = []
-        gae = 0.0
-        values = values + [last_val]
-        for t in reversed(range(len(rewards))):
-            # 零和博弈交替回合价值反转判定: 若发生玩家换边，对手预估价值符号取反
-            is_switch = (t + 1 < len(acting_players) and acting_players[t] != acting_players[t + 1])
-            next_v = -values[t + 1] if is_switch else values[t + 1]
+        advantages_list, returns_list = compute_zero_sum_gae(
+            self.buffer.rewards,
+            self.buffer.dones,
+            self.buffer.values,
+            self.buffer.acting_players,
+            last_val=last_val,
+            last_player=last_player,
+            gamma=GAMMA,
+            gae_lambda=GAE_LAMBDA,
+        )
 
-            delta = rewards[t] + GAMMA * next_v * (1.0 - dones[t]) - values[t]
-            gae = delta + GAMMA * GAE_LAMBDA * (1.0 - dones[t]) * gae
-            advantages.insert(0, gae)
-
-        advantages = torch.FloatTensor(advantages).to(DEVICE)
-        returns = advantages + torch.FloatTensor(values[:-1]).to(DEVICE)
+        advantages = torch.FloatTensor(advantages_list).to(DEVICE)
+        returns = torch.FloatTensor(returns_list).to(DEVICE)
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
         total_loss_accum = 0.0
@@ -228,7 +223,7 @@ def main():
     cards_file = args.cards if args.cards else ("cards_config_baseline.json" if STAGE == "baseline" and os.path.exists("cards_config_baseline.json") else ("cards_config_tuned.json" if STAGE == "tuned" and os.path.exists("cards_config_tuned.json") else "cards_config.json"))
     print(f"[卡池加载] 阶段: {STAGE.upper()} | 卡池文件: {cards_file}")
     env = DuelEnv(p0_faction=Faction.RED, p1_faction=Faction.BLUE, cards_path=cards_file)
-    trainer = PPOTrainer(action_dim=env.action_space_size)
+    trainer = PPOTrainer(action_dim=env.action_space_size, obs_shape=env.obs_shape)
 
     metrics = {
         "total_episodes": 0, "p0_wins": 0, "p1_wins": 0,
@@ -296,7 +291,7 @@ def main():
                 else:
                     next_mask = env.get_action_mask()
                     last_val = trainer.get_value(obs, next_mask)
-                trainer.update(last_val=last_val)
+                trainer.update(last_val=last_val, last_player=env.current_player)
                 step_accum = 0
 
         metrics["total_episodes"] += 1

@@ -562,7 +562,7 @@ def check_balance_status(metrics: dict, target_tolerance: float = 5.0, target_pa
 
     return False, max_dev, spread, max_pairwise_dev
 
-def step5_deepseek_rebalance_cards(cards_file: str, metrics_file: str, target_balance: float = 5.0, target_pairwise_balance: float = 8.0, severe_threshold: float = 10.0):
+def step5_deepseek_rebalance_cards(cards_file: str, metrics_file: str, target_balance: float = 5.0, target_pairwise_balance: float = 8.0, severe_threshold: float = 10.0, decks_file: str = None):
     print("\n" + "═" * 80)
     print("【阶段五】根据遥测战报调整卡牌基础数值与费用")
     print("═" * 80)
@@ -577,6 +577,8 @@ def step5_deepseek_rebalance_cards(cards_file: str, metrics_file: str, target_ba
         "--target-pairwise-balance", str(target_pairwise_balance),
         "--severe-threshold", str(severe_threshold)
     ]
+    if decks_file and os.path.exists(decks_file):
+        cmd.extend(["--decks", decks_file])
     print(f"  [执行指令] {' '.join(cmd)}")
     run_command_safe(cmd)
     print("  [完成] 卡牌数值与费用调整完毕并保存至 cards_config.json")
@@ -708,7 +710,7 @@ def main():
 
     brawl_episodes = 60 if args.dry_run else args.episodes
     ppo_gens = 2 if args.dry_run else 20
-    ppo_games = 15 if args.dry_run else 50
+    ppo_games = 15 if args.dry_run else 80
     ppo_samples = 4 if args.dry_run else 15
     deck_attempts = 1 if args.dry_run else args.max_deck_attempts
 
@@ -810,12 +812,34 @@ def main():
                 print(f"[判定] 胜率达成平衡收敛条件 (第 {outer_round} 轮数值调整，第 {attempt} 次卡组微调)")
                 print(f"   各阵营最大偏离度: {max_dev:.2f}% <= 目标阈值: {args.target_balance:.2f}% (两两最大偏离: {max_pairwise_dev:.2f}% <= {args.target_pairwise_balance:.2f}%, 胜率极差: {spread:.2f}%)")
                 if not args.dry_run and not args.skip_final_audit and current_brawl_episodes < 3000:
-                    print("   [验证] 执行 3,000 局全量对战验收遥测...")
-                    metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=3000, eval_only=args.eval_only)
+                    print("   [验证] 执行 3,000 局全量冻结策略验收遥测...")
+                    metrics = step4_run_brawl_audit(cards_file, decks_file, metrics_file, episodes=3000, eval_only=True)
                     latest_metrics = metrics
-                print("   已达成收敛，退出迭代循环。")
-                print("=" * 70)
-                break
+                    audit_stats = {
+                        f: metrics.get("faction_stats", {}).get(f, {}).get("winrate", 50.0)
+                        for f in (list(metrics.get("faction_stats", {}).keys()) if metrics.get("faction_stats") else ["Red", "Blue", "Green"])
+                    }
+                    history_records[-1] = audit_stats
+                    is_balanced, max_dev, spread, max_pairwise_dev = check_balance_status(
+                        metrics,
+                        target_tolerance=args.target_balance,
+                        target_pairwise_tolerance=args.target_pairwise_balance
+                    )
+                    latest_max_dev = max_dev
+                if is_balanced:
+                    print("   已达成收敛，退出迭代循环。")
+                    print("=" * 70)
+                    break
+                else:
+                    print("   [回驳] 3,000 局验收未通过平衡带要求，继续推进调优迭代！")
+                    print("=" * 70)
+                    is_severe = (max_dev >= args.severe_imbalance_threshold) or (max_pairwise_dev >= args.severe_imbalance_threshold) or (spread >= args.severe_spread_threshold)
+                    if is_severe:
+                        break
+                    elif attempt < deck_attempts:
+                        continue
+                    else:
+                        break
             else:
                 is_severe = (max_dev >= args.severe_imbalance_threshold) or (max_pairwise_dev >= args.severe_imbalance_threshold) or (spread >= args.severe_spread_threshold)
                 if is_severe:
@@ -839,7 +863,8 @@ def main():
                 cards_file, metrics_file,
                 target_balance=args.target_balance,
                 target_pairwise_balance=args.target_pairwise_balance,
-                severe_threshold=args.severe_imbalance_threshold
+                severe_threshold=args.severe_imbalance_threshold,
+                decks_file=decks_file,
             )
             outer_round += 1
         else:

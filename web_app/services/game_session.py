@@ -6,7 +6,7 @@ import torch
 # Ensure we can import from the parent directory
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from sandbox import DuelEnv, Faction
-from agent import CardNet
+from agent import CardNet, load_cardnet_compatible
 
 class GameSession:
     def __init__(self, p0_faction="Red", p1_faction="Blue", p0_decklist=None, p1_decklist=None, mode="pve", started=True, first_player=0):
@@ -32,11 +32,14 @@ class GameSession:
         )
         
         model_path = os.path.join(self.root_dir, "card_ppo_model_brawl.pth")
-        self.model = CardNet(action_dim=self.env.action_space_size).to(self.device)
+        self.model = CardNet(action_dim=self.env.action_space_size, obs_shape=self.env.obs_shape).to(self.device)
         if os.path.exists(model_path):
-            state_dict = torch.load(model_path, map_location=self.device, weights_only=True)
-            self.model.load_state_dict(state_dict)
-            self.model.eval()
+            try:
+                load_cardnet_compatible(self.model, model_path, self.device)
+                self.model.eval()
+            except Exception as e:
+                print(f"[GameSession] Failed to load model {model_path}: {e}")
+                self.model = None
         else:
             self.model = None
 

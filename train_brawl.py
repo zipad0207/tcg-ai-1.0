@@ -36,7 +36,7 @@ if hasattr(torch, "set_num_interop_threads"):
         pass
 
 from sandbox import DuelEnv, Faction
-from agent import CardNet
+from agent import CardNet, compute_zero_sum_gae, load_cardnet_compatible
 
 # ==========================================
 # 0. 参数解析与运行配置
@@ -132,8 +132,8 @@ class RolloutBuffer:
 # 2. PPO 优化与更新器
 # ==========================================
 class PPOTrainer:
-    def __init__(self, action_dim=29):
-        self.policy = CardNet(action_dim=action_dim).to(DEVICE)
+    def __init__(self, action_dim=29, obs_shape=DuelEnv.OBS_SHAPE):
+        self.policy = CardNet(action_dim=action_dim, obs_shape=obs_shape).to(DEVICE)
         # 智能热启：优先载入现有混战权重继续深造，其次载入 tuned 权重
         load_candidates = []
         if args.load_model:
@@ -145,9 +145,8 @@ class PPOTrainer:
         for p in load_candidates:
             if p and os.path.exists(p):
                 try:
-                    state_dict = torch.load(p, map_location=DEVICE, weights_only=True)
-                    self.policy.load_state_dict(state_dict)
-                    print(f"[OK] 成功载入预训练权重: {p}")
+                    mode = load_cardnet_compatible(self.policy, p, DEVICE)
+                    print(f"[OK] 成功载入预训练权重 ({mode}): {p}")
                     loaded = True
                     break
                 except Exception as e:
@@ -175,7 +174,7 @@ class PPOTrainer:
             _, value = self.policy(state_t, mask_t)
         return value.item()
 
-    def update(self, last_val: float = 0.0):
+    def update(self, last_val: float = 0.0, last_player=None):
         if len(self.buffer.states) == 0:
             return 0.0
 
@@ -184,32 +183,19 @@ class PPOTrainer:
         masks = torch.FloatTensor(np.array(self.buffer.masks)).to(DEVICE)
         old_log_probs = torch.FloatTensor(self.buffer.log_probs).to(DEVICE)
 
-        # 计算 GAE 优势函数与回报目标 (针对回合交替自博弈)
-        rewards = self.buffer.rewards
-        dones = self.buffer.dones
-        values = self.buffer.values + [last_val]
-        acting_players = self.buffer.acting_players
+        advantages_list, returns_list = compute_zero_sum_gae(
+            self.buffer.rewards,
+            self.buffer.dones,
+            self.buffer.values,
+            self.buffer.acting_players,
+            last_val=last_val,
+            last_player=last_player,
+            gamma=GAMMA,
+            gae_lambda=GAE_LAMBDA,
+        )
 
-        returns = []
-        advantages = []
-        gae = 0.0
-
-        for step in reversed(range(len(rewards))):
-            curr_player = acting_players[step]
-            next_val = values[step + 1]
-
-            if step + 1 < len(acting_players):
-                next_player = acting_players[step + 1]
-                if curr_player != next_player:
-                    next_val = -next_val
-
-            delta = rewards[step] + (0.0 if dones[step] else GAMMA * next_val) - values[step]
-            gae = delta + (0.0 if dones[step] else GAMMA * GAE_LAMBDA * gae)
-            advantages.insert(0, gae)
-            returns.insert(0, gae + values[step])
-
-        returns = torch.FloatTensor(returns).to(DEVICE)
-        advantages = torch.FloatTensor(advantages).to(DEVICE)
+        returns = torch.FloatTensor(returns_list).to(DEVICE)
+        advantages = torch.FloatTensor(advantages_list).to(DEVICE)
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
         total_samples = len(states)
@@ -377,10 +363,18 @@ def main():
 
     # 初始化沙盒环境
     env = DuelEnv(p0_faction=Faction.RED, p1_faction=Faction.BLUE, cards_path=CARDS_FILE)
-    trainer = PPOTrainer(action_dim=env.action_space_size)
+    trainer = PPOTrainer(action_dim=env.action_space_size, obs_shape=env.obs_shape)
 
     faction_list = [Faction.RED, Faction.BLUE, Faction.GREEN]
     faction_names = {Faction.RED: "Red", Faction.BLUE: "Blue", Faction.GREEN: "Green"}
+    cross_pairs = [(fA, fB) for fA in faction_list for fB in faction_list if fA != fB]
+    mirror_pairs = [(fA, fA) for fA in faction_list]
+    matchup_schedule = []
+    while len(matchup_schedule) < TOTAL_EPISODES:
+        block = cross_pairs * 2 + mirror_pairs
+        random.shuffle(block)
+        matchup_schedule.extend(block)
+    matchup_schedule = matchup_schedule[:TOTAL_EPISODES]
 
     metrics = {
         "total_episodes": 0,
@@ -419,18 +413,15 @@ def main():
     signal.signal(signal.SIGINT, handle_sigint)
 
     for ep in range(1, TOTAL_EPISODES + 1):
-        # 1. 双方随机独立抽取阵营
-        f0 = random.choice(faction_list)
-        f1 = random.choice(faction_list)
+        # Balanced round-robin schedule so every faction and P0/P1 order gets equal coverage
+        f0, f1 = matchup_schedule[ep - 1]
 
         name0 = faction_names[f0]
         name1 = faction_names[f1]
 
-        # 2. 优先使用预建卡组（若无则由环境使用默认卡组）
         d0 = prebuilt_decks.get(name0, None)
         d1 = prebuilt_decks.get(name1, None)
 
-        # 动态更新环境配置并重置
         env.p0_faction = f0
         env.p1_faction = f1
         env.p0_decklist = d0
@@ -445,7 +436,6 @@ def main():
             mask = env.get_action_mask()
             action, log_prob, val = trainer.select_action(obs, mask)
 
-            # 统计出牌记录
             if action != env.action_space_size - 1:
                 hand_idx = action // 4
                 curr_player = env.players[acting_player]
@@ -469,6 +459,10 @@ def main():
                 trainer.buffer.values.append(val)
                 trainer.buffer.acting_players.append(acting_player)
 
+            obs = next_obs
+            ep_len += 1
+
+            if not args.eval_only:
                 step_accum += 1
                 if step_accum >= ROLLOUT_STEPS:
                     if done:
@@ -476,20 +470,20 @@ def main():
                     else:
                         next_mask = env.get_action_mask()
                         last_val = trainer.get_value(obs, next_mask)
-                    trainer.update(last_val=last_val)
+                    trainer.update(last_val=last_val, last_player=env.current_player)
                     step_accum = 0
 
-            obs = next_obs
-            ep_len += 1
-
-        # 战绩结算
         metrics["total_episodes"] += 1
         all_lengths.append(ep_len)
 
-        # 主动给系统让渡微观时间片 (避免 Windows DWM 掉帧与桌面卡死)
         time.sleep(0.001)
 
-        p0_won = (env.winner == 0) if env.winner is not None else (env.players[0].score >= env.WIN_SCORE)
+        if env.winner is not None:
+            p0_won = (env.winner == 0)
+        elif env.players[0].score != env.players[1].score:
+            p0_won = env.players[0].score > env.players[1].score
+        else:
+            p0_won = (ep % 2 == 0)
         winner_faction = name0 if p0_won else name1
 
         # 阵营战报
@@ -553,6 +547,9 @@ def main():
         if ep % 200 == 0:
             torch.save(trainer.policy.state_dict(), MODEL_SAVE_PATH)
             save_metrics()
+
+    if not args.eval_only and len(trainer.buffer.rewards) > 0:
+        trainer.update(last_val=0.0, last_player=env.current_player)
 
     # 训练完成终结归档
     torch.save(trainer.policy.state_dict(), MODEL_SAVE_PATH)

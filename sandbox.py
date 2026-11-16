@@ -71,6 +71,7 @@ class DuelEnv:
     MAX_TURNS = 100
     MAX_COPIES_PER_CARD = 3
     DECK_SIZE = 30
+    OBS_SHAPE = (3, 13, 20)
 
     def __init__(self, p0_faction: Faction = Faction.RED, p1_faction: Faction = Faction.BLUE, 
                  cards_path: str = "cards_config.json", p0_decklist=None, p1_decklist=None):
@@ -81,6 +82,7 @@ class DuelEnv:
         self.p0_decklist = p0_decklist
         self.p1_decklist = p1_decklist
 
+        self.obs_shape = self.OBS_SHAPE
         self.action_space_size = self.MAX_HAND_SIZE * 4 + 1
         self.reset()
 
@@ -301,6 +303,47 @@ class DuelEnv:
         lane = self.lanes[lane_id]
         return any(u.owner == self.current_player for u in lane.attackers) or any(u.owner == self.current_player for u in lane.defenders)
 
+    @staticmethod
+    def _sum_tag_int(tags: List[str], prefix: str) -> int:
+        total = 0
+        for t in tags:
+            if t.startswith(prefix):
+                suffix = t[len(prefix):]
+                if suffix.isdigit():
+                    total += int(suffix)
+        return total
+
+    @staticmethod
+    def _spawn_total_dp(tags: List[str]) -> int:
+        total = 0
+        for t in tags:
+            if t.startswith("SPAWN_"):
+                parts = t.split("_")
+                if len(parts) == 3 and parts[1].isdigit() and parts[2].isdigit():
+                    total += int(parts[1]) * int(parts[2])
+        return total
+
+    def _apply_lane_reduction(self, lane_id: int, target_owner: int, amount: int, prefer_defenders: bool = True):
+        if amount <= 0:
+            return
+        lane = self.lanes[lane_id]
+        containers = (lane.defenders, lane.attackers) if prefer_defenders else (lane.attackers, lane.defenders)
+        remaining = amount
+        for zone in containers:
+            if remaining <= 0:
+                break
+            targets = [u for u in zone if u.owner == target_owner]
+            for unit in targets:
+                if remaining <= 0:
+                    break
+                dealt = min(remaining, unit.current_dp)
+                unit.current_dp -= dealt
+                remaining -= dealt
+                if unit.current_dp <= 0:
+                    zone.remove(unit)
+                    self.players[target_owner].graveyard.append(unit.card)
+                    self._trigger_deathrattle(unit)
+
     def get_action_mask(self) -> np.ndarray:
         mask = np.zeros(self.action_space_size, dtype=np.float32)
         mask[-1] = 1.0
@@ -314,20 +357,21 @@ class DuelEnv:
                 is_atk_only = "ATTACK_ONLY" in card.tags
                 is_spell = (card.card_type == CardType.SPELL and not any(t.startswith("SPAWN_") for t in card.tags))
                 needs_sacrifice = "SACRIFICE_1_KILL_1" in card.tags
-                is_atk_spell = card.atk_spell_val > 0
-                is_def_spell = card.def_spell_val > 0
+                has_degrade = any(t.startswith("DEGRADE_") for t in card.tags)
+                has_utility = any(t.startswith(("DRAW_", "RAMP_", "TEMP_MANA_")) for t in card.tags)
+                is_atk_spell = (card.atk_spell_val > 0) or has_degrade
+                is_def_spell = (card.def_spell_val > 0)
 
                 for lane_id in [0, 1]:
                     lane = self.lanes[lane_id]
                     my_atks = sum(1 for u in lane.attackers if u.owner == curr.player_id)
                     my_defs = sum(1 for u in lane.defenders if u.owner == curr.player_id)
+                    has_my_ready_atk = any(u.owner == curr.player_id and u.ready_to_attack for u in lane.attackers)
                     atk_slot = base_idx + (0 if lane_id == 0 else 2)
                     def_slot = base_idx + (1 if lane_id == 0 else 3)
-                    
+
                     has_enemy = self._lane_has_enemy(lane_id)
-                    has_my_atk = my_atks > 0
-                    has_my_def = my_defs > 0
-                    has_my = has_my_atk or has_my_def
+                    has_my = (my_atks > 0) or (my_defs > 0)
 
                     can_play_atk_slot = False
                     can_play_def_slot = False
@@ -337,21 +381,20 @@ class DuelEnv:
                             if has_enemy and has_my:
                                 can_play_atk_slot = True
                                 can_play_def_slot = not is_atk_only
-                        else:
-                            if is_atk_spell or is_def_spell:
-                                if is_atk_spell and has_my_atk:
-                                    can_play_atk_slot = True
-                                if is_def_spell and has_my_def and not is_atk_only:
-                                    can_play_def_slot = True
-                            else:
+                        elif is_atk_spell or is_def_spell:
+                            if is_atk_spell and (has_my_ready_atk or has_enemy or (has_utility and not is_def_spell)):
                                 can_play_atk_slot = True
-                                can_play_def_slot = not is_atk_only
+                            if is_def_spell and not is_atk_only:
+                                can_play_def_slot = True
+                        else:
+                            can_play_atk_slot = True
+                            can_play_def_slot = not is_atk_only
                     else:
                         if my_atks < self.MAX_LANE_UNITS:
                             can_play_atk_slot = True
                         if not is_atk_only and my_defs < self.MAX_LANE_UNITS:
                             can_play_def_slot = True
-                            
+
                     if can_play_atk_slot:
                         mask[atk_slot] = 1.0
                     if can_play_def_slot:
@@ -531,8 +574,28 @@ class DuelEnv:
                             discarded = player.hand.pop(0)
                             player.graveyard.append(discarded)
 
+            fortify_val = self._sum_tag_int(card.tags, "FORTIFY_")
+            if fortify_val > 0:
+                my_defs = [u for u in lane.defenders if u.owner == player.player_id]
+                if my_defs:
+                    my_defs[0].current_dp += fortify_val
+                else:
+                    self.lane_def_shield[lane_id, player.player_id] += fortify_val
+
+            degrade_val = self._sum_tag_int(card.tags, "DEGRADE_")
+            if degrade_val > 0:
+                self._apply_lane_reduction(lane_id, opp_id, degrade_val, prefer_defenders=True)
+
             if card.atk_spell_val > 0:
-                self.lane_spell_atk[lane_id, player.player_id] += card.atk_spell_val
+                my_atks = [u for u in lane.attackers if u.owner == player.player_id]
+                has_my_ready_atk = any(u.ready_to_attack for u in my_atks)
+                if has_my_ready_atk:
+                    self.lane_spell_atk[lane_id, player.player_id] += card.atk_spell_val
+                else:
+                    # Without a ready attacker this turn, deal spell damage directly to lane threats (no face score).
+                    self._apply_lane_reduction(
+                        lane_id, opp_id, card.atk_spell_val, prefer_defenders=bool(my_atks)
+                    )
 
             if card.def_spell_val > 0:
                 self.lane_def_shield[lane_id, player.player_id] += card.def_spell_val
@@ -737,8 +800,7 @@ class DuelEnv:
         return False
 
     def get_observation(self) -> np.ndarray:
-        # 完全恢复了 obs[0] 玩家状态和 obs[2] 场面状态，并扩展了 obs[1] 的 8 维视野
-        obs = np.zeros((3, 13, 8), dtype=np.float32)
+        obs = np.zeros(self.obs_shape, dtype=np.float32)
         curr = self.players[self.current_player]
         opp = self.players[1 - self.current_player]
 
@@ -754,6 +816,18 @@ class DuelEnv:
         obs[0, 1, 3] = len(opp.hand) / 7.0
         obs[0, 1, 4] = len(opp.deck) / 30.0
 
+        faction_col = {Faction.RED: 8, Faction.BLUE: 9, Faction.GREEN: 10}
+        if curr.faction in faction_col:
+            obs[0, 0, faction_col[curr.faction]] = 1.0
+        if opp.faction in faction_col:
+            obs[0, 1, faction_col[opp.faction]] = 1.0
+        obs[0, 0, 11] = min(1.0, self.turn_count / 30.0)
+        obs[0, 0, 12] = 1.0 if self.current_player == self.first_player else 0.0
+        obs[0, 0, 13] = min(1.0, curr.fatigue / 5.0)
+        obs[0, 0, 14] = min(1.0, len(curr.graveyard) / 30.0)
+        obs[0, 1, 13] = min(1.0, opp.fatigue / 5.0)
+        obs[0, 1, 14] = min(1.0, len(opp.graveyard) / 30.0)
+
         for i, card in enumerate(curr.hand[:7]):
             obs[1, i, 0] = card.cost / 10.0
             obs[1, i, 1] = card.base_dp / 10.0
@@ -764,25 +838,70 @@ class DuelEnv:
             obs[1, i, 6] = 1.0 if any(t.startswith("RAMP") or t.startswith("TEMP_MANA") or t.startswith("DEATH_MANA") for t in card.tags) else 0.0
             obs[1, i, 7] = 1.0 if any(t.startswith("DRAW") or t.startswith("DEATH_DRAW") for t in card.tags) else 0.0
 
+            obs[1, i, 8] = card.atk_spell_val / 10.0
+            obs[1, i, 9] = card.def_spell_val / 10.0
+            obs[1, i, 10] = min(1.5, self._spawn_total_dp(card.tags) / 10.0)
+            obs[1, i, 11] = min(1.5, self._sum_tag_int(card.tags, "SUPPORT_ATK_") / 5.0)
+            obs[1, i, 12] = min(1.5, self._sum_tag_int(card.tags, "FORTIFY_") / 5.0)
+            obs[1, i, 13] = min(1.5, self._sum_tag_int(card.tags, "DEGRADE_") / 5.0)
+            perm_ramp = self._sum_tag_int(card.tags, "RAMP_") + self._sum_tag_int(card.tags, "DEATH_MANA_")
+            obs[1, i, 14] = min(1.5, perm_ramp / 3.0)
+            obs[1, i, 15] = min(1.5, self._sum_tag_int(card.tags, "TEMP_MANA_") / 3.0)
+            draw_val = self._sum_tag_int(card.tags, "DRAW_") + self._sum_tag_int(card.tags, "DEATH_DRAW_")
+            obs[1, i, 16] = min(1.5, draw_val / 3.0)
+            obs[1, i, 17] = min(1.0, self._sum_tag_int(card.tags, "BONUS_SCORE_") / 2.0)
+            obs[1, i, 18] = 1.0 if "SACRIFICE_1_KILL_1" in card.tags else 0.0
+            obs[1, i, 19] = 1.0 if "ATTACK_ONLY" in card.tags else 0.0
+
         for lane_idx, lane in self.lanes.items():
             slot_offset = lane_idx * 6
             my_atks = [u for u in lane.attackers if u.owner == curr.player_id]
             for j, u in enumerate(my_atks[:3]):
                 obs[2, slot_offset + j, 0] = u.current_dp / 10.0
                 obs[2, slot_offset + j, 1] = 1.0 if u.ready_to_attack else 0.0
+                obs[2, slot_offset + j, 9] = min(1.0, self._sum_tag_int(u.card.tags, "BONUS_SCORE_") / 2.0)
+                obs[2, slot_offset + j, 10] = min(1.5, self._sum_tag_int(u.card.tags, "DEGRADE_") / 5.0)
+
             opp_defs = [u for u in lane.defenders if u.owner == opp.player_id]
             for j, u in enumerate(opp_defs[:3]):
                 obs[2, slot_offset + 3 + j, 0] = u.current_dp / 10.0
                 obs[2, slot_offset + 3 + j, 2] = 1.0
+                obs[2, slot_offset + 3 + j, 8] = min(1.5, self._sum_tag_int(u.card.tags, "SUPPORT_ATK_") / 5.0)
+
             my_defs = [u for u in lane.defenders if u.owner == curr.player_id]
             for j, u in enumerate(my_defs[:3]):
                 obs[2, slot_offset + j, 3] = u.current_dp / 10.0
+                obs[2, slot_offset + j, 8] = min(1.5, self._sum_tag_int(u.card.tags, "SUPPORT_ATK_") / 5.0)
+
             opp_atks = [u for u in lane.attackers if u.owner == opp.player_id]
             for j, u in enumerate(opp_atks[:3]):
                 obs[2, slot_offset + j, 4] = u.current_dp / 10.0
-            
+                obs[2, slot_offset + j, 11] = min(1.0, self._sum_tag_int(u.card.tags, "BONUS_SCORE_") / 2.0)
+                obs[2, slot_offset + j, 12] = min(1.5, self._sum_tag_int(u.card.tags, "DEGRADE_") / 5.0)
+
             obs[2, slot_offset, 5] = self.lane_spell_atk[lane_idx, curr.player_id] / 10.0
             obs[2, slot_offset, 6] = self.lane_def_shield[lane_idx, curr.player_id] / 10.0
             obs[2, slot_offset, 7] = self.lane_def_shield[lane_idx, opp.player_id] / 10.0
+
+            my_sup = sum(self._sum_tag_int(u.card.tags, "SUPPORT_ATK_") for u in my_defs)
+            opp_sup = sum(self._sum_tag_int(u.card.tags, "SUPPORT_ATK_") for u in opp_defs)
+            my_ready_total = (
+                sum(u.current_dp for u in my_atks if u.ready_to_attack)
+                + (my_sup if any(u.ready_to_attack for u in my_atks) else 0)
+                + int(self.lane_spell_atk[lane_idx, curr.player_id])
+            )
+            opp_def_total = sum(u.current_dp for u in opp_defs) + int(self.lane_def_shield[lane_idx, opp.player_id])
+            opp_threat_total = (
+                sum(u.current_dp for u in opp_atks) + (opp_sup if opp_atks else 0)
+            )
+            my_def_total = sum(u.current_dp for u in my_defs) + int(self.lane_def_shield[lane_idx, curr.player_id])
+
+            s_col = 8 + lane_idx * 6
+            obs[2, 12, s_col + 0] = my_ready_total / 20.0
+            obs[2, 12, s_col + 1] = opp_def_total / 20.0
+            obs[2, 12, s_col + 2] = (my_ready_total - opp_def_total) / 20.0
+            obs[2, 12, s_col + 3] = opp_threat_total / 20.0
+            obs[2, 12, s_col + 4] = my_def_total / 20.0
+            obs[2, 12, s_col + 5] = (my_def_total - opp_threat_total) / 20.0
 
         return obs

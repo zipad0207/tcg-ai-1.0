@@ -90,7 +90,7 @@ def step2_run_brawl_sim(prebuilt_decks: dict, iteration: int = 0):
     env = DuelEnv(p0_faction=Faction.RED, p1_faction=Faction.BLUE, cards_path=CARDS_FILE)
     
     from train_brawl import PPOTrainer, ROLLOUT_STEPS
-    trainer = PPOTrainer(action_dim=env.action_space_size)
+    trainer = PPOTrainer(action_dim=env.action_space_size, obs_shape=env.obs_shape)
 
     faction_list = [Faction.RED, Faction.BLUE, Faction.GREEN]
     faction_names = {Faction.RED: "Red", Faction.BLUE: "Blue", Faction.GREEN: "Green"}
@@ -165,7 +165,7 @@ def step2_run_brawl_sim(prebuilt_decks: dict, iteration: int = 0):
                 else:
                     next_mask = env.get_action_mask()
                     last_val = trainer.get_value(obs, next_mask)
-                trainer.update(last_val=last_val)
+                trainer.update(last_val=last_val, last_player=env.current_player)
                 step_accum = 0
 
         metrics["total_episodes"] += 1

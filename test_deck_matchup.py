@@ -11,7 +11,8 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 from sandbox import DuelEnv, Faction
-from agent import CardNet
+from agent import CardNet, load_cardnet_compatible
+
 
 def get_device(req_device: str = "auto") -> torch.device:
     req = (req_device or "auto").strip().lower()
@@ -35,7 +36,16 @@ def get_device(req_device: str = "auto") -> torch.device:
             print("[运算设备] 未检测到可用 CUDA GPU，自动采用 CPU 模式运行。")
             return torch.device("cpu")
 
-def run_simulation(episodes: int = 500, decks_path: str = "decks_config.json", cards_path: str = "cards_config.json", model_path: str = "card_ppo_model_tuned.pth", p0_faction: str = "Red", p1_faction: str = "Blue", device_name: str = "auto"):
+
+def run_simulation(
+    episodes: int = 500,
+    decks_path: str = "decks_config.json",
+    cards_path: str = "cards_config.json",
+    model_path: str = "card_ppo_model_tuned.pth",
+    p0_faction: str = "Red",
+    p1_faction: str = "Blue",
+    device_name: str = "auto",
+):
     device = get_device(device_name)
 
     def resolve_path(p):
@@ -50,7 +60,12 @@ def run_simulation(episodes: int = 500, decks_path: str = "decks_config.json", c
         res = resolve_path(p)
         if res and os.path.exists(res):
             return res
-        for cand in ["card_ppo_model_brawl.pth", "card_ppo_model_tuned.pth", "card_ppo_model.pth", "card_ppo_model_baseline.pth"]:
+        for cand in [
+            "card_ppo_model_brawl.pth",
+            "card_ppo_model_tuned.pth",
+            "card_ppo_model.pth",
+            "card_ppo_model_baseline.pth",
+        ]:
             cand_p = resolve_path(cand)
             if cand_p and os.path.exists(cand_p):
                 return cand_p
@@ -67,7 +82,7 @@ def run_simulation(episodes: int = 500, decks_path: str = "decks_config.json", c
     faction_tags = {
         Faction.RED: "🔴 赤红",
         Faction.BLUE: "🔵 蔚蓝",
-        Faction.GREEN: "🟢 翠绿"
+        Faction.GREEN: "🟢 翠绿",
     }
     p0_tag = faction_tags.get(p0_f, "P0")
     p1_tag = faction_tags.get(p1_f, "P1")
@@ -91,14 +106,20 @@ def run_simulation(episodes: int = 500, decks_path: str = "decks_config.json", c
     print(f"评测总轮数: {episodes} 场 | 运算设备: {device}")
     print("=" * 80)
 
-    env = DuelEnv(p0_faction=p0_f, p1_faction=p1_f, cards_path=cards_path,
-                  p0_decklist=p0_decklist, p1_decklist=p1_decklist)
+    env = DuelEnv(
+        p0_faction=p0_f,
+        p1_faction=p1_f,
+        cards_path=cards_path,
+        p0_decklist=p0_decklist,
+        p1_decklist=p1_decklist,
+    )
 
-    model = CardNet(action_dim=env.action_space_size).to(device)
+    model = CardNet(action_dim=env.action_space_size, obs_shape=env.obs_shape).to(
+        device
+    )
     if os.path.exists(model_path):
-        state_dict = torch.load(model_path, map_location=device, weights_only=True)
-        model.load_state_dict(state_dict)
-        print(f"已加载模型权重: {model_path}")
+        mode = load_cardnet_compatible(model, model_path, device)
+        print(f"已加载模型权重 ({mode}): {model_path}")
     else:
         print(f"未找到指定权重 {model_path}，采用随机动作策略")
     model.eval()
@@ -154,7 +175,9 @@ def run_simulation(episodes: int = 500, decks_path: str = "decks_config.json", c
         if ep % (max(1, episodes // 5)) == 0 or ep == episodes:
             p0_rate = (p0_wins / ep) * 100
             p1_rate = (p1_wins / ep) * 100
-            print(f"进度: {ep:4d}/{episodes} 局 | {p0_tag} 胜率: {p0_rate:5.1f}% | {p1_tag} 胜率: {p1_rate:5.1f}% | 均轮: {np.mean(turns_history):.1f}")
+            print(
+                f"进度: {ep:4d}/{episodes} 局 | {p0_tag} 胜率: {p0_rate:5.1f}% | {p1_tag} 胜率: {p1_rate:5.1f}% | 均轮: {np.mean(turns_history):.1f}"
+            )
 
     elapsed = time.time() - start_time
     p0_rate = (p0_wins / episodes) * 100
@@ -165,16 +188,22 @@ def run_simulation(episodes: int = 500, decks_path: str = "decks_config.json", c
     print(f"【{p0_tag} vs {p1_tag} 卡组测试报告】")
     print("═" * 80)
     print(f"测试耗时: {elapsed:.2f} 秒 ({episodes / elapsed:.1f} 场/秒)")
-    print(f"{p0_tag}《{p0_name}》: 胜 {p0_wins} 场 ({p0_rate:.2f}%) | 局均分: {np.mean(p0_scores):.2f}")
-    print(f"{p1_tag}《{p1_name}》: 胜 {p1_wins} 场 ({p1_rate:.2f}%) | 局均分: {np.mean(p1_scores):.2f}")
+    print(
+        f"{p0_tag}《{p0_name}》: 胜 {p0_wins} 场 ({p0_rate:.2f}%) | 局均分: {np.mean(p0_scores):.2f}"
+    )
+    print(
+        f"{p1_tag}《{p1_name}》: 胜 {p1_wins} 场 ({p1_rate:.2f}%) | 局均分: {np.mean(p1_scores):.2f}"
+    )
     if draws > 0:
         print(f"平局/超时: {draws} 场 ({draw_rate:.2f}%)")
-    print(f"平均对局轮数: {np.mean(turns_history):.1f} 回合 (中位数: {np.median(turns_history):.0f})")
+    print(
+        f"平均对局轮数: {np.mean(turns_history):.1f} 回合 (中位数: {np.median(turns_history):.0f})"
+    )
     print(f"轮数分布: 最短 {min(turns_history)} 回合 / 最长 {max(turns_history)} 回合")
     print("─" * 80)
     print("出牌频次 Top 8 单卡:")
     for rank, (cname, cnt) in enumerate(card_usage.most_common(8), 1):
-        print(f"   {rank}. [{cname}]: 出牌 {cnt} 次 (局均 {cnt/episodes:.2f} 次)")
+        print(f"   {rank}. [{cname}]: 出牌 {cnt} 次 (局均 {cnt / episodes:.2f} 次)")
     print("═" * 80 + "\n")
 
     return {
@@ -185,19 +214,59 @@ def run_simulation(episodes: int = 500, decks_path: str = "decks_config.json", c
         "p1_winrate": p1_rate,
         "avg_turns": float(np.mean(turns_history)),
         "p0_avg_score": float(np.mean(p0_scores)),
-        "p1_avg_score": float(np.mean(p1_scores))
+        "p1_avg_score": float(np.mean(p1_scores)),
     }
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="多阵营 AI 卡组实机对抗批处理评测 (支持红/蓝/绿任意对抗)")
-    parser.add_argument("--episodes", type=int, default=500, help="测试对战总轮数 (默认 500)")
-    parser.add_argument("--decks", type=str, default="decks_config.json", help="卡组配置文件")
-    parser.add_argument("--cards", type=str, default="cards_config.json", help="卡池配置文件")
-    parser.add_argument("--model", type=str, default="card_ppo_model_tuned.pth", help="模型权重文件")
-    parser.add_argument("--p0", "--f0", dest="p0_faction", type=str, default="Red", choices=["Red", "Blue", "Green"], help="先手 P0 阵营 (默认 Red)")
-    parser.add_argument("--p1", "--f1", dest="p1_faction", type=str, default="Blue", choices=["Red", "Blue", "Green"], help="后手 P1 阵营 (默认 Blue)")
-    parser.add_argument("--device", type=str, default="cpu", choices=["auto", "cuda", "cpu"], help="运算设备 (默认 cpu: 极速模式，限制2线程)")
+    parser = argparse.ArgumentParser(
+        description="多阵营 AI 卡组实机对抗批处理评测 (支持红/蓝/绿任意对抗)"
+    )
+    parser.add_argument(
+        "--episodes", type=int, default=500, help="测试对战总轮数 (默认 500)"
+    )
+    parser.add_argument(
+        "--decks", type=str, default="decks_config.json", help="卡组配置文件"
+    )
+    parser.add_argument(
+        "--cards", type=str, default="cards_config.json", help="卡池配置文件"
+    )
+    parser.add_argument(
+        "--model", type=str, default="card_ppo_model_tuned.pth", help="模型权重文件"
+    )
+    parser.add_argument(
+        "--p0",
+        "--f0",
+        dest="p0_faction",
+        type=str,
+        default="Red",
+        choices=["Red", "Blue", "Green"],
+        help="先手 P0 阵营 (默认 Red)",
+    )
+    parser.add_argument(
+        "--p1",
+        "--f1",
+        dest="p1_faction",
+        type=str,
+        default="Blue",
+        choices=["Red", "Blue", "Green"],
+        help="后手 P1 阵营 (默认 Blue)",
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="cpu",
+        choices=["auto", "cuda", "cpu"],
+        help="运算设备 (默认 cpu: 极速模式，限制2线程)",
+    )
     args = parser.parse_args()
 
-    run_simulation(episodes=args.episodes, decks_path=args.decks, cards_path=args.cards, model_path=args.model,
-                   p0_faction=args.p0_faction, p1_faction=args.p1_faction, device_name=args.device)
+    run_simulation(
+        episodes=args.episodes,
+        decks_path=args.decks,
+        cards_path=args.cards,
+        model_path=args.model,
+        p0_faction=args.p0_faction,
+        p1_faction=args.p1_faction,
+        device_name=args.device,
+    )

@@ -10,7 +10,7 @@ import torch
 import numpy as np
 from openai import OpenAI
 from sandbox import DuelEnv, Faction
-from agent import CardNet
+from agent import CardNet, load_cardnet_compatible
 from tcg_common import (
     LEGAL_TAG_PATTERNS,
     atomic_write_json,
@@ -214,10 +214,9 @@ def run_post_print_benchmark(cards_path: str, all_printed_cards: Dict[str, List[
 
     for p0_f, p1_f, sub_eps in matchups:
         env = DuelEnv(p0_faction=p0_f, p1_faction=p1_f, cards_path=cards_path)
-        model = CardNet(action_dim=env.action_space_size).to(device)
+        model = CardNet(action_dim=env.action_space_size, obs_shape=env.obs_shape).to(device)
         if model_file and os.path.exists(model_file):
-            state_dict = torch.load(model_file, map_location=device, weights_only=True)
-            model.load_state_dict(state_dict)
+            load_cardnet_compatible(model, model_file, device)
         model.eval()
 
         for ep in range(1, sub_eps + 1):

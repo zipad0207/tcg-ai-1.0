@@ -45,18 +45,76 @@ def _compute_balance_metrics(metrics_data: dict, target_pairwise_tolerance: floa
     return summary
 
 
-def _strip_cards_for_prompt(cards_data: dict) -> dict:
+def _strip_cards_for_prompt(cards_data: dict, card_in_decks: dict = None) -> dict:
     keep_fields = ("id", "name", "card_type", "cost", "base_dp", "atk_spell_val", "def_spell_val", "tags", "factions")
     stripped = {}
     for k, v in cards_data.items():
         if isinstance(v, list):
-            stripped[k] = [
-                {fld: c[fld] for fld in keep_fields if fld in c}
-                for c in v if isinstance(c, dict)
-            ]
+            items = []
+            for c in v:
+                if not isinstance(c, dict):
+                    continue
+                entry = {fld: c[fld] for fld in keep_fields if fld in c}
+                if card_in_decks is not None:
+                    cid = _to_int(c.get("id"))
+                    if cid is not None and cid in card_in_decks:
+                        entry["in_decks"] = card_in_decks[cid]
+                items.append(entry)
+            stripped[k] = items
         else:
             stripped[k] = v
     return stripped
+
+
+def _build_active_deck_context(decks_data: dict, cards_data: dict) -> tuple:
+    """Summarize each faction's active 30-card roster and map card_id -> {faction: count}."""
+    if not isinstance(decks_data, dict) or not decks_data:
+        return {}, ""
+
+    by_id = {}
+    for _, clist in cards_data.items():
+        if isinstance(clist, list):
+            for c in clist:
+                if isinstance(c, dict) and _to_int(c.get("id")) is not None:
+                    by_id[_to_int(c.get("id"))] = c
+
+    card_in_decks = {}
+    roster_lines = []
+    for f in ("Red", "Blue", "Green"):
+        pkg = decks_data.get(f)
+        if not isinstance(pkg, dict):
+            continue
+        decklist = pkg.get("decklist") or []
+        if not decklist:
+            continue
+        counts = {}
+        for raw_id in decklist:
+            cid = _to_int(raw_id)
+            if cid is None:
+                continue
+            counts[cid] = counts.get(cid, 0) + 1
+            card_in_decks.setdefault(cid, {})[f] = counts[cid]
+
+        parts = []
+        for cid, cnt in sorted(counts.items(), key=lambda x: (-x[1], by_id.get(x[0], {}).get("cost", 0), x[0])):
+            c = by_id.get(cid)
+            if not c:
+                parts.append(f"ID{cid}x{cnt}")
+                continue
+            stat = f"{c.get('base_dp', 0)}DP" if c.get("card_type") == "MINION" else f"攻{c.get('atk_spell_val', 0)}/防{c.get('def_spell_val', 0)}"
+            parts.append(f"ID{cid} {c.get('name', '')}x{cnt}({c.get('cost', 0)}费/{stat})")
+        avg_c = pkg.get("avg_cost", "?")
+        roster_lines.append(f"  - 【{f}】现役 30 张 (均费 {avg_c}): " + ", ".join(parts))
+
+    if not roster_lines:
+        return card_in_decks, ""
+
+    section = (
+        "\n### 各阵营当前 30 张现役卡组携带实况 (已携带卡牌在卡池含 in_decks 字段):\n"
+        + "\n".join(roster_lines)
+        + "\n  * 重要调优准则: 削弱强势阵营时必须优先从其现役携带 (>=1张) 的卡中挑选；加强弱势阵营时若调整 0 携带冷门卡，必须给予显著加强（如 -1费 或 +2数值/关键强力词条）以确保 Phase 3 构筑器能将其选入现役卡组。\n"
+    )
+    return card_in_decks, section
 
 
 def _build_card_role_maps(cards_data: dict) -> tuple:
@@ -78,7 +136,7 @@ def _build_card_role_maps(cards_data: dict) -> tuple:
                     dual_names.add(name)
     return excluded_names, dual_names
 
-def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client: OpenAI, history_metrics: dict = None, target_tolerance: float = 5.0, target_pairwise_tolerance: float = 8.0, target_pairwise_balance: float = None, severe_threshold: float = 10.0, tabu_list: dict = None, weak_factions: list = None) -> str:
+def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client: OpenAI, history_metrics: dict = None, target_tolerance: float = 5.0, target_pairwise_tolerance: float = 8.0, target_pairwise_balance: float = None, severe_threshold: float = 10.0, tabu_list: dict = None, weak_factions: list = None, decks_data: dict = None) -> str:
     if target_pairwise_balance is not None:
         target_pairwise_tolerance = target_pairwise_balance
 
@@ -264,7 +322,8 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
         "严禁改动卡牌的 id 与 card_type；仅针对性调整选中的 2~8 张卡牌的 cost, base_dp, atk_spell_val, def_spell_val, tags。"
     )
 
-    prompt_cards = _strip_cards_for_prompt(cards_data)
+    card_in_decks, active_deck_section = _build_active_deck_context(decks_data, cards_data)
+    prompt_cards = _strip_cards_for_prompt(cards_data, card_in_decks=card_in_decks or None)
 
     prompt = f"""
 你是一名经验丰富的 TCG 卡牌设计师兼数值策划。
@@ -273,8 +332,7 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
 ### 1. 训练对局数据:
 - 总训练对局: {total} 局
 {data_section}
-{card_plays_section}
-- 卡牌全局使用频次统计: {json.dumps(metrics_data.get("card_play_count", {}), ensure_ascii=False)}
+{card_plays_section}{active_deck_section}- 卡牌全局使用频次统计: {json.dumps(metrics_data.get("card_play_count", {}), ensure_ascii=False)}
 {history_section}
 
 ### 2. 核心机制特性与设计规则：
@@ -579,6 +637,7 @@ def main():
     parser = argparse.ArgumentParser(description="TCG 卡牌数值自动平衡调优工具")
     parser.add_argument("--cards", type=str, default="cards_config.json", help="输入的卡池 JSON 文件")
     parser.add_argument("--metrics", type=str, default="training_metrics_brawl.json", help="输入的训练战报 JSON 文件")
+    parser.add_argument("--decks", type=str, default=None, help="现役卡组配置 JSON 文件 (可选，默认自动查找同目录 decks_config.json)")
     parser.add_argument("--output", type=str, default="cards_config_tuned.json", help="输出调优卡池文件路径")
     parser.add_argument("--history", type=str, default=None, help="基准/历史战报文件路径")
     parser.add_argument("--target-balance", type=float, default=5.0, help="阵营总胜率平衡容差 (默认 5.0%%)")
@@ -614,6 +673,8 @@ def main():
 
     metrics_data = load_json(metrics_file)
     history_data = load_json(history_file) if history_file else None
+    decks_file = resolve_path(args.decks) if args.decks else os.path.join(os.path.dirname(os.path.abspath(cards_file)), "decks_config.json")
+    decks_data = load_json(decks_file) if decks_file and os.path.exists(decks_file) else None
 
     print(f"卡池输入: {cards_file} | 战报文件: {metrics_file}")
     if history_file:
@@ -649,7 +710,8 @@ def main():
             target_pairwise_balance=args.target_pairwise_balance,
             severe_threshold=args.severe_threshold,
             tabu_list=tabu_list,
-            weak_factions=weak_factions
+            weak_factions=weak_factions,
+            decks_data=decks_data,
         )
     except Exception as e:
         print(f"\n[警告] DeepSeek 模型调用异常 ({e})！保持当前卡池不变，平滑进入下一阶段。")

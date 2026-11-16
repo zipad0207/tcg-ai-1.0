@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import time
+import copy
 import argparse
 import random
 import torch
@@ -32,11 +33,48 @@ if hasattr(torch, "set_num_interop_threads"):
     except Exception:
         pass
 
-from sandbox import DuelEnv, Faction, Card, CardType
-from agent import CardNet
+from sandbox import DuelEnv, Faction, Card, CardType, MinionInstance
+from agent import CardNet, load_cardnet_compatible
 
 MAX_COPIES_PER_CARD = 3
 DECK_SIZE = 30
+MAX_ZERO_COST_CARDS = 2
+
+FACTION_CURVE_RULES = {
+    "Red": {"max_zero": 2, "max_low": 16, "min_early": 6, "min_high_5": 2, "min_high_6": 0, "min_high_7": 0, "min_ramp": 0},
+    "Blue": {"max_zero": 2, "max_low": 15, "min_early": 5, "min_high_5": 4, "min_high_6": 2, "min_high_7": 0, "min_ramp": 0},
+    "Green": {"max_zero": 2, "max_low": 15, "min_early": 4, "min_high_5": 5, "min_high_6": 4, "min_high_7": 2, "min_ramp": 3},
+}
+_DEFAULT_CURVE_RULE = {"max_zero": 2, "max_low": 16, "min_early": 5, "min_high_5": 3, "min_high_6": 1, "min_high_7": 0, "min_ramp": 0}
+
+
+def _is_ramp_card(card: dict) -> bool:
+    return any(t.startswith(("RAMP_", "DEATH_MANA_")) for t in card.get("tags", []))
+
+
+def _is_pure_temp_mana(card: dict) -> bool:
+    if card.get("card_type") != "SPELL" or card.get("cost", 0) > 0:
+        return False
+    if card.get("atk_spell_val", 0) > 0 or card.get("def_spell_val", 0) > 0:
+        return False
+    tags = card.get("tags", [])
+    has_other = any(
+        t.startswith(("DRAW_", "RAMP_", "SPAWN_", "DEGRADE_")) or t == "SACRIFICE_1_KILL_1"
+        for t in tags
+    )
+    return (not has_other) and any(t.startswith("TEMP_MANA_") for t in tags)
+
+
+def _is_early_interactive(card: dict) -> bool:
+    cost = card.get("cost", 0)
+    if cost not in (1, 2):
+        return False
+    return (
+        card.get("card_type") == "MINION"
+        or card.get("atk_spell_val", 0) > 0
+        or card.get("def_spell_val", 0) > 0
+        or _is_ramp_card(card)
+    )
 
 def find_model_path(requested_path: str = None, stage: str = "tuned") -> str:
     candidates = []
@@ -92,6 +130,32 @@ def get_faction_candidates(pool_data: dict, faction: str) -> List[dict]:
 
     return candidates
 
+def _populate_probe_board(env: DuelEnv, opp_f: Faction, sample_idx: int) -> None:
+    """Populate realistic mid-game units on 2/3 of probes so spells and removal are tested."""
+    if sample_idx % 3 == 0:
+        return
+    opp_pool = [c for c in env.card_database.values() if c.card_type == CardType.MINION and not c.is_token]
+    if not opp_pool:
+        return
+    lane_id = sample_idx % 2
+    opp_card = random.choice(opp_pool)
+    if sample_idx % 3 == 1:
+        env.lanes[lane_id].attackers.append(
+            MinionInstance(card=env._clone_card(opp_card), current_dp=max(2, opp_card.base_dp), owner=1, ready_to_attack=True)
+        )
+    else:
+        env.lanes[lane_id].defenders.append(
+            MinionInstance(card=env._clone_card(opp_card), current_dp=max(3, opp_card.base_dp), owner=1, ready_to_attack=False)
+        )
+        f_code = 1 if env.p0_faction == Faction.RED else (2 if env.p0_faction == Faction.BLUE else 3)
+        my_pool = [c for c in opp_pool if env._is_card_allowed_for_faction(c, f_code)]
+        if my_pool:
+            ally = random.choice(my_pool)
+            env.lanes[lane_id].attackers.append(
+                MinionInstance(card=env._clone_card(ally), current_dp=max(2, ally.base_dp), owner=0, ready_to_attack=True)
+            )
+
+
 def evaluate_card_neural_utility(model: CardNet, device: torch.device, candidate: dict, 
                                  faction: Faction, cards_path: str, samples: int = 15) -> dict:
     card_obj = Card(
@@ -102,35 +166,31 @@ def evaluate_card_neural_utility(model: CardNet, device: torch.device, candidate
         base_dp=candidate.get("base_dp", 0),
         atk_spell_val=candidate.get("atk_spell_val", 0),
         def_spell_val=candidate.get("def_spell_val", 0),
-        tags=candidate.get("tags", [])
+        tags=candidate.get("tags", []),
+        factions=candidate.get("factions", []),
     )
 
     play_probs = []
     value_gains = []
     is_playable_count = 0
 
-    for _ in range(samples):
+    for s_idx in range(samples):
         opp_pool = [f for f in [Faction.RED, Faction.BLUE, Faction.GREEN] if f != faction]
         opp_f = random.choice(opp_pool)
         env = DuelEnv(p0_faction=faction, p1_faction=opp_f, cards_path=cards_path)
-        obs = env.reset()
+        env.reset()
 
-        acting_p_id = 0
-        env.current_player = acting_p_id
-        player = env.players[acting_p_id]
-
-        # 采样费用：保证该卡至少有一半概率能被打出，避免高费卡因为低费回合太多而被系统性低估
+        env.current_player = 0
+        player = env.players[0]
         min_fair_mana = max(1, card_obj.cost)
         sim_mana = random.randint(min_fair_mana, max(min_fair_mana, 10))
         player.mana = sim_mana
         player.max_mana = sim_mana
+        _populate_probe_board(env, opp_f, s_idx)
 
         player.hand = [card_obj] + player.hand[:3]
-
         mask = env.get_action_mask()
-        card_action_indices = [0, 1, 2, 3] 
-        legal_card_actions = [idx for idx in card_action_indices if mask[idx] > 0.5]
-
+        legal_card_actions = [idx for idx in range(4) if mask[idx] > 0.5]
         if not legal_card_actions:
             continue
 
@@ -143,29 +203,58 @@ def evaluate_card_neural_utility(model: CardNet, device: torch.device, candidate
             logits, v_before = model(state_t, mask_t)
             probs = torch.softmax(logits, dim=-1).squeeze(0).cpu().numpy()
 
-        p_card_play = float(sum(probs[idx] for idx in legal_card_actions))
-        play_probs.append(p_card_play)
-
+        play_probs.append(float(sum(probs[idx] for idx in legal_card_actions)))
         best_card_act = max(legal_card_actions, key=lambda idx: probs[idx])
-        obs_next, reward, done, _ = env.step(best_card_act)
 
-        next_state_t = torch.FloatTensor(obs_next).unsqueeze(0).to(device)
-        next_mask_t = torch.FloatTensor(env.get_action_mask()).unsqueeze(0).to(device)
+        pass_env = copy.deepcopy(env)
+        obs_play, r_play, done_play, _ = env.step(best_card_act)
+        obs_pass, r_pass, done_pass, _ = pass_env.step(pass_env.action_space_size - 1)
+
         with torch.no_grad():
-            _, v_after = model(next_state_t, next_mask_t)
+            if done_play:
+                v_play = r_play
+            else:
+                _, vp_t = model(
+                    torch.FloatTensor(obs_play).unsqueeze(0).to(device),
+                    torch.FloatTensor(env.get_action_mask()).unsqueeze(0).to(device),
+                )
+                v_play = float(vp_t.item() + r_play)
 
-        v_delta = float(v_after.item() - v_before.item() + reward)
-        value_gains.append(v_delta)
+            if done_pass:
+                v_pass = r_pass
+            else:
+                _, vpass_t = model(
+                    torch.FloatTensor(obs_pass).unsqueeze(0).to(device),
+                    torch.FloatTensor(pass_env.get_action_mask()).unsqueeze(0).to(device),
+                )
+                v_pass_raw = float(vpass_t.item())
+                v_pass = (-v_pass_raw if pass_env.current_player != 0 else v_pass_raw) + r_pass
+
+            if not done_play and env.current_player != 0:
+                v_play = -float(vp_t.item()) + r_play
+
+        cf_gain = (v_play - v_pass) * 0.6 + (v_play - float(v_before.item())) * 0.4
+        value_gains.append(cf_gain)
 
     playability_ratio = is_playable_count / max(1, samples)
     avg_play_prob = float(np.mean(play_probs)) if play_probs else 0.0
-    avg_v_gain = float(np.mean(value_gains)) if value_gains else 0.0
+    avg_v_gain = float(np.mean(value_gains)) if value_gains else -0.05
 
-    # 费用无关的公平评分：value_gain 和 play_prob 已在公平费用下采样，无需额外惩罚高费卡
-    v_norm = (avg_v_gain + 0.05) * 300.0
-    p_norm = avg_play_prob * 100.0 * 0.4
-    tempo_norm = playability_ratio * 20.0
-    ppo_score = round(max(20.0, min(98.0, 20.0 + v_norm + p_norm + tempo_norm)), 2)
+    # Discount pure cantrip-less 0-cost temporary mana cards that burn a card slot for 1-turn mana.
+    tags = candidate.get("tags", [])
+    multi_turn_bonus = 0.0
+    for t in tags:
+        if t.startswith("RAMP_") or t.startswith("DEATH_MANA_"):
+            suffix = t.split("_")[-1]
+            if suffix.isdigit():
+                multi_turn_bonus += int(suffix) * 5.0
+    if _is_pure_temp_mana(candidate):
+        multi_turn_bonus -= 18.0
+
+    v_norm = 34.0 * float(np.tanh(avg_v_gain * 0.45))
+    p_norm = avg_play_prob * 18.0
+    tempo_norm = playability_ratio * 12.0
+    ppo_score = round(max(20.0, min(98.0, 36.0 + v_norm + p_norm + tempo_norm + multi_turn_bonus)), 2)
 
     return {
         "id": candidate["id"],
@@ -179,17 +268,35 @@ def evaluate_card_neural_utility(model: CardNet, device: torch.device, candidate
         "ppo_score": ppo_score
     }
 
-def normalize_deck_allocation(counts: Dict[int, int], candidate_ids: List[int], priority_order: List[int]) -> Dict[int, int]:
+def normalize_deck_allocation(
+    counts: Dict[int, int],
+    candidate_ids: List[int],
+    priority_order: List[int],
+    cand_by_id: dict = None,
+    max_zero: int = MAX_ZERO_COST_CARDS,
+) -> Dict[int, int]:
     clean_counts = {cid: min(MAX_COPIES_PER_CARD, max(0, counts.get(cid, 0))) for cid in candidate_ids}
     total = sum(clean_counts.values())
 
     if total < DECK_SIZE:
-        for cid in priority_order:
-            while clean_counts[cid] < MAX_COPIES_PER_CARD and total < DECK_SIZE:
-                clean_counts[cid] += 1
-                total += 1
+        zero_cnt = (
+            sum(cnt for cid, cnt in clean_counts.items() if cand_by_id.get(cid, {}).get("cost", 1) == 0)
+            if cand_by_id else 0
+        )
+        for allow_zero in ([False, True] if cand_by_id else [True]):
             if total >= DECK_SIZE:
                 break
+            for cid in priority_order:
+                is_zero = cand_by_id.get(cid, {}).get("cost", 1) == 0 if cand_by_id else False
+                while clean_counts[cid] < MAX_COPIES_PER_CARD and total < DECK_SIZE:
+                    if is_zero and not allow_zero and zero_cnt >= max_zero:
+                        break
+                    clean_counts[cid] += 1
+                    total += 1
+                    if is_zero:
+                        zero_cnt += 1
+                if total >= DECK_SIZE:
+                    break
 
     if total > DECK_SIZE:
         rev_priority = list(reversed(priority_order))
@@ -202,6 +309,206 @@ def normalize_deck_allocation(counts: Dict[int, int], candidate_ids: List[int], 
 
     return clean_counts
 
+
+def _bracket_counts(counts: Dict[int, int], cand_by_id: dict) -> dict:
+    stats = {"zero": 0, "low": 0, "early": 0, "high5": 0, "high6": 0, "high7": 0, "ramp": 0}
+    for cid, cnt in counts.items():
+        if cnt <= 0:
+            continue
+        card = cand_by_id.get(cid)
+        if not card:
+            continue
+        cost = card.get("cost", 0)
+        if cost == 0:
+            stats["zero"] += cnt
+        if cost <= 2:
+            stats["low"] += cnt
+        if _is_early_interactive(card):
+            stats["early"] += cnt
+        if cost >= 5:
+            stats["high5"] += cnt
+        if cost >= 6:
+            stats["high6"] += cnt
+        if cost >= 7:
+            stats["high7"] += cnt
+        if _is_ramp_card(card):
+            stats["ramp"] += cnt
+    return stats
+
+
+def _swap_to_satisfy(
+    counts: Dict[int, int],
+    need: int,
+    remove_filter,
+    add_filter,
+    cand_by_id: dict,
+    priority_order: List[int],
+    score_fn,
+    protect_rules: dict = None,
+) -> int:
+    """Swap up to `need` cards matching `remove_filter` into cards matching `add_filter`."""
+    if need <= 0:
+        return 0
+
+    add_pool = [
+        cid for cid in priority_order
+        if add_filter(cand_by_id[cid]) and counts.get(cid, 0) < MAX_COPIES_PER_CARD
+    ]
+    if not add_pool:
+        return 0
+
+    stats = _bracket_counts(counts, cand_by_id) if protect_rules else None
+
+    def _is_protected(card: dict) -> int:
+        if not stats or not protect_rules:
+            return 0
+        cost = card.get("cost", 0)
+        if _is_ramp_card(card) and stats["ramp"] <= protect_rules["min_ramp"]:
+            return 2
+        if cost >= 7 and stats["high7"] <= protect_rules["min_high_7"]:
+            return 2
+        if cost >= 6 and stats["high6"] <= protect_rules["min_high_6"]:
+            return 2
+        if cost >= 5 and stats["high5"] <= protect_rules["min_high_5"]:
+            return 1
+        if _is_early_interactive(card) and stats["early"] <= protect_rules["min_early"]:
+            return 1
+        return 0
+
+    swapped = 0
+    for max_prot_level in (0, 1, 2):
+        if swapped >= need:
+            break
+        rem_pool = sorted(
+            [cid for cid, cnt in counts.items() if cnt > 0 and remove_filter(cand_by_id[cid])],
+            key=lambda cid: (_is_protected(cand_by_id[cid]), score_fn(cid)),
+        )
+        for r_cid in rem_pool:
+            if swapped >= need:
+                break
+            while counts.get(r_cid, 0) > 0 and swapped < need:
+                if _is_protected(cand_by_id[r_cid]) > max_prot_level:
+                    break
+                target_b = next((b for b in add_pool if b != r_cid and counts.get(b, 0) < MAX_COPIES_PER_CARD), None)
+                if target_b is None:
+                    return swapped
+                counts[r_cid] -= 1
+                counts[target_b] = counts.get(target_b, 0) + 1
+                swapped += 1
+                if stats:
+                    stats = _bracket_counts(counts, cand_by_id)
+    return swapped
+
+
+def _repair_deck_curve(
+    counts: Dict[int, int],
+    cand_by_id: dict,
+    priority_order: List[int],
+    faction: str,
+    neural_dict: dict = None,
+) -> Dict[int, int]:
+    """Enforce archetype-aware zero-cost, ramp, early-play, and top-end curve invariants."""
+    rules = FACTION_CURVE_RULES.get(faction, _DEFAULT_CURVE_RULE)
+    fixed = dict(counts)
+    n_dict = neural_dict or {}
+    score_fn = lambda cid: n_dict.get(cid, {}).get("ppo_score", 50.0)
+
+    stats = _bracket_counts(fixed, cand_by_id)
+    if stats["zero"] > rules["max_zero"]:
+        _swap_to_satisfy(
+            fixed,
+            stats["zero"] - rules["max_zero"],
+            lambda c: c.get("cost", 0) == 0,
+            lambda c: 2 <= c.get("cost", 0) <= 5,
+            cand_by_id,
+            priority_order,
+            score_fn,
+            protect_rules=rules,
+        )
+
+    requirements = [
+        ("ramp", rules["min_ramp"], _is_ramp_card),
+        ("high7", rules["min_high_7"], lambda c: c.get("cost", 0) >= 7),
+        ("high6", rules["min_high_6"], lambda c: c.get("cost", 0) >= 6),
+        ("high5", rules["min_high_5"], lambda c: c.get("cost", 0) >= 5),
+        ("early", rules["min_early"], _is_early_interactive),
+    ]
+    for key, target_min, pred in requirements:
+        if target_min <= 0:
+            continue
+        stats = _bracket_counts(fixed, cand_by_id)
+        if stats[key] < target_min:
+            _swap_to_satisfy(
+                fixed,
+                target_min - stats[key],
+                lambda c, p=pred: not p(c),
+                pred,
+                cand_by_id,
+                priority_order,
+                score_fn,
+                protect_rules=rules,
+            )
+
+    stats = _bracket_counts(fixed, cand_by_id)
+    if stats["low"] > rules["max_low"]:
+        _swap_to_satisfy(
+            fixed,
+            stats["low"] - rules["max_low"],
+            lambda c: c.get("cost", 0) <= 2,
+            lambda c: 3 <= c.get("cost", 0) <= 5,
+            cand_by_id,
+            priority_order,
+            score_fn,
+            protect_rules=rules,
+        )
+
+    return normalize_deck_allocation(
+        fixed, list(cand_by_id.keys()), priority_order, cand_by_id=cand_by_id, max_zero=rules["max_zero"]
+    )
+
+
+def _is_valid_swap(
+    counts: Dict[int, int],
+    w_cid: int,
+    b_cid: int,
+    step: int,
+    cand_by_id: dict,
+    rules: dict,
+    cur_stats: dict,
+) -> bool:
+    """Return True if swapping `step` copies of `w_cid` to `b_cid` preserves curve invariants."""
+    w_c = cand_by_id[w_cid]
+    b_c = cand_by_id[b_cid]
+    w_cost = w_c.get("cost", 0)
+    b_cost = b_c.get("cost", 0)
+
+    new_zero = cur_stats["zero"] + (step if b_cost == 0 else 0) - (step if w_cost == 0 else 0)
+    if new_zero > max(rules["max_zero"], 0) and new_zero >= cur_stats["zero"]:
+        return False
+
+    new_low = cur_stats["low"] + (step if b_cost <= 2 else 0) - (step if w_cost <= 2 else 0)
+    if new_low > rules["max_low"] and new_low >= cur_stats["low"]:
+        return False
+
+    floors = [
+        ("ramp", rules["min_ramp"], _is_ramp_card),
+        ("high7", rules["min_high_7"], lambda c: c.get("cost", 0) >= 7),
+        ("high6", rules["min_high_6"], lambda c: c.get("cost", 0) >= 6),
+        ("high5", rules["min_high_5"], lambda c: c.get("cost", 0) >= 5),
+        ("early", rules["min_early"], _is_early_interactive),
+    ]
+    for key, req_min, pred in floors:
+        if req_min <= 0:
+            continue
+        delta = (step if pred(b_c) else 0) - (step if pred(w_c) else 0)
+        new_val = cur_stats[key] + delta
+        min_allowed = min(req_min, cur_stats[key])
+        if new_val < min_allowed:
+            return False
+
+    return True
+
+
 def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats: List[dict],
                               model: CardNet, device: torch.device, cards_path: str,
                               generations: int = 20, games_per_gen: int = 50,
@@ -211,92 +518,24 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
     sorted_by_ppo = sorted(neural_stats, key=lambda x: x["ppo_score"], reverse=True)
     priority_order = [x["id"] for x in sorted_by_ppo]
     neural_dict = {x["id"]: x for x in neural_stats}
+    rules = FACTION_CURVE_RULES.get(faction, _DEFAULT_CURVE_RULE)
 
     current_counts: Dict[int, int] = {cid: 0 for cid in candidate_ids}
-
     has_existing = False
     if existing_decks and faction in existing_decks and "decklist" in existing_decks[faction]:
         existing_list = existing_decks[faction]["decklist"]
         if len(existing_list) > 0:
             for cid in existing_list:
-                if cid in current_counts:
+                if cid in current_counts and current_counts[cid] < MAX_COPIES_PER_CARD:
                     current_counts[cid] += 1
             if sum(current_counts.values()) >= 15:
-                # 费用健康度检查与平滑微创修剪
-                total_inherited = sum(current_counts.values())
-                min_high = 4 if faction == "Green" else 3
-                max_low = 18  # 1~2 费卡上限（60%）
-
-                high_cost_count = sum(cnt for cid, cnt in current_counts.items() if cand_by_id.get(cid, {}).get("cost", 0) >= 5)
-                low_cost_count = sum(cnt for cid, cnt in current_counts.items() if cand_by_id.get(cid, {}).get("cost", 0) <= 2)
-
-                # 1. 若高费不足，进行微创修剪补齐高费大哥
-                if high_cost_count < min_high:
-                    deficit = min_high - high_cost_count
-                    trim_cands = sorted(
-                        [cid for cid, cnt in current_counts.items() if cnt > 0 and cand_by_id.get(cid, {}).get("cost", 0) < 5],
-                        key=lambda cid: neural_dict.get(cid, {}).get("ppo_score", 50.0)
-                    )
-                    high_add_pool = [
-                        cid for cid in priority_order
-                        if cand_by_id.get(cid, {}).get("cost", 0) >= 5 and current_counts.get(cid, 0) < MAX_COPIES_PER_CARD
-                    ]
-                    cut_done = 0
-                    for cid in trim_cands:
-                        if cut_done >= deficit: break
-                        can_cut = min(current_counts[cid], deficit - cut_done)
-                        current_counts[cid] -= can_cut
-                        cut_done += can_cut
-                    
-                    add_done = 0
-                    for cid in high_add_pool:
-                        if add_done >= cut_done: break
-                        can_add = min(MAX_COPIES_PER_CARD - current_counts.get(cid, 0), cut_done - add_done)
-                        current_counts[cid] = current_counts.get(cid, 0) + can_add
-                        add_done += can_add
-                    
-                    if add_done > 0:
-                        print(f"[*] 【{faction}】既有卡组高费偏少 (5+费仅 {high_cost_count} 张)，已平滑补齐 {add_done} 张高费大哥。")
-
-                # 重新计算低费张数
-                low_cost_count = sum(cnt for cid, cnt in current_counts.items() if cand_by_id.get(cid, {}).get("cost", 0) <= 2)
-                # 2. 若低费超标，进行微创修剪替换为 3~4 费中费卡
-                if low_cost_count > max_low:
-                    excess = low_cost_count - max_low
-                    trim_low_cands = sorted(
-                        [cid for cid, cnt in current_counts.items() if cnt > 0 and cand_by_id.get(cid, {}).get("cost", 0) <= 2],
-                        key=lambda cid: neural_dict.get(cid, {}).get("ppo_score", 50.0)
-                    )
-                    mid_add_pool = [
-                        cid for cid in priority_order
-                        if 3 <= cand_by_id.get(cid, {}).get("cost", 0) <= 4 and current_counts.get(cid, 0) < MAX_COPIES_PER_CARD
-                    ]
-                    cut_done = 0
-                    for cid in trim_low_cands:
-                        if cut_done >= excess: break
-                        can_cut = min(current_counts[cid], excess - cut_done)
-                        current_counts[cid] -= can_cut
-                        cut_done += can_cut
-
-                    add_done = 0
-                    for cid in mid_add_pool:
-                        if add_done >= cut_done: break
-                        can_add = min(MAX_COPIES_PER_CARD - current_counts.get(cid, 0), cut_done - add_done)
-                        current_counts[cid] = current_counts.get(cid, 0) + can_add
-                        add_done += can_add
-                    
-                    if add_done > 0:
-                        print(f"[*] 【{faction}】既有卡组低费卡偏多 (1~2费 {low_cost_count} 张)，已平滑置换 {add_done} 张为优质中费卡。")
-
-                # 最终校验总数与均费
-                current_counts = normalize_deck_allocation(current_counts, candidate_ids, priority_order)
+                current_counts = _repair_deck_curve(current_counts, cand_by_id, priority_order, faction, neural_dict)
                 total_inherited = sum(current_counts.values())
                 avg_inherited = sum(cand_by_id.get(cid, {}).get("cost", 0) * cnt for cid, cnt in current_counts.items()) / max(1, total_inherited)
                 has_existing = True
-                print(f"[*] 【{faction}】成功继承既有实战卡组 (有效卡牌 {total_inherited} 张，均费 {avg_inherited:.1f})，启动 PPO 自主胜率检验与变异搜索...")
+                print(f"[*] 【{faction}】继承并按曲线规则校准既有卡组 (有效 {total_inherited} 张，均费 {avg_inherited:.1f})，启动 PPO 搜索...")
 
     if not has_existing:
-        # 按合理法力曲线初始化，保证高中低费段都有足够卡牌
         curve_targets = {(1, 2): 10, (3, 4): 10, (5, 10): 10}
         rem = DECK_SIZE
         for cost_range, target in curve_targets.items():
@@ -310,244 +549,184 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
                 if bracket_rem <= 0:
                     break
         for cid in priority_order:
-            if rem <= 0: break
+            if rem <= 0:
+                break
+            if cand_by_id[cid].get("cost", 1) == 0:
+                continue
             if current_counts.get(cid, 0) < MAX_COPIES_PER_CARD:
                 take = min(MAX_COPIES_PER_CARD - current_counts.get(cid, 0), rem)
                 current_counts[cid] = current_counts.get(cid, 0) + take
                 rem -= take
-
-    current_counts = normalize_deck_allocation(current_counts, candidate_ids, priority_order)
+        current_counts = _repair_deck_curve(current_counts, cand_by_id, priority_order, faction, neural_dict)
 
     faction_map = {"Red": Faction.RED, "Blue": Faction.BLUE, "Green": Faction.GREEN}
     name_map = {Faction.RED: "Red", Faction.BLUE: "Blue", Faction.GREEN: "Green"}
     my_faction = faction_map.get(faction, Faction.RED)
     opp_factions = [f for f in [Faction.RED, Faction.BLUE, Faction.GREEN] if f != my_faction]
 
-    def evaluate_decklist_performance(deck_allocation: Dict[int, int], num_games: int):
+    def evaluate_decklist_performance(deck_allocation: Dict[int, int], num_games: int, seed_base: int = None):
         test_decklist = []
         for cid, count in deck_allocation.items():
             test_decklist.extend([cid] * count)
 
         card_played_win = Counter()
         card_played_total = Counter()
-        card_hand_turns = Counter()
-        card_idle_turns = Counter()
+        card_playable_turns = Counter()
+        card_playable_idle = Counter()
         wins = 0
 
-        for game_idx in range(num_games):
-            # 对称均衡轮换对手阵营，确保对每个对手样本量严格相等，避免偏科
-            opp_f = opp_factions[game_idx % len(opp_factions)]
-            opp_name = name_map[opp_f]
-            opp_deck = None
-            if existing_decks and opp_name in existing_decks and "decklist" in existing_decks[opp_name]:
-                opp_deck = existing_decks[opp_name]["decklist"]
+        saved_rng = None
+        if seed_base is not None:
+            saved_rng = (random.getstate(), np.random.get_state(), torch.get_rng_state())
 
-            # 先手与后手严格交替对称分配，消除先后手胜率统计偏差
-            is_p0 = (game_idx % 2 == 0)
-            
-            p0_f = my_faction if is_p0 else opp_f
-            p1_f = opp_f if is_p0 else my_faction
-            p0_deck = test_decklist if is_p0 else opp_deck
-            p1_deck = opp_deck if is_p0 else test_decklist
+        try:
+            for game_idx in range(num_games):
+                if seed_base is not None:
+                    g_seed = seed_base + game_idx
+                    random.seed(g_seed)
+                    np.random.seed(g_seed & 0xFFFFFFFF)
+                    torch.manual_seed(g_seed)
 
-            env = DuelEnv(p0_faction=p0_f, p1_faction=p1_f, cards_path=cards_path,
-                          p0_decklist=p0_deck, p1_decklist=p1_deck)
-            obs = env.reset()
-            done = False
-            played_this_game = set()
+                opp_f = opp_factions[game_idx % len(opp_factions)]
+                opp_name = name_map[opp_f]
+                opp_deck = None
+                if existing_decks and opp_name in existing_decks and "decklist" in existing_decks[opp_name]:
+                    opp_deck = existing_decks[opp_name]["decklist"]
 
-            while not done:
-                curr_p = env.current_player
-                is_my_turn = (curr_p == 0 and is_p0) or (curr_p == 1 and not is_p0)
-                
-                mask = env.get_action_mask()
-                state_t = torch.FloatTensor(obs).unsqueeze(0).to(device)
-                mask_t = torch.FloatTensor(mask).unsqueeze(0).to(device)
+                is_p0 = (game_idx % 2 == 0)
+                p0_f = my_faction if is_p0 else opp_f
+                p1_f = opp_f if is_p0 else my_faction
+                p0_deck = test_decklist if is_p0 else opp_deck
+                p1_deck = opp_deck if is_p0 else test_decklist
 
-                with torch.no_grad():
-                    logits, _ = model(state_t, mask_t)
-                    dist = Categorical(logits=logits)
-                    act = dist.sample().item()
+                env = DuelEnv(
+                    p0_faction=p0_f, p1_faction=p1_f, cards_path=cards_path,
+                    p0_decklist=p0_deck, p1_decklist=p1_deck,
+                )
+                obs = env.reset()
+                done = False
+                played_this_game = set()
 
-                if is_my_turn:
-                    my_player = env.players[curr_p]
-                    for card in my_player.hand:
-                        card_hand_turns[card.id] += 1
-                        if card.cost > my_player.mana:
-                            card_idle_turns[card.id] += 1
+                while not done:
+                    curr_p = env.current_player
+                    is_my_turn = (curr_p == 0 and is_p0) or (curr_p == 1 and not is_p0)
 
-                    if act != env.action_space_size - 1:
-                        h_idx = act // 4
-                        if h_idx < len(my_player.hand):
-                            c = my_player.hand[h_idx]
+                    mask = env.get_action_mask()
+                    state_t = torch.FloatTensor(obs).unsqueeze(0).to(device)
+                    mask_t = torch.FloatTensor(mask).unsqueeze(0).to(device)
+
+                    with torch.no_grad():
+                        logits, _ = model(state_t, mask_t)
+                        dist = Categorical(logits=logits)
+                        act = dist.sample().item()
+
+                    if is_my_turn:
+                        my_player = env.players[curr_p]
+                        acted_h_idx = act // 4 if act != env.action_space_size - 1 else -1
+                        for h_i, card in enumerate(my_player.hand[:env.MAX_HAND_SIZE]):
+                            if any(mask[h_i * 4 + slot] > 0.5 for slot in range(4)):
+                                card_playable_turns[card.id] += 1
+                                if h_i != acted_h_idx:
+                                    card_playable_idle[card.id] += 1
+
+                        if acted_h_idx >= 0 and acted_h_idx < len(my_player.hand):
+                            c = my_player.hand[acted_h_idx]
                             card_played_total[c.id] += 1
                             played_this_game.add(c.id)
 
-                obs, _, done, _ = env.step(act)
+                    obs, _, done, _ = env.step(act)
 
-            is_win = False
-            if env.winner is not None:
-                is_win = (env.winner == 0 and is_p0) or (env.winner == 1 and not is_p0)
-            else:
-                s0 = env.players[0].score
-                s1 = env.players[1].score
-                is_win = (s0 > s1 and is_p0) or (s1 > s0 and not is_p0)
+                if env.winner is not None:
+                    is_win = (env.winner == 0 and is_p0) or (env.winner == 1 and not is_p0)
+                else:
+                    s0 = env.players[0].score
+                    s1 = env.players[1].score
+                    is_win = (s0 > s1 and is_p0) or (s1 > s0 and not is_p0)
 
-            if is_win:
-                wins += 1
-                for cid in played_this_game:
-                    card_played_win[cid] += 1
+                if is_win:
+                    wins += 1
+                    for cid in played_this_game:
+                        card_played_win[cid] += 1
 
-            if (game_idx + 1) % 5 == 0:
-                time.sleep(0.001)
+                if (game_idx + 1) % 5 == 0:
+                    time.sleep(0.001)
+        finally:
+            if saved_rng is not None:
+                random.setstate(saved_rng[0])
+                np.random.set_state(saved_rng[1])
+                torch.set_rng_state(saved_rng[2])
 
-        wr = (wins / num_games) * 100.0
-        return wr, card_played_win, card_played_total, card_idle_turns, card_hand_turns
+        wr = (wins / max(1, num_games)) * 100.0
+        return wr, card_played_win, card_played_total, card_playable_idle, card_playable_turns
 
-    print(f"\n启动 PPO 自主学习卡组搜索 (共 {generations} 轮，每轮 {games_per_gen} 局实测)...")
-    
+    bench_games = games_per_gen if games_per_gen <= 20 else max(games_per_gen * 2, 100)
+    print(f"\n启动 PPO 自主学习卡组搜索 (共 {generations} 轮，每轮 {games_per_gen} 局筛选 + 成对 CRN 复核，基准 {bench_games} 局)...")
+
     print(f"[*] 正在实测【{faction}】基准卡组性能...")
-    best_winrate, best_p_win, best_p_tot, best_idles, best_hands = evaluate_decklist_performance(current_counts, games_per_gen)
+    best_winrate, best_p_win, best_p_tot, best_idles, best_hands = evaluate_decklist_performance(
+        current_counts, bench_games, seed_base=10000
+    )
     best_counts = dict(current_counts)
     print(f"[*] 【{faction}】初始基准实战胜率: {best_winrate:.1f}%")
-
-    early_cards = sum(cnt for cid, cnt in best_counts.items() if cand_by_id[cid]["cost"] <= 2 and cand_by_id[cid]["card_type"] == "MINION")
-    min_early = 4 if faction == "Green" else 6
-    if early_cards < min_early:
-        deficit = min_early - early_cards
-        print(f"   [*] 检测到前期抗压随从偏少 ({early_cards} < {min_early} 张)，启动曲线微创修补 (定向补齐 {deficit} 个卡位)...")
-        
-        # 挑选可微调削减的卡牌：避开 1~2 费随从，避开底线高费大哥
-        cnt_high = sum(cnt for cid, cnt in best_counts.items() if cand_by_id[cid]["cost"] >= 5)
-        min_high = 5 if faction == "Green" else 3
-        
-        cut_candidates = []
-        for cid, cnt in best_counts.items():
-            if cnt <= 0: continue
-            cost = cand_by_id[cid]["cost"]
-            ctype = cand_by_id[cid]["card_type"]
-            if cost <= 2 and ctype == "MINION":
-                continue
-            if cost >= 5 and cnt_high <= min_high:
-                continue
-            prior = neural_dict.get(cid, {}).get("ppo_score", 50.0)
-            cut_candidates.append((cid, cost, cnt, prior))
-        
-        # 按 PPO 评分从低到高削减（优先调减相对低效的卡牌）
-        cut_candidates.sort(key=lambda x: x[3])
-        
-        patch_counts = dict(best_counts)
-        cut_done = 0
-        for cid, cost, cnt, _ in cut_candidates:
-            if cut_done >= deficit:
-                break
-            can_cut = min(cnt, deficit - cut_done)
-            patch_counts[cid] -= can_cut
-            cut_done += can_cut
-            if cost >= 5:
-                cnt_high -= can_cut
-
-        # 寻找该阵营最优秀的 1~2 费随从补入
-        add_candidates = [
-            cid for cid in priority_order 
-            if cand_by_id[cid]["cost"] <= 2 and cand_by_id[cid]["card_type"] == "MINION"
-        ]
-        
-        add_done = 0
-        for cid in add_candidates:
-            if add_done >= cut_done:
-                break
-            curr_cnt = patch_counts.get(cid, 0)
-            can_add = min(MAX_COPIES_PER_CARD - curr_cnt, cut_done - add_done)
-            if can_add > 0:
-                patch_counts[cid] = curr_cnt + can_add
-                add_done += can_add
-
-        cand_patch = normalize_deck_allocation(patch_counts, candidate_ids, priority_order)
-        patch_wr, p_p_win, p_p_tot, p_idles, p_hands = evaluate_decklist_performance(cand_patch, games_per_gen)
-        
-        if patch_wr >= best_winrate or (patch_wr >= best_winrate - 2.0 and best_winrate < 40.0):
-            delta = patch_wr - best_winrate
-            best_counts = cand_patch
-            best_winrate = patch_wr
-            best_p_win, best_p_tot, best_idles, best_hands = p_p_win, p_p_tot, p_idles, p_hands
-            print(f"   [*] 曲线微创修补成功采纳！基准胜率: {best_winrate:.1f}% ({delta:+.1f}%)，补足前期随从。")
-        else:
-            print(f"   [*] 曲线微创修补实测胜率 ({patch_wr:.1f}%) 未见明显改善，保留原构筑交由后续微调。")
 
     decision_logs = []
     introspections = []
     rejected_pairs = set()
     rejected_actions = set()
+    reject_streak = 0
 
     for gen in range(1, generations + 1):
         prev_winrate = best_winrate
+
+        if reject_streak >= 6:
+            refresh_seed = 80000 + gen * 1000
+            refreshed_wr, best_p_win, best_p_tot, best_idles, best_hands = evaluate_decklist_performance(
+                best_counts, bench_games, seed_base=refresh_seed
+            )
+            print(f"   [*] 【{faction}】连续 {reject_streak} 轮未突破，按新随机种子重测基准胜率: {best_winrate:.1f}% -> {refreshed_wr:.1f}%")
+            best_winrate = refreshed_wr
+            prev_winrate = refreshed_wr
+            reject_streak = 0
 
         deck_cids = [cid for cid, cnt in best_counts.items() if cnt > 0]
         fitness_map = {}
         for cid in deck_cids:
             tot = best_p_tot[cid]
             win_r = (best_p_win[cid] / tot) if tot >= 2 else (best_winrate / 100.0)
-            h_turn = best_hands[cid]
-            idle_r = (best_idles[cid] / h_turn) if h_turn >= 3 else 0.0
+            p_turns = best_hands[cid]
+            idle_r = (best_idles[cid] / p_turns) if p_turns >= 3 else 0.0
             prior = neural_dict.get(cid, {}).get("ppo_score", 50.0) / 100.0
-            fit = (win_r * 0.6 + prior * 0.4) * (1.0 - 0.75 * idle_r)
+            fit = max(0.05, win_r * 0.65 + prior * 0.35 - 0.18 * idle_r)
             fitness_map[cid] = fit
 
-        cnt_1_cost = sum(cnt for cid, cnt in best_counts.items() if cand_by_id[cid]["cost"] == 1)
-        cnt_2_cost = sum(cnt for cid, cnt in best_counts.items() if cand_by_id[cid]["cost"] == 2)
-        cnt_high_cost = sum(cnt for cid, cnt in best_counts.items() if cand_by_id[cid]["cost"] >= 5)
-        min_high = 5 if faction == "Green" else 3
-        
-        eligible_worst_cids = []
-        for cid in deck_cids:
-            cost = cand_by_id[cid]["cost"]
-            if cost == 1 and cnt_1_cost <= 3: continue
-            if cost == 2 and cnt_2_cost <= 5: continue
-            if cost >= 5 and cnt_high_cost <= min_high: continue
-            eligible_worst_cids.append(cid)
-            
-        if not eligible_worst_cids:
-            eligible_worst_cids = deck_cids
+        cur_stats = _bracket_counts(best_counts, cand_by_id)
+        sorted_worst = sorted(deck_cids, key=lambda cid: fitness_map[cid])
 
-        sorted_worst = sorted(eligible_worst_cids, key=lambda cid: fitness_map[cid])
-
-        candidate_pool_sorted = []
-        for cid in candidate_ids:
-            if best_counts.get(cid, 0) < MAX_COPIES_PER_CARD:
-                prior = neural_dict.get(cid, {}).get("ppo_score", 50.0)
-                # 纯 PPO 评分排序，不再给低费卡额外加分
-                candidate_pool_sorted.append((cid, prior))
+        candidate_pool_sorted = [
+            (cid, neural_dict.get(cid, {}).get("ppo_score", 50.0))
+            for cid in candidate_ids
+            if best_counts.get(cid, 0) < MAX_COPIES_PER_CARD
+        ]
         candidate_pool_sorted.sort(key=lambda x: x[1], reverse=True)
 
-        # 构建所有合规替换候选对
         valid_pairs = []
         for w_cid in sorted_worst:
-            w_cost = cand_by_id[w_cid]["cost"]
             for b_cid, _ in candidate_pool_sorted:
-                if w_cid == b_cid:
-                    continue
-                if (b_cid, w_cid) in rejected_pairs:
-                    continue
-
-                b_cost = cand_by_id[b_cid]["cost"]
-                # 费用健康度防护 1：若当前低费卡 (1~2费) 已达上限 (18 张 / 60%)，禁止用低费卡替换中高费卡
-                if b_cost <= 2 and w_cost > 2 and (cnt_1_cost + cnt_2_cost) >= 18:
-                    continue
-                # 费用健康度防护 2：若当前高费卡 (5+费) 已触底 (<= min_high)，禁止削减高费卡换入非高费卡
-                if w_cost >= 5 and b_cost < 5 and cnt_high_cost <= min_high:
+                if w_cid == b_cid or (b_cid, w_cid) in rejected_pairs:
                     continue
 
                 curr_w_cnt = best_counts.get(w_cid, 0)
                 curr_b_cnt = best_counts.get(b_cid, 0)
-                max_can_add = MAX_COPIES_PER_CARD - curr_b_cnt
-                max_step = min(curr_w_cnt, max_can_add)
+                max_step = min(curr_w_cnt, MAX_COPIES_PER_CARD - curr_b_cnt)
                 if max_step <= 0:
                     continue
 
-                # 备选步长选项：支持渐进平滑 1 张，或整批替换
                 possible_steps = [max_step] if max_step == 1 else [1, max_step]
-                avail_steps = [s for s in possible_steps if (b_cid, w_cid, s) not in rejected_actions]
+                avail_steps = [
+                    s for s in possible_steps
+                    if (b_cid, w_cid, s) not in rejected_actions
+                    and _is_valid_swap(best_counts, w_cid, b_cid, s, cand_by_id, rules, cur_stats)
+                ]
                 if not avail_steps:
                     continue
 
@@ -561,17 +740,14 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
                     "curr_w_cnt": curr_w_cnt,
                     "max_step": max_step,
                     "avail_steps": avail_steps,
-                    "pair_score": pair_score
+                    "pair_score": pair_score,
                 })
 
         if not valid_pairs:
-            print(f"   [代数 {gen}/{generations}] 所有可行组合已被探索或已达局部最优，停止变异。")
+            print(f"   [代数 {gen}/{generations}] 所有合规替换组合已探索完毕，停止变异。")
             break
 
-        # 按综合评分排序
         valid_pairs.sort(key=lambda x: x["pair_score"], reverse=True)
-
-        # 机制一：温度退火 Softmax 概率采样（代数越小温度越高，探索范围越广）
         top_k = min(len(valid_pairs), 12 if faction == "Red" else 8)
         top_pairs = valid_pairs[:top_k]
         temp = max(0.4, 2.0 * (1.0 - (gen - 1) / max(1, generations))) if faction == "Red" else max(0.2, 1.2 * (1.0 - (gen - 1) / max(1, generations)))
@@ -579,27 +755,13 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
         scores_arr = np.array([p["pair_score"] for p in top_pairs], dtype=np.float64)
         exp_scores = np.exp((scores_arr - np.max(scores_arr)) / temp)
         sum_exp = np.sum(exp_scores)
-        if sum_exp > 1e-12:
-            probs = exp_scores / sum_exp
-            probs = probs / np.sum(probs)  # 二次归一化保证浮点求和严格等于 1.0
-        else:
-            probs = np.ones(len(top_pairs), dtype=np.float64) / len(top_pairs)
-        chosen_idx = int(np.random.choice(len(top_pairs), p=probs))
-        chosen_pair = top_pairs[chosen_idx]
+        probs = (exp_scores / sum_exp / np.sum(exp_scores / sum_exp)) if sum_exp > 1e-12 else (np.ones(len(top_pairs), dtype=np.float64) / len(top_pairs))
+        chosen_pair = top_pairs[int(np.random.choice(len(top_pairs), p=probs))]
 
         worst_candidate = chosen_pair["w_cid"]
         best_candidate = chosen_pair["b_cid"]
-        curr_w_cnt = chosen_pair["curr_w_cnt"]
         avail_steps = chosen_pair["avail_steps"]
-
-        # 机制二：步长松动（退火与平滑单张微调）
-        if len(avail_steps) > 1:
-            swap_cnt = 1 if (random.random() < 0.55 or gen <= 3) else chosen_pair["max_step"]
-        else:
-            swap_cnt = avail_steps[0]
-
-        is_smooth_step = (swap_cnt < curr_w_cnt)
-        step_type_str = "平滑" if is_smooth_step else "整批"
+        swap_cnt = (1 if (random.random() < 0.55 or gen <= 3) else avail_steps[-1]) if len(avail_steps) > 1 else avail_steps[0]
 
         c_name_worst = cand_by_id[worst_candidate]["name"]
         c_name_best = cand_by_id[best_candidate]["name"]
@@ -607,43 +769,54 @@ def ppo_self_play_deck_search(faction: str, candidates: List[dict], neural_stats
         candidate_counts = dict(best_counts)
         candidate_counts[worst_candidate] -= swap_cnt
         candidate_counts[best_candidate] = candidate_counts.get(best_candidate, 0) + swap_cnt
-        candidate_counts = normalize_deck_allocation(candidate_counts, candidate_ids, priority_order)
+        candidate_counts = normalize_deck_allocation(
+            candidate_counts, candidate_ids, priority_order, cand_by_id=cand_by_id, max_zero=rules["max_zero"]
+        )
 
-        test_winrate, t_p_win, t_p_tot, t_idles, t_hands = evaluate_decklist_performance(candidate_counts, games_per_gen)
+        gen_seed = 20000 + gen * 1000
+        test_winrate, t_p_win, t_p_tot, t_idles, t_hands = evaluate_decklist_performance(
+            candidate_counts, games_per_gen, seed_base=gen_seed
+        )
         delta_wr = test_winrate - best_winrate
-        
+
         gen_reflection = {
             "generation": gen, "winrate": test_winrate, "prev_winrate": prev_winrate,
-            "promoted": None, "demoted": None, "monologue": ""
+            "promoted": None, "demoted": None, "monologue": "",
         }
 
-        tolerance = -1.0 * (1.0 - (gen / generations))  # Much stricter tolerance, max -1.0 initially, approaching 0.0
-
         can_accept = False
-        if best_winrate <= 0.0:
-            can_accept = (test_winrate > 0.0)
-        else:
-            can_accept = (delta_wr >= tolerance)
+        if test_winrate > best_winrate - 1.5 or best_winrate <= 0.0:
+            confirm_seed = 50000 + gen * 1000
+            best_cf_wr, _, _, _, _ = evaluate_decklist_performance(best_counts, games_per_gen, seed_base=confirm_seed)
+            cand_cf_wr, c_p_win, c_p_tot, c_idles, c_hands = evaluate_decklist_performance(
+                candidate_counts, games_per_gen, seed_base=confirm_seed
+            )
+            if cand_cf_wr > best_cf_wr:
+                can_accept = True
+                test_winrate = round((test_winrate + cand_cf_wr) * 0.5, 1)
+                delta_wr = round(cand_cf_wr - best_cf_wr, 1)
+                t_p_win, t_p_tot, t_idles, t_hands = c_p_win, c_p_tot, c_idles, c_hands
 
         if can_accept:
+            reject_streak = 0
             rejected_pairs.add((best_candidate, worst_candidate))
             remain_worst = candidate_counts.get(worst_candidate, 0)
             now_best = candidate_counts.get(best_candidate, 0)
             thought_demote = f"移出 [{c_name_worst}] x{swap_cnt} (余 {remain_worst} 张)"
-            thought_promote = f"加入 [{c_name_best}] x{swap_cnt} (持 {now_best} 张)，胜率提升至 {test_winrate:.1f}% ({delta_wr:+.1f}%)"
-            log_entry = f"第 {gen} 代微调 (胜率 {best_winrate:.1f}% -> {test_winrate:.1f}%, {delta_wr:+.1f}%): 采纳变异，+{swap_cnt}[{c_name_best}] / -{swap_cnt}[{c_name_worst}]"
+            thought_promote = f"加入 [{c_name_best}] x{swap_cnt} (持 {now_best} 张)，成对 CRN 复核提升 {delta_wr:+.1f}% (综合胜率 {test_winrate:.1f}%)"
+            log_entry = f"第 {gen} 代微调 (胜率 {best_winrate:.1f}% -> {test_winrate:.1f}%, CRN {delta_wr:+.1f}%): 采纳变异，+{swap_cnt}[{c_name_best}] / -{swap_cnt}[{c_name_worst}]"
 
-            print(f"   [代数 {gen}/{generations}] 采纳新构筑: 胜率 {test_winrate:5.1f}% ({delta_wr:+5.1f}%) | +{swap_cnt}[{c_name_best}] / -{swap_cnt}[{c_name_worst}] (余 {remain_worst})")
+            print(f"   [代数 {gen}/{generations}] 采纳新构筑: 胜率 {test_winrate:5.1f}% (CRN {delta_wr:+5.1f}%) | +{swap_cnt}[{c_name_best}] / -{swap_cnt}[{c_name_worst}] (余 {remain_worst})")
             best_counts = candidate_counts
             best_winrate = test_winrate
             best_p_win, best_p_tot, best_idles, best_hands = t_p_win, t_p_tot, t_idles, t_hands
         else:
+            reject_streak += 1
             rejected_actions.add((best_candidate, worst_candidate, swap_cnt))
-            all_possible = [chosen_pair["max_step"]] if chosen_pair["max_step"] == 1 else [1, chosen_pair["max_step"]]
-            if all((best_candidate, worst_candidate, s) in rejected_actions for s in all_possible):
+            if all((best_candidate, worst_candidate, s) in rejected_actions for s in avail_steps):
                 rejected_pairs.add((best_candidate, worst_candidate))
 
-            thought_demote = f"尝试换入 [{c_name_best}] 胜率降至 {test_winrate:.1f}%，取消变动"
+            thought_demote = f"尝试换入 [{c_name_best}] 未通过 CRN 检验 ({test_winrate:.1f}% vs 基准 {best_winrate:.1f}%)，取消变动"
             thought_promote = f"维持原构筑，保留 [{c_name_worst}]"
             log_entry = f"第 {gen} 代微调 (实测胜率 {test_winrate:.1f}%, 变化 {delta_wr:+.1f}%): 放弃变异，回滚保留原构筑"
 
@@ -742,7 +915,7 @@ def build_ppo_deck_package(faction: str, candidates: List[dict], neural_stats: L
 def print_ppo_deck_report(faction: str, deck_pkg: dict, neural_stats: List[dict]):
     print("\n" + "─" * 70)
     print(f"【{faction}】推荐卡组: 《{deck_pkg['deck_name']}》 (30 张 | 均费 {deck_pkg['avg_cost']} 费 | 随从 {deck_pkg['minion_count']} / 法术 {deck_pkg['spell_count']})")
-    curve_summary = [f"{c}费({deck_pkg['mana_curve'].get(c, 0)})" for c in range(1, 6) if deck_pkg['mana_curve'].get(c, 0) > 0]
+    curve_summary = [f"{c}费({deck_pkg['mana_curve'].get(c, 0)})" for c in range(0, 6) if deck_pkg['mana_curve'].get(c, 0) > 0]
     high_cnt = sum(deck_pkg['mana_curve'].get(c, 0) for c in range(6, 10))
     if high_cnt > 0:
         curve_summary.append(f"6+费({high_cnt})")
@@ -804,7 +977,7 @@ def export_introspection_report(decks_result: dict, output_path: str = "ppo_intr
 
         lines.append("### 3. 法力曲线 (Mana Curve)\n")
         lines.append("```text")
-        for cost in range(1, 8):
+        for cost in range(0, 8):
             cnt = deck["mana_curve"].get(cost, 0)
             bar = "█" * (cnt * 2)
             lines.append(f"{cost} 费: {bar:<22} ({cnt} 张)")
@@ -880,12 +1053,11 @@ def main():
     print("=" * 85)
 
     cards_db = load_card_pool(args.cards)
-    model = CardNet().to(device)
-    
+    model = CardNet(action_dim=29, obs_shape=DuelEnv.OBS_SHAPE).to(device)
+
     if model_path and os.path.exists(model_path):
-        state_dict = torch.load(model_path, map_location=device, weights_only=True)
-        model.load_state_dict(state_dict)
-        print(f"[*] 成功加载 PPO 模型权重: {model_path}")
+        mode = load_cardnet_compatible(model, model_path, device)
+        print(f"[*] 成功加载 PPO 模型权重 ({mode}): {model_path}")
     else:
         print("[WARN] 未找到可用权重，已随机初始化神经网络进行冷启动探索！")
         

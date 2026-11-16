@@ -447,7 +447,7 @@ class AutoBalancerTests(unittest.TestCase):
             env = DuelEnv(p0_faction=Faction.RED, p1_faction=Faction.GREEN, cards_path=out_path)
             self.assertEqual(env.card_database[917].cost, 0)
             obs = env.reset()
-            self.assertEqual(obs.shape, (3, 13, 8))
+            self.assertEqual(obs.shape, env.obs_shape)
 
     def test_shared_common_helpers_and_web_services(self):
         # 1. extract_valid_tags & enforce_temp_mana_cost
