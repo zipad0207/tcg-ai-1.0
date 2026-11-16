@@ -19,9 +19,11 @@ from web_app.services.image_gen import ZImageTurboGenerator
 def main():
     parser = argparse.ArgumentParser(description="卡牌卡图批量生成与重绘工具")
     parser.add_argument("--all", action="store_true", help="强制全量重绘全部卡牌 (默认仅为缺失卡图的卡牌生成)")
+    parser.add_argument("--model", type=str, default=None, help="指定生图模型 (默认读取配置中的 IMAGE_MODEL)")
     args = parser.parse_args()
 
     gen = ZImageTurboGenerator()
+    target_model = (args.model or "").strip() or gen.model_name
     config_path = os.path.join(root_dir, "cards_config.json")
     with open(config_path, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -63,7 +65,7 @@ def main():
     mode_desc = "全量强制重绘" if args.all else "补全缺失卡图"
     print(f"==================================================")
     print(f"开始【{mode_desc}】共 {total} 张卡牌原画")
-    print(f"使用模型: Tongyi-MAI/Z-Image-Turbo")
+    print(f"使用模型: {target_model}")
     print(f"==================================================")
 
     progress_file = os.path.join(root_dir, "web_app", "static", "batch_progress.json")
@@ -105,7 +107,7 @@ def main():
                 faction=c_faction,
                 tags=c_tags,
                 dp=c_dp,
-                model="Tongyi-MAI/Z-Image-Turbo"
+                model=target_model
             )
             success_count += 1
             print(f"   -> [成功]: {res['url']}")

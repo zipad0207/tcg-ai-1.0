@@ -13,9 +13,6 @@ TCG-AI 多阵营扩展包生成与自平衡调度流水线
 import os
 import sys
 import json
-from dotenv import load_dotenv
-load_dotenv()
-import re
 import time
 import argparse
 import subprocess
@@ -26,42 +23,35 @@ import matplotlib.pyplot as plt
 from typing import Dict, List, Tuple, Optional
 from openai import OpenAI
 
+from tcg_common import (
+    ROOT_DIR as SCRIPT_DIR,
+    LEGAL_TAG_PATTERNS,
+    OUTCLASSING_RULE_BODY,
+    DEFICIT_RULE_BODY,
+    atomic_write_json,
+    clean_json_response,
+    compute_pairwise_matchups,
+    enforce_temp_mana_cost,
+    extract_valid_tags,
+    get_api_key,
+    get_base_url,
+    get_model_name,
+    is_legal_tag,
+    ordered_factions,
+    resolve_path,
+    set_low_priority_and_threads,
+    to_float,
+)
+
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-if sys.platform == "win32":
-    try:
-        import ctypes
-        from ctypes import wintypes
-        k32 = ctypes.WinDLL("kernel32", use_last_error=True)
-        k32.GetCurrentProcess.restype = wintypes.HANDLE
-        k32.SetPriorityClass.argtypes = [wintypes.HANDLE, wintypes.DWORD]
-        k32.SetPriorityClass.restype = wintypes.BOOL
-        k32.SetPriorityClass(k32.GetCurrentProcess(), 0x00004000)  # BELOW_NORMAL_PRIORITY_CLASS
-    except Exception:
-        pass
+set_low_priority_and_threads(2)
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-def resolve_path(p: str) -> str:
-    if not p:
-        return p
-    if os.path.isabs(p) and os.path.exists(p):
-        return p
-    candidates = [
-        p,
-        os.path.join(SCRIPT_DIR, p),
-    ]
-    for c in candidates:
-        if os.path.exists(c):
-            return os.path.abspath(c)
-    return os.path.abspath(os.path.join(SCRIPT_DIR, p))
 
 def get_subprocess_env() -> dict:
     env = os.environ.copy()
-    py_paths = [
-        SCRIPT_DIR,
-    ]
+    py_paths = [SCRIPT_DIR]
     cur_pypath = env.get("PYTHONPATH", "")
     all_paths = [p for p in py_paths if os.path.exists(p)]
     if cur_pypath:
@@ -79,149 +69,10 @@ def get_subprocess_env() -> dict:
     env["KMP_BLOCKTIME"] = "0"
     return env
 
+
 def run_command_safe(cmd: list) -> subprocess.CompletedProcess:
-    cflags = 0x00004000 if sys.platform == "win32" else 0  # BELOW_NORMAL_PRIORITY_CLASS
+    cflags = 0x00004000 if sys.platform == "win32" else 0
     return subprocess.run(cmd, check=True, env=get_subprocess_env(), creationflags=cflags)
-
-def get_api_key() -> str:
-    key = (os.environ.get("DEEPSEEK_API_KEY", "") or os.environ.get("SILICONFLOW_API_KEY", "")).strip()
-    if not key or "••••" in key or key.startswith("sk-•••"):
-        key = ""
-        cfg_path = os.path.join(SCRIPT_DIR, "llm_config.json")
-        if os.path.exists(cfg_path):
-            try:
-                with open(cfg_path, "r", encoding="utf-8") as f:
-                    cfg = json.load(f)
-                    raw_k = (cfg.get("deepseek_api_key") or cfg.get("api_key", "")).strip()
-                    if raw_k and "••••" not in raw_k and not raw_k.startswith("sk-•••"):
-                        key = raw_k
-            except Exception:
-                pass
-    if not key and sys.platform == "win32":
-        try:
-            import winreg
-            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment") as env_key:
-                raw_k, _ = winreg.QueryValueEx(env_key, "DEEPSEEK_API_KEY")
-                raw_k = (raw_k or "").strip()
-                if raw_k and "••••" not in raw_k and not raw_k.startswith("sk-•••"):
-                    key = raw_k
-        except Exception:
-            pass
-    return key
-
-def get_base_url() -> str:
-    url = os.environ.get("DEEPSEEK_BASE_URL", "")
-    if not url:
-        cfg_path = os.path.join(SCRIPT_DIR, "llm_config.json")
-        if os.path.exists(cfg_path):
-            try:
-                with open(cfg_path, "r", encoding="utf-8") as f:
-                    cfg = json.load(f)
-                    url = cfg.get("base_url", "")
-            except Exception:
-                pass
-    return url or "https://api.deepseek.com"
-
-def get_model_name() -> str:
-    model = os.environ.get("DEEPSEEK_MODEL", "")
-    if not model:
-        cfg_path = os.path.join(SCRIPT_DIR, "llm_config.json")
-        if os.path.exists(cfg_path):
-            try:
-                with open(cfg_path, "r", encoding="utf-8") as f:
-                    cfg = json.load(f)
-                    model = cfg.get("model", "")
-            except Exception:
-                pass
-    return model or "deepseek-flash"
-
-# 支持的核心合法词条
-LEGAL_TAG_PATTERNS = [
-    r"^RUSH$",
-    r"^FORTIFY_\d+$",
-    r"^DEGRADE_\d+$",
-    r"^SUPPORT_ATK_\d+$",
-    r"^BONUS_SCORE_\d+$",
-    r"^SPAWN_\d+_\d+$",
-    r"^DEATH_DRAW_\d+$",
-    r"^DEATH_MANA_\d+$",
-    r"^SACRIFICE_1_KILL_1$",
-    r"^ATTACK_ONLY$",
-    r"^DRAW_\d+$",
-    r"^RAMP_\d+$",
-    r"^TEMP_MANA_\d+$",
-    r"^DISCARD_\d+$",
-]
-
-def is_legal_tag(tag: str) -> bool:
-    if not isinstance(tag, str):
-        return False
-    return any(re.match(p, tag.strip().upper()) for p in LEGAL_TAG_PATTERNS)
-
-def extract_valid_tags(c: dict) -> List[str]:
-    """从大模型生成的卡牌对象中健壮提取合法词条，兼容多种键名、大小写及占位符"""
-    raw_tags = c.get("tags")
-    if raw_tags is None:
-        raw_tags = c.get("keywords") or c.get("tag") or []
-    if isinstance(raw_tags, str):
-        raw_tags = [raw_tags]
-    elif not isinstance(raw_tags, list):
-        raw_tags = []
-
-    kw_values = c.get("keyword_values", {})
-    valid_tags = []
-    default_sub_map = {
-        "FORTIFY_X": "FORTIFY_2",
-        "DEGRADE_X": "DEGRADE_1",
-        "SUPPORT_ATK_X": "SUPPORT_ATK_1",
-        "BONUS_SCORE_X": "BONUS_SCORE_1",
-        "SPAWN_X_Y": "SPAWN_1_1",
-        "DEATH_DRAW_X": "DEATH_DRAW_1",
-        "DEATH_MANA_X": "DEATH_MANA_1",
-        "DRAW_X": "DRAW_1",
-        "RAMP_X": "RAMP_1",
-        "TEMP_MANA_X": "TEMP_MANA_1",
-        "DISCARD_X": "DISCARD_1",
-    }
-
-    for t in raw_tags:
-        if not isinstance(t, str):
-            continue
-        t_clean = t.strip().upper()
-        if is_legal_tag(t_clean):
-            if t_clean not in valid_tags:
-                valid_tags.append(t_clean)
-            continue
-        # 占位符兼容处理
-        if "_X" in t_clean or "_Y" in t_clean:
-            val = None
-            if isinstance(kw_values, dict):
-                for k, v in kw_values.items():
-                    if k.strip().upper() in t_clean or t_clean.startswith(k.strip().upper()):
-                        val = v
-                        break
-            if val is not None:
-                sub_tag = re.sub(r"_[XY]", f"_{val}", t_clean)
-                if is_legal_tag(sub_tag) and sub_tag not in valid_tags:
-                    valid_tags.append(sub_tag)
-                    continue
-            if t_clean in default_sub_map and is_legal_tag(default_sub_map[t_clean]):
-                cand = default_sub_map[t_clean]
-                if cand not in valid_tags:
-                    valid_tags.append(cand)
-
-    return valid_tags
-
-def clean_json_response(raw_text: str) -> str:
-    if not raw_text:
-        return "{}"
-    match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw_text, re.DOTALL)
-    if match:
-        return match.group(1).strip()
-    match = re.search(r"(\{.*\})", raw_text, re.DOTALL)
-    if match:
-        return match.group(1).strip()
-    return raw_text.strip()
 
 # ==============================================================================
 # Phase 1: 卡牌扩展设计
@@ -390,7 +241,7 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
 """
 
     print("  [模型调用] 正在生成扩展包卡牌数据...")
-    extra = {"thinking": {"type": "disabled"}} if "deepseek.com" in get_base_url() else {}
+    extra = {"thinking": {"type": "disabled"}} if "deepseek.com" in get_base_url().lower() else {}
     response = client.chat.completions.create(
         model=get_model_name(),
         messages=[{"role": "user", "content": prompt}],
@@ -516,12 +367,9 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
                         def_val = cost_val + 2
 
                 # 倒亏法力防护：拦截纯临时法力法术（如花5费只给2点临时法力）
-                temp_mana_val = sum(int(t.split("_")[2]) for t in valid_tags if t.startswith("TEMP_MANA_"))
-                has_comp = (atk_val > 0 or def_val > 0 or any(t.startswith("DRAW_") or t.startswith("SPAWN_") or t.startswith("RAMP_") or t == "SACRIFICE_1_KILL_1" for t in valid_tags))
-                if temp_mana_val > 0 and not has_comp:
-                    if cost_val >= temp_mana_val:
-                        print(f"  [规则拦截] 发现纯临时法力倒亏卡牌 '{c.get('name')}' (费用 {cost_val} >= 临时法力 {temp_mana_val})，自动修正为 0 费爆发牌！")
-                        cost_val = 0
+                cost_val, corrected = enforce_temp_mana_cost(c_type, cost_val, atk_val, def_val, valid_tags)
+                if corrected:
+                    print(f"  [规则拦截] 发现纯临时法力倒亏卡牌 '{c.get('name')}'，自动修正为 0 费爆发牌！")
 
             card_dict = {
                 "id": cid,
@@ -545,19 +393,7 @@ def step1_print_expansion_pack(cards_file: str, metrics_file: str, pack_name: st
             final_pack.append(card_dict)
 
     # 保存扩充后卡池 (原子写入防止并发读取异常)
-    tmp_cards = cards_file + ".tmp"
-    try:
-        with open(tmp_cards, "w", encoding="utf-8") as f:
-            json.dump(current_pool, f, indent=2, ensure_ascii=False)
-        os.replace(tmp_cards, cards_file)
-    except Exception:
-        with open(cards_file, "w", encoding="utf-8") as f:
-            json.dump(current_pool, f, indent=2, ensure_ascii=False)
-        if os.path.exists(tmp_cards):
-            try:
-                os.remove(tmp_cards)
-            except OSError:
-                pass
+    atomic_write_json(cards_file, current_pool, indent=2, ensure_ascii=False)
 
     # 终端打印表格与配比统计
     mechanic_cards = [c for c in final_pack if c.get("tags")]
@@ -683,40 +519,16 @@ def step4_run_brawl_audit(cards_file: str, decks_file: str, metrics_file: str, e
 # ==============================================================================
 def check_balance_status(metrics: dict, target_tolerance: float = 5.0, target_pairwise_tolerance: float = 5.0) -> Tuple[bool, float, float, float]:
     f_stats = metrics.get("faction_stats", {})
-    factions = [f for f in ["Red", "Blue", "Green"] if f in f_stats]
-    for f in f_stats.keys():
-        if f not in factions:
-            factions.append(f)
-    if not factions:
-        factions = ["Red", "Blue", "Green"]
-
-    deviations = {f: abs(f_stats.get(f, {}).get("winrate", 50.0) - 50.0) for f in factions}
-    winrates = [f_stats.get(f, {}).get("winrate", 50.0) for f in factions]
-    max_dev = max(deviations.values()) if deviations else 0.0
-    spread = (max(winrates) - min(winrates)) if winrates else 0.0
-
-    # 跨阵营两两对抗双向合并统计
-    matchups = metrics.get("matchups", {})
-    pairs = []
-    for i in range(len(factions)):
-        for j in range(i + 1, len(factions)):
-            pairs.append((factions[i], factions[j]))
-
-    pairwise_results = {}
-    max_pairwise_dev = 0.0
-
-    for f1, f2 in pairs:
-        k1 = f"{f1}_vs_{f2}"
-        k2 = f"{f2}_vs_{f1}"
-        r1 = matchups.get(k1, {})
-        r2 = matchups.get(k2, {})
-        tot = r1.get("total", 0) + r2.get("total", 0)
-        f1_wins = r1.get(f"{f1}_wins", 0) + r2.get(f"{f1}_wins", 0)
-        wr = (f1_wins / max(1, tot)) * 100.0 if tot > 0 else 50.0
-        p_dev = abs(wr - 50.0)
-        if p_dev > max_pairwise_dev:
-            max_pairwise_dev = p_dev
-        pairwise_results[(f1, f2)] = (wr, tot, p_dev)
+    summary = compute_pairwise_matchups(metrics)
+    factions = summary["factions"] or ordered_factions(f_stats.keys())
+    deviations = summary["deviations"]
+    max_dev = summary["max_dev"]
+    spread = summary["spread"]
+    max_pairwise_dev = summary["max_pairwise_dev"]
+    pairwise_results = {
+        pair: (ps["wr1"], ps["total"], ps["dev"])
+        for pair, ps in summary["pairwise_stats"].items()
+    }
 
     is_overall_balanced = max_dev <= target_tolerance
     is_pairwise_balanced = (target_pairwise_tolerance <= 0) or (max_pairwise_dev <= target_pairwise_tolerance)
@@ -726,8 +538,8 @@ def check_balance_status(metrics: dict, target_tolerance: float = 5.0, target_pa
     print(f"\n[胜率偏离检测] 阵营总偏离: {max_dev:.2f}% (容差: <={target_tolerance:.2f}%){pairwise_info} | 阵营极差: {spread:.2f}%")
     print("  【1. 各阵营综合胜率】:")
     for f in factions:
-        wr = f_stats.get(f, {}).get("winrate", 50.0)
-        dev = deviations[f]
+        wr = to_float((f_stats.get(f) or {}).get("winrate"), 50.0)
+        dev = deviations.get(f, abs(wr - 50.0))
         flag = "[OK]" if dev <= target_tolerance else "[! ]"
         print(f"    {flag} 【{f:<5}】当前胜率: {wr:5.1f}% (偏离 50% 达 {dev:4.1f}%)")
 

@@ -1,88 +1,27 @@
 import os
-from dotenv import load_dotenv
-load_dotenv()
-import re
 import sys
 import json
 import argparse
 from typing import Dict, List
 from openai import OpenAI
+from tcg_common import (
+    atomic_write_json,
+    clean_json_response,
+    get_api_key,
+    get_base_url,
+    get_model_name,
+    load_json,
+    resolve_path,
+)
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-def get_api_key() -> str:
-    key = os.environ.get("DEEPSEEK_API_KEY", "") or os.environ.get("SILICONFLOW_API_KEY", "")
-    if not key:
-        cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_config.json")
-        if os.path.exists(cfg_path):
-            try:
-                with open(cfg_path, "r", encoding="utf-8") as f:
-                    cfg = json.load(f)
-                    key = cfg.get("deepseek_api_key") or cfg.get("api_key", "")
-            except Exception:
-                pass
-    if not key and sys.platform == "win32":
-        try:
-            import winreg
-            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment") as env_key:
-                key, _ = winreg.QueryValueEx(env_key, "DEEPSEEK_API_KEY")
-        except Exception:
-            pass
-    return key
-
-def get_base_url() -> str:
-    url = os.environ.get("DEEPSEEK_BASE_URL", "")
-    if not url:
-        cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_config.json")
-        if os.path.exists(cfg_path):
-            try:
-                with open(cfg_path, "r", encoding="utf-8") as f:
-                    cfg = json.load(f)
-                    url = cfg.get("base_url", "")
-            except Exception:
-                pass
-    return url or "https://api.deepseek.com"
-
-def get_model_name() -> str:
-    model = os.environ.get("DEEPSEEK_MODEL", "")
-    if not model:
-        cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_config.json")
-        if os.path.exists(cfg_path):
-            try:
-                with open(cfg_path, "r", encoding="utf-8") as f:
-                    cfg = json.load(f)
-                    model = cfg.get("model") or cfg.get("deepseek_model", "")
-            except Exception:
-                pass
-    if not model:
-        base_url = get_base_url()
-        model = "deepseek-ai/DeepSeek-V3" if "siliconflow" in base_url.lower() else "deepseek-flash"
-    return model
-
 MODEL_NAME = get_model_name()
-
 DEEPSEEK_API_KEY = get_api_key()
 
 MAX_COPIES_PER_CARD = 3
 DECK_SIZE = 30
-
-def load_json(filepath: str) -> dict:
-    if not os.path.exists(filepath):
-        return {}
-    with open(filepath, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-def clean_json_response(raw_text: str) -> str:
-    if not raw_text:
-        return "{}"
-    match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw_text, re.DOTALL)
-    if match:
-        return match.group(1).strip()
-    match = re.search(r"(\{.*\})", raw_text, re.DOTALL)
-    if match:
-        return match.group(1).strip()
-    return raw_text.strip()
 
 def get_faction_pool(card_database: dict, faction: str) -> List[dict]:
     pool = []
@@ -200,16 +139,17 @@ def build_prompt_for_deck(faction: str, pool: List[dict]) -> str:
 注意：card_allocation 中所有选定卡牌的张数总和必须严格等于 30！"""
 
 def call_deepseek_deckbuild(faction: str, pool: List[dict]) -> dict:
-    if not DEEPSEEK_API_KEY:
+    api_key = DEEPSEEK_API_KEY or get_api_key()
+    if not api_key:
         raise ValueError(f"未检测到 DEEPSEEK_API_KEY，无法构建 {faction} 卡组。请先配置环境变量。")
 
     print(f"调用 DeepSeek 生成 {faction} 阵营卡组...")
     client = OpenAI(
-        api_key=DEEPSEEK_API_KEY,
+        api_key=api_key,
         base_url=get_base_url()
     )
     prompt = build_prompt_for_deck(faction, pool)
-    extra = {"thinking": {"type": "disabled"}} if "deepseek.com" in get_base_url() else {}
+    extra = {"thinking": {"type": "disabled"}} if "deepseek.com" in get_base_url().lower() else {}
 
     try:
         response = client.chat.completions.create(
@@ -223,7 +163,7 @@ def call_deepseek_deckbuild(faction: str, pool: List[dict]) -> dict:
             response_format={"type": "json_object"},
             extra_body=extra if extra else None
         )
-        content = response.choices[0].message.content
+        content = response.choices[0].message.content or ""
         cleaned = clean_json_response(content)
         parsed = json.loads(cleaned)
 
@@ -340,16 +280,17 @@ def build_prompt_for_incremental_deck(faction: str, existing_deck: dict, new_car
 注意：card_allocation 中所有选定卡牌的张数之和必须严格等于 30！"""
 
 def call_deepseek_incremental_deckbuild(faction: str, existing_deck: dict, new_cards: List[dict], pool: List[dict]) -> dict:
-    if not DEEPSEEK_API_KEY:
+    api_key = DEEPSEEK_API_KEY or get_api_key()
+    if not api_key:
         raise ValueError(f"未检测到 DEEPSEEK_API_KEY，无法升级 {faction} 卡组。请先配置环境变量。")
 
     print(f"调用 DeepSeek 基于现有构筑进行【{faction}】痛点增量换卡 (纳入 {len(new_cards)} 张扩展新卡)...")
     client = OpenAI(
-        api_key=DEEPSEEK_API_KEY,
+        api_key=api_key,
         base_url=get_base_url()
     )
     prompt = build_prompt_for_incremental_deck(faction, existing_deck, new_cards, pool)
-    extra = {"thinking": {"type": "disabled"}} if "deepseek.com" in get_base_url() else {}
+    extra = {"thinking": {"type": "disabled"}} if "deepseek.com" in get_base_url().lower() else {}
 
     try:
         response = client.chat.completions.create(
@@ -363,7 +304,7 @@ def call_deepseek_incremental_deckbuild(faction: str, existing_deck: dict, new_c
             response_format={"type": "json_object"},
             extra_body=extra if extra else None
         )
-        content = response.choices[0].message.content
+        content = response.choices[0].message.content or ""
         cleaned = clean_json_response(content)
         parsed = json.loads(cleaned)
 
@@ -505,17 +446,19 @@ def main():
 
     args = parser.parse_args()
 
-    cards_db = load_json(args.cards)
+    cards_path = resolve_path(args.cards)
+    output_path = resolve_path(args.output)
+    cards_db = load_json(cards_path)
     if not cards_db:
-        print(f"无法读取卡池数据: {args.cards}")
+        print(f"无法读取卡池数据: {cards_path}")
         return
 
     factions_to_build = [f.strip() for f in args.factions.split(",") if f.strip()]
     decks_result = {}
 
     # 若已有现存卡组文件，先加载保留其他阵营
-    if os.path.exists(args.output):
-        decks_result = load_json(args.output)
+    if os.path.exists(output_path):
+        decks_result = load_json(output_path)
 
     # 加载本次扩展包新卡
     new_cards_list = []
@@ -562,10 +505,9 @@ def main():
         decks_result[faction] = deck_info
 
     # 导出卡组配置
-    with open(args.output, "w", encoding="utf-8") as f:
-        json.dump(decks_result, f, indent=2, ensure_ascii=False)
+    atomic_write_json(output_path, decks_result, indent=2, ensure_ascii=False)
 
-    abs_out = os.path.abspath(args.output)
+    abs_out = os.path.abspath(output_path)
     print(f"卡组已保存至: {abs_out}")
 
 if __name__ == "__main__":

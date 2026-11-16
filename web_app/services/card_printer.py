@@ -1,56 +1,37 @@
 import os
 import sys
 import json
-import re
-from typing import List, Dict, Optional
-from openai import OpenAI
-from dotenv import load_dotenv
+from typing import List
 
-load_dotenv()
+_ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _ROOT_DIR not in sys.path:
+    sys.path.insert(0, _ROOT_DIR)
+
+from openai import OpenAI
+from tcg_common import (
+    LEGAL_TAG_PATTERNS,
+    atomic_write_json,
+    clean_json_response as clean_json_text,
+    enforce_temp_mana_cost,
+    get_api_key,
+    get_base_url,
+    get_model_name,
+    is_legal_tag,
+)
 
 SYSTEM_RESERVED_IDS = {990, 991, 992, 993, 994, 995, 996, 997, 998, 999}
 
-LEGAL_TAG_PATTERNS = [
-    r"^RUSH$",
-    r"^FORTIFY_\d+$",
-    r"^DEGRADE_\d+$",
-    r"^SUPPORT_ATK_\d+$",
-    r"^BONUS_SCORE_\d+$",
-    r"^SPAWN_\d+_\d+$",
-    r"^DEATH_DRAW_\d+$",
-    r"^DEATH_MANA_\d+$",
-    r"^SACRIFICE_1_KILL_1$",
-    r"^ATTACK_ONLY$",
-    r"^DRAW_\d+$",
-    r"^RAMP_\d+$",
-    r"^TEMP_MANA_\d+$",
-    r"^DISCARD_\d+$",
-]
-
-def is_legal_tag(tag: str) -> bool:
-    if not isinstance(tag, str):
-        return False
-    return any(re.match(pattern, tag.strip().upper()) for pattern in LEGAL_TAG_PATTERNS)
-
-def clean_json_text(raw_text: str) -> str:
-    # First extract content inside ```json ... ``` if present
-    match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", raw_text)
-    candidate = match.group(1).strip() if match else raw_text.strip()
-    
-    # Locate outermost { ... }
-    start = candidate.find("{")
-    end = candidate.rfind("}")
-    if start != -1 and end != -1 and end > start:
-        return candidate[start:end+1]
-    return candidate
 
 class DeepSeekCardPrinter:
     def __init__(self):
-        self.api_key = os.getenv("SILICONFLOW_API_KEY") or os.getenv("DEEPSEEK_API_KEY", "")
-        self.base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.siliconflow.cn/v1")
-        self.model = os.getenv("DEEPSEEK_MODEL", "deepseek-flash")
-        self.root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        self.root_dir = _ROOT_DIR
         self.cards_path = os.path.join(self.root_dir, "cards_config.json")
+        self.reload_config()
+
+    def reload_config(self):
+        self.api_key = get_api_key(self.root_dir)
+        self.base_url = get_base_url(self.root_dir)
+        self.model = get_model_name(self.root_dir)
 
     def _get_next_id(self, existing_cards: List[dict], default_start: int) -> int:
         if not existing_cards:
@@ -67,28 +48,17 @@ class DeepSeekCardPrinter:
         return {"Red": [], "Blue": [], "Green": [], "Neutral": []}
 
     def save_cards_config(self, config_data: dict):
-        tmp_path = self.cards_path + ".tmp"
-        try:
-            with open(tmp_path, "w", encoding="utf-8") as f:
-                json.dump(config_data, f, indent=4, ensure_ascii=False)
-            os.replace(tmp_path, self.cards_path)
-        except Exception:
-            with open(self.cards_path, "w", encoding="utf-8") as f:
-                json.dump(config_data, f, indent=4, ensure_ascii=False)
-            if os.path.exists(tmp_path):
-                try:
-                    os.remove(tmp_path)
-                except OSError:
-                    pass
-            
+        atomic_write_json(self.cards_path, config_data, indent=4, ensure_ascii=False)
+
         export_script = os.path.join(self.root_dir, "export_ui_data.py")
         if os.path.exists(export_script):
             import subprocess
             subprocess.run([sys.executable, export_script], check=False)
 
     def generate_new_cards(self, faction: str = "Red", count: int = 2, theme: str = "") -> dict:
+        self.reload_config()
         if not self.api_key:
-            raise ValueError("SILICONFLOW_API_KEY is not configured in .env")
+            raise ValueError("未配置有效的 DeepSeek API Key，请先在【AI 服务配置】或 .env 中配置 DEEPSEEK_API_KEY。")
 
         client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         cards_config = self.load_cards_config()
@@ -160,13 +130,15 @@ class DeepSeekCardPrinter:
   ]
 }}
 """
+        extra = {"thinking": {"type": "disabled"}} if "deepseek.com" in self.base_url.lower() else {}
         response = client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
-            max_tokens=1500
+            max_tokens=1500,
+            extra_body=extra if extra else None,
         )
-        raw_content = response.choices[0].message.content
+        raw_content = response.choices[0].message.content or ""
         cleaned_json = clean_json_text(raw_content)
         data = json.loads(cleaned_json)
         new_cards_list = data.get("cards", [])
@@ -187,16 +159,11 @@ class DeepSeekCardPrinter:
             base_dp = int(card.get("base_dp", 0)) if c_type == "MINION" else 0
             atk_spell = int(card.get("atk_spell_val", 0))
             def_spell = int(card.get("def_spell_val", 0))
-            
+
             raw_tags = card.get("tags", [])
             valid_tags = [t.strip().upper() for t in raw_tags if is_legal_tag(t)]
 
-            # 临时法力倒亏防护校验
-            temp_mana_val = sum(int(t.split("_")[2]) for t in valid_tags if t.startswith("TEMP_MANA_"))
-            has_other_effect = (atk_spell > 0 or def_spell > 0 or any(t.startswith("DRAW_") or t.startswith("RAMP_") or t.startswith("SPAWN_") or t == "SACRIFICE_1_KILL_1" for t in valid_tags))
-            if c_type == "SPELL" and temp_mana_val > 0 and not has_other_effect:
-                if cost >= temp_mana_val:
-                    cost = 0  # 纯临时法力法术若费用倒挂，强制修正为 0 费（激活机制）
+            cost, _ = enforce_temp_mana_cost(c_type, cost, atk_spell, def_spell, valid_tags)
 
             final_card = {
                 "id": card_id,

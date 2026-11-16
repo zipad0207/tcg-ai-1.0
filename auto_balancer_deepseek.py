@@ -1,218 +1,48 @@
 import os
-from dotenv import load_dotenv
-load_dotenv()
 import re
 import sys
 import json
 import copy
 import argparse
-from typing import Optional
 from openai import OpenAI
+
+from tcg_common import (
+    ROOT_DIR as SCRIPT_DIR,
+    LEGAL_TAG_PATTERNS,
+    OUTCLASSING_RULE_BODY,
+    DEFICIT_RULE_BODY,
+    atomic_write_json,
+    clean_json_response,
+    clean_secret as _clean_secret,
+    compute_pairwise_matchups,
+    enforce_temp_mana_cost,
+    get_api_key,
+    get_base_url,
+    get_model_name,
+    is_legal_tag,
+    load_json,
+    load_llm_config as _load_llm_config,
+    resolve_path,
+    to_float as _to_float,
+    to_int as _to_int,
+    to_int_default as _to_int_default,
+)
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
-def _clean_secret(val) -> str:
-    if not isinstance(val, str):
-        return ""
-    s = val.strip()
-    if not s or "••••" in s or s.startswith("sk-•••"):
-        return ""
-    return s
-
-
-def _load_llm_config() -> dict:
-    cfg_path = os.path.join(SCRIPT_DIR, "llm_config.json")
-    if not os.path.exists(cfg_path):
-        return {}
-    try:
-        with open(cfg_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return data if isinstance(data, dict) else {}
-    except Exception:
-        return {}
-
-
-def get_base_url() -> str:
-    url = (os.environ.get("DEEPSEEK_BASE_URL") or "").strip()
-    if not url:
-        cfg = _load_llm_config()
-        url = (cfg.get("base_url") or "").strip() if isinstance(cfg.get("base_url"), str) else ""
-    return url or "https://api.deepseek.com"
-
-
-def get_api_key() -> str:
-    key = _clean_secret(os.environ.get("DEEPSEEK_API_KEY", ""))
-    if not key:
-        cfg = _load_llm_config()
-        key = _clean_secret(cfg.get("deepseek_api_key")) or _clean_secret(cfg.get("api_key"))
-    if not key and sys.platform == "win32":
-        try:
-            import winreg
-            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment") as env_key:
-                raw_k, _ = winreg.QueryValueEx(env_key, "DEEPSEEK_API_KEY")
-                key = _clean_secret(raw_k)
-        except Exception:
-            pass
-    # Only reuse SILICONFLOW_API_KEY when base_url targets SiliconFlow; otherwise it is the image-gen key.
-    if not key and "siliconflow" in get_base_url().lower():
-        key = _clean_secret(os.environ.get("SILICONFLOW_API_KEY", ""))
-    return key
-
-
-def get_model_name() -> str:
-    model = (os.environ.get("DEEPSEEK_MODEL") or "").strip()
-    if not model:
-        cfg = _load_llm_config()
-        raw_m = cfg.get("model") or cfg.get("deepseek_model")
-        model = raw_m.strip() if isinstance(raw_m, str) else ""
-    if not model:
-        base_url = get_base_url()
-        model = "deepseek-ai/DeepSeek-V3" if "siliconflow" in base_url.lower() else "deepseek-flash"
-    return model
-
 
 MODEL_NAME = get_model_name()
 DEEPSEEK_API_KEY = get_api_key()
 
 
-def load_json(filepath: str) -> dict:
-    if not filepath or not os.path.exists(filepath):
-        return {}
-    with open(filepath, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def clean_json_response(raw_text: str) -> str:
-    if not raw_text or not isinstance(raw_text, str):
-        return "{}"
-    match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", raw_text)
-    candidate = match.group(1).strip() if match else raw_text.strip()
-    obj_start, obj_end = candidate.find("{"), candidate.rfind("}")
-    arr_start, arr_end = candidate.find("["), candidate.rfind("]")
-    if arr_start != -1 and arr_end > arr_start and (obj_start == -1 or arr_start < obj_start):
-        return candidate[arr_start:arr_end + 1]
-    if obj_start != -1 and obj_end > obj_start:
-        return candidate[obj_start:obj_end + 1]
-    return candidate or "{}"
-
-
-LEGAL_TAG_PATTERNS = [
-    r"^RUSH$",
-    r"^FORTIFY_[1-9]\d*$",
-    r"^DEGRADE_[1-9]\d*$",
-    r"^SUPPORT_ATK_[1-9]\d*$",
-    r"^BONUS_SCORE_[1-9]\d*$",
-    r"^SPAWN_[1-9]\d*_[1-9]\d*$",
-    r"^DEATH_DRAW_[1-9]\d*$",
-    r"^DEATH_MANA_[1-9]\d*$",
-    r"^SACRIFICE_1_KILL_1$",
-    r"^ATTACK_ONLY$",
-    r"^DRAW_[1-9]\d*$",
-    r"^RAMP_[1-9]\d*$",
-    r"^TEMP_MANA_[1-9]\d*$",
-    r"^DISCARD_[1-9]\d*$",
-]
-
-
-def is_legal_tag(tag: str) -> bool:
-    if not isinstance(tag, str):
-        return False
-    normalized = tag.strip().upper()
-    return any(re.match(p, normalized) for p in LEGAL_TAG_PATTERNS)
-
-
-def _to_int(val) -> Optional[int]:
-    if val is None or isinstance(val, bool):
-        return None
-    try:
-        return int(val)
-    except (TypeError, ValueError):
-        return None
-
-
-def _to_int_default(val, default: int = 0) -> int:
-    parsed = _to_int(val)
-    return default if parsed is None else parsed
-
-
-def _to_float(val, default: float = 0.0) -> float:
-    if val is None or isinstance(val, bool):
-        return default
-    try:
-        return float(val)
-    except (TypeError, ValueError):
-        return default
-
-
 def _compute_balance_metrics(metrics_data: dict, target_pairwise_tolerance: float) -> dict:
-    raw_total = _to_int(metrics_data.get("total_episodes"))
-    total = max(1, 1000 if raw_total is None else raw_total)
-    factions = []
-    deviations = {}
-    pairwise_stats = {}
-    max_dev = 0.0
-    max_pairwise_dev = 0.0
-
-    f_stats = metrics_data.get("faction_stats")
-    if isinstance(f_stats, dict):
-        f_keys = list(f_stats.keys())
-        factions = [f for f in ["Red", "Blue", "Green"] if f in f_keys]
-        for f in f_keys:
-            if f not in factions:
-                factions.append(f)
-        if not factions:
-            factions = ["Red", "Blue", "Green"]
-
-        for f in factions:
-            s = f_stats.get(f) or {}
-            wr = _to_float(s.get("winrate"), 50.0)
-            deviations[f] = abs(wr - 50.0)
-        max_dev = max(deviations.values()) if deviations else 0.0
-
-        matchups = metrics_data.get("matchups")
-        if isinstance(matchups, dict) and len(factions) >= 2:
-            for i in range(len(factions)):
-                for j in range(i + 1, len(factions)):
-                    f1, f2 = factions[i], factions[j]
-                    k1 = f"{f1}_vs_{f2}"
-                    k2 = f"{f2}_vs_{f1}"
-                    r1 = matchups.get(k1) or {}
-                    r2 = matchups.get(k2) or {}
-                    tot = _to_int_default(r1.get("total"), 0) + _to_int_default(r2.get("total"), 0)
-                    f1_wins = _to_int_default(r1.get(f"{f1}_wins"), 0) + _to_int_default(r2.get(f"{f1}_wins"), 0)
-                    f2_wins = max(0, tot - f1_wins)
-                    wr1 = (f1_wins / max(1, tot)) * 100.0 if tot > 0 else 50.0
-                    wr2 = 100.0 - wr1
-                    p_dev = abs(wr1 - 50.0)
-                    if p_dev > max_pairwise_dev:
-                        max_pairwise_dev = p_dev
-                    pairwise_stats[(f1, f2)] = {
-                        "total": tot,
-                        "f1_wins": f1_wins,
-                        "f2_wins": f2_wins,
-                        "wr1": wr1,
-                        "wr2": wr2,
-                        "dev": p_dev,
-                    }
-    else:
-        p0_wins = _to_int_default(metrics_data.get("p0_wins"), 500)
-        p0_rate = (p0_wins / total) * 100.0
-        max_dev = abs(p0_rate - 50.0)
-
-    effective_max_dev = max(max_dev, max_pairwise_dev) if target_pairwise_tolerance > 0 else max_dev
-    return {
-        "total": total,
-        "factions": factions,
-        "deviations": deviations,
-        "pairwise_stats": pairwise_stats,
-        "max_dev": max_dev,
-        "max_pairwise_dev": max_pairwise_dev,
-        "effective_max_dev": effective_max_dev,
-    }
+    summary = compute_pairwise_matchups(metrics_data)
+    summary["effective_max_dev"] = (
+        max(summary["max_dev"], summary["max_pairwise_dev"])
+        if target_pairwise_tolerance > 0
+        else summary["max_dev"]
+    )
+    return summary
 
 
 def _strip_cards_for_prompt(cards_data: dict) -> dict:
@@ -473,21 +303,9 @@ def run_deepseek_balance_and_expand(metrics_data: dict, cards_data: dict, client
    - `ATTACK_ONLY`：限定只能打入进攻区。
    - `DRAW_X` / `RAMP_X` / `TEMP_MANA_X` / `DISCARD_X`：常规法术/战吼词条。
 6. **严禁恶性完爆（Anti-Strict-Outclassing Rule，绝对红线）**：
-   - 严禁调出同费用、同阵营下的绝对完爆关系！
-   - 严禁出现一张卡在同费用下，身材、词条以及机制全方位被另一张卡绝对碾压（如同样 3 费，一张 3 DP 生 1/1 能攻能守，另一张 1 DP 生 1/1 且仅能进攻）；
-   - 若发现同阵营卡牌功能重叠或存在完爆隐患，必须通过调整费用（如将低阶卡降费以拉开费用阶梯）、重塑差异化词条或调整战术定位来化解，确保每张卡具有不可替代的构筑价值。
+{OUTCLASSING_RULE_BODY}
 7. **严禁极度亏模废牌（Anti-Deficit Rule，全费用通用绝对红线）**：
-   - 规则不限于高费，严禁在任何费用区间（无论是 1~4 费低中费，还是 5~8+ 费高费）设计、保留或调出「身材/数值极度亏模且缺乏强力词条机制补偿」的垃圾废牌！
-   - 随从身材模型基准：
-     a. 纯白板随从（无任何词条）：必须严格遵守超模身材补偿基准线，底线为 DP >= 费用 + 1（例如 1费白板 >= 2 DP，2费白板 >= 3 DP，3费白板 >= 4 DP，4费白板 >= 5 DP，5费白板 >= 6 DP，6费白板 >= 7~8 DP，7费白板 >= 8~9 DP，8费白板 >= 9~10 DP）。绝对严禁出现 1费1DP、2费2DP、3费3DP、4费4DP 乃至 7~8费5DP 这类没有任何词条还严重亏模的废卡！
-     b. 亏模随从（DP <= 费用）：必须携带足够强力或关键的战术词条（如 RUSH、FORTIFY、DEGRADE、BONUS_SCORE、DEATH_DRAW、SPAWN 等）作为亏模补偿。若 DP < 费用 - 1，其机制价值必须极其扎实，严禁低数值白板！
-   - 法术数值模型基准：
-     纯数值法术的总点数必须合理匹配费用（基础标准通常为 点数 >= 费用 * 1.5 到 2，如 1费直伤 2、2费直伤 3~4、3费护盾 5~6）。严禁出现 3 费仅提供 3 点护盾且无任何词条/跳费效果的极度亏模法术！
-   - **严禁“倒亏法力”与逻辑错乱的法力法术（绝对核心红线，违者直接判废）：**
-     - `TEMP_MANA_X` 为当前回合临时获得的法力水晶（打出当回合生效，如同炉石传说幸运币或激活）。
-     - **纯临时法力法术**（仅包含 `TEMP_MANA_X`，无直伤、无护盾、无抽牌）：其法力消耗 (cost) **必须严格小于获得的临时法力数值**！标准设计只能是 **0 费消耗获得 1~2 点临时法力**（用于前期抢节奏、打连携爆发）；
-     - **绝对严禁出现 `cost >= TEMP_MANA` 的反智倒亏设计**（例如：绝对严禁出现「5 费法术仅提供 TEMP_MANA_2」、「2 费法术仅提供 TEMP_MANA_1」这种花更多费用换取更少临时法力、净亏费用还白白浪费手牌的荒谬智商税废卡）！
-     - 若一张法术的费用较高（如 2~5 费）且带有 `TEMP_MANA`，它必须作为高价值复合收益的返费润滑手段（例如：带有直伤打怪 `atk_spell_val`、强力护盾 `def_spell_val`，或者配合抽牌 `DRAW_2`），**绝不允许高费单挂一个 `TEMP_MANA` 却毫无其他任何正面效果**！
+{DEFICIT_RULE_BODY}
    - 平衡调整核心原则：
      在削弱胜率过高的卡牌时，若剥离了其突袭（RUSH）或核心词条，绝不能把数值留在残缺低位使其沦为亏模白板废卡！若去掉核心词条，必须同步补足基础身材；若压低身材，必须保留功能性机制或降费。
 
@@ -552,17 +370,6 @@ def extract_card_list(data) -> list:
 
     _collect(data)
     return cards
-
-
-def resolve_path(p):
-    if not p or os.path.exists(p):
-        return p
-    alt2 = os.path.join(SCRIPT_DIR, os.path.basename(p))
-    if os.path.exists(alt2):
-        return alt2
-    if not os.path.isabs(p) and not os.path.dirname(p):
-        return os.path.join(SCRIPT_DIR, p)
-    return p
 
 _POS_BOOL_TAGS = {"RUSH", "SACRIFICE_1_KILL_1"}
 _POS_PREFIX_TAGS = (
@@ -728,27 +535,17 @@ def _apply_candidates(candidates: list, updated_pool: dict, id_index: dict, weak
 
         # 临时法力倒亏安全拦截与修复
         if is_spell:
-            c_tags = orig_card.get("tags") or []
-            t_val = 0
-            for t in c_tags:
-                if isinstance(t, str) and t.startswith("TEMP_MANA_"):
-                    tv = _to_int(t.split("_", 2)[2]) if len(t.split("_")) == 3 else None
-                    if tv:
-                        t_val += tv
-            has_other = (
-                _to_int_default(orig_card.get("atk_spell_val"), 0) > 0
-                or _to_int_default(orig_card.get("def_spell_val"), 0) > 0
-                or any(
-                    isinstance(t, str) and (
-                        t.startswith("DRAW_") or t.startswith("RAMP_") or t.startswith("SPAWN_") or t == "SACRIFICE_1_KILL_1"
-                    )
-                    for t in c_tags
-                )
-            )
             curr_cost = _to_int_default(orig_card.get("cost"), 0)
-            if t_val > 0 and not has_other and curr_cost >= t_val:
-                print(f"  [安全兜底] 拦截到纯临时法力倒亏法术 ID {cid} {card_name} (cost={curr_cost} >= 临时法力 {t_val})，自动修正为 0 费！")
-                orig_card["cost"] = 0
+            fixed_cost, corrected = enforce_temp_mana_cost(
+                "SPELL",
+                curr_cost,
+                _to_int_default(orig_card.get("atk_spell_val"), 0),
+                _to_int_default(orig_card.get("def_spell_val"), 0),
+                orig_card.get("tags") or [],
+            )
+            if corrected:
+                print(f"  [安全兜底] 拦截到纯临时法力倒亏法术 ID {cid} {card_name} (cost={curr_cost})，自动修正为 0 费！")
+                orig_card["cost"] = fixed_cost
 
         card_changed = False
         for field in ["cost", "base_dp", "atk_spell_val", "def_spell_val", "tags"]:
@@ -949,29 +746,12 @@ def main():
         print("  [死锁防范] 本轮有效卡牌调整数为 0，自动清空 Tabu 禁忌列表，解除下一轮潜在死锁。")
         tabu_list.clear()
 
-    out_dir = os.path.dirname(os.path.abspath(output_file))
-    if out_dir:
-        os.makedirs(out_dir, exist_ok=True)
-
     try:
-        with open(tabu_file, "w", encoding="utf-8") as f:
-            json.dump(tabu_list, f, indent=2)
+        atomic_write_json(tabu_file, tabu_list, indent=2, ensure_ascii=False)
     except Exception as e:
         print(f"  [警告] 保存 Tabu 列表失败 ({tabu_file}): {e}")
 
-    tmp_out = output_file + ".tmp"
-    try:
-        with open(tmp_out, "w", encoding="utf-8") as f:
-            json.dump(updated_pool, f, indent=2, ensure_ascii=False)
-        os.replace(tmp_out, output_file)
-    except Exception:
-        with open(output_file, "w", encoding="utf-8") as f:
-            json.dump(updated_pool, f, indent=2, ensure_ascii=False)
-        if os.path.exists(tmp_out):
-            try:
-                os.remove(tmp_out)
-            except OSError:
-                pass
+    atomic_write_json(output_file, updated_pool, indent=2, ensure_ascii=False)
 
     print(f"已完成卡池数值调优 (共更新 {updated_count} 处属性/词条)，已保存至: {output_file}")
 

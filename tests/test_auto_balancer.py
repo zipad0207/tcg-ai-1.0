@@ -11,6 +11,7 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 import auto_balancer_deepseek as ab
+import tcg_common as tc
 
 
 class FakeClient:
@@ -189,13 +190,13 @@ def _make_sample_metrics():
 class AutoBalancerTests(unittest.TestCase):
     def test_api_key_isolation_and_config_nulls(self):
         with patch.dict(os.environ, {"DEEPSEEK_API_KEY": "", "SILICONFLOW_API_KEY": "sf-img-key", "DEEPSEEK_BASE_URL": "https://api.deepseek.com"}, clear=False):
-            with patch.object(ab, "_load_llm_config", return_value={"api_key": None, "deepseek_api_key": "sk-•••1234", "base_url": "https://api.deepseek.com"}):
-                with patch.object(ab.sys, "platform", "linux"):
+            with patch.object(tc, "load_llm_config", return_value={"api_key": None, "deepseek_api_key": "sk-•••1234", "base_url": "https://api.deepseek.com"}):
+                with patch.object(tc.sys, "platform", "linux"):
                     self.assertEqual(ab.get_api_key(), "")
 
         with patch.dict(os.environ, {"DEEPSEEK_API_KEY": "", "SILICONFLOW_API_KEY": "sf-llm-key", "DEEPSEEK_BASE_URL": "https://api.siliconflow.cn/v1"}, clear=False):
-            with patch.object(ab, "_load_llm_config", return_value={}):
-                with patch.object(ab.sys, "platform", "linux"):
+            with patch.object(tc, "load_llm_config", return_value={}):
+                with patch.object(tc.sys, "platform", "linux"):
                     self.assertEqual(ab.get_api_key(), "sf-llm-key")
 
     def test_tag_validation_and_json_helpers(self):
@@ -447,6 +448,84 @@ class AutoBalancerTests(unittest.TestCase):
             self.assertEqual(env.card_database[917].cost, 0)
             obs = env.reset()
             self.assertEqual(obs.shape, (3, 13, 8))
+
+    def test_shared_common_helpers_and_web_services(self):
+        # 1. extract_valid_tags & enforce_temp_mana_cost
+        self.assertEqual(
+            tc.extract_valid_tags({"tags": [" rush ", "FORTIFY_X", "DRAW_0"], "keyword_values": {"FORTIFY": 3}}),
+            ["RUSH", "FORTIFY_3"],
+        )
+        self.assertEqual(tc.enforce_temp_mana_cost("SPELL", 2, 0, 0, ["TEMP_MANA_1"]), (0, True))
+        self.assertEqual(tc.enforce_temp_mana_cost("SPELL", 2, 2, 0, ["TEMP_MANA_1"]), (2, False))
+
+        # 2. DeepSeekCardPrinter loads llm_config.json and uses DeepSeek base_url/model
+        from web_app.services.card_printer import DeepSeekCardPrinter
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg_path = os.path.join(tmp, "llm_config.json")
+            cards_path = os.path.join(tmp, "cards_config.json")
+            with open(cfg_path, "w", encoding="utf-8") as f:
+                json.dump({"deepseek_api_key": "sk-ds-from-cfg", "base_url": "https://api.deepseek.com", "model": "deepseek-flash"}, f)
+            with open(cards_path, "w", encoding="utf-8") as f:
+                json.dump({"Red": [], "Blue": [], "Green": [], "Neutral": []}, f)
+
+            with patch.dict(os.environ, {"DEEPSEEK_API_KEY": "", "SILICONFLOW_API_KEY": "sf-img-only", "DEEPSEEK_BASE_URL": "", "DEEPSEEK_MODEL": ""}, clear=False):
+                printer = DeepSeekCardPrinter()
+                printer.root_dir = tmp
+                printer.cards_path = cards_path
+                printer.reload_config()
+                self.assertEqual(printer.api_key, "sk-ds-from-cfg")
+                self.assertEqual(printer.base_url, "https://api.deepseek.com")
+                self.assertEqual(printer.model, "deepseek-flash")
+
+                # Verify generate_new_cards reloads config and enforces TEMP_MANA cost
+                fake_reply = json.dumps({"cards": [{"name": "测试涌动", "card_type": "SPELL", "cost": 3, "base_dp": 0, "atk_spell_val": 0, "def_spell_val": 0, "tags": ["temp_mana_1", "draw_0"]}]})
+                fake_client = FakeClient([fake_reply])
+                with patch("web_app.services.card_printer.OpenAI", return_value=fake_client):
+                    res = printer.generate_new_cards(faction="Red", count=1)
+                self.assertTrue(res["success"])
+                self.assertEqual(res["cards"][0]["cost"], 0)
+                self.assertEqual(res["cards"][0]["tags"], ["TEMP_MANA_1"])
+
+        # 3. save_llm_config preserves custom model/base_url when UI doesn't pass them
+        import web_app.main as web_main
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg_path = os.path.join(tmp, "llm_config.json")
+            with open(cfg_path, "w", encoding="utf-8") as f:
+                json.dump({"deepseek_api_key": "sk-old", "base_url": "https://custom.endpoint/v1", "model": "custom-model", "deepseek_model": "custom-model"}, f)
+            with patch.object(web_main, "_root_dir", tmp):
+                req = web_main.LLMConfigRequest(deepseek_api_key="sk-new", image_api_key="sf-new")
+                web_main.save_llm_config(req)
+            with open(cfg_path, "r", encoding="utf-8") as f:
+                saved = json.load(f)
+            self.assertEqual(saved["base_url"], "https://custom.endpoint/v1")
+            self.assertEqual(saved["model"], "custom-model")
+            self.assertEqual(saved["deepseek_api_key"], "sk-new")
+
+        # 4. PipelineRunner blocks start when only SILICONFLOW_API_KEY exists for api.deepseek.com
+        from web_app.services.pipeline_runner import PipelineRunner
+        with tempfile.TemporaryDirectory() as tmp:
+            runner = PipelineRunner()
+            runner.root_dir = tmp
+            with patch.dict(os.environ, {"DEEPSEEK_API_KEY": "", "SILICONFLOW_API_KEY": "sf-img-only", "DEEPSEEK_BASE_URL": "https://api.deepseek.com"}, clear=False):
+                with patch.object(tc.sys, "platform", "linux"):
+                    res = runner.start()
+                    self.assertFalse(res["success"])
+
+        # 5. export_ui_data & check_balance_status share unified bidirectional pairwise math
+        import export_ui_data
+        import pipeline_orchestrator as po
+        with tempfile.TemporaryDirectory() as tmp:
+            with open(os.path.join(tmp, "cards_config.json"), "w", encoding="utf-8") as f:
+                json.dump(_make_sample_cards(), f)
+            with open(os.path.join(tmp, "decks_config.json"), "w", encoding="utf-8") as f:
+                json.dump({}, f)
+            with open(os.path.join(tmp, "training_metrics_brawl.json"), "w", encoding="utf-8") as f:
+                json.dump(_make_sample_metrics(), f)
+            ui_data = export_ui_data.export_ui_data(tmp)
+            self.assertAlmostEqual(ui_data["max_pairwise_dev"], 22.73, places=2)
+            balanced, max_dev, spread, max_pair = po.check_balance_status(_make_sample_metrics(), 5.0, 8.0)
+            self.assertFalse(balanced)
+            self.assertAlmostEqual(max_pair, 22.73, places=2)
 
 
 if __name__ == "__main__":

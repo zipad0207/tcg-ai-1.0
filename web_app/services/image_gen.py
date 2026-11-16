@@ -12,6 +12,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+_ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _ROOT_DIR not in sys.path:
+    sys.path.insert(0, _ROOT_DIR)
+
+from tcg_common import atomic_write_json, clean_secret, get_base_url, get_model_name, load_llm_config
+
 class ZImageTurboGenerator:
     """
     Interface for calling text-to-image models (e.g. Kwai-Kolors/Kolors, Tongyi-MAI/Z-Image) via SiliconFlow or DashScope.
@@ -20,18 +26,10 @@ class ZImageTurboGenerator:
         self.reload_config()
 
     def reload_config(self):
-        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        cfg_path = os.path.join(root_dir, "llm_config.json")
-        saved_cfg = {}
-        if os.path.exists(cfg_path):
-            try:
-                with open(cfg_path, "r", encoding="utf-8") as f:
-                    saved_cfg = json.load(f)
-            except Exception:
-                pass
-        self.siliconflow_key = saved_cfg.get("image_api_key") or os.getenv("SILICONFLOW_API_KEY", "")
-        self.dashscope_key = os.getenv("DASH_SCOPE_API_KEY", "")
-        self.api_key = self.siliconflow_key or self.dashscope_key or saved_cfg.get("api_key", "")
+        saved_cfg = load_llm_config(_ROOT_DIR)
+        self.siliconflow_key = clean_secret(saved_cfg.get("image_api_key")) or clean_secret(os.getenv("SILICONFLOW_API_KEY", ""))
+        self.dashscope_key = clean_secret(os.getenv("DASH_SCOPE_API_KEY", ""))
+        self.api_key = self.siliconflow_key or self.dashscope_key or clean_secret(saved_cfg.get("api_key", ""))
         self.model_name = saved_cfg.get("image_model") or os.getenv("IMAGE_MODEL", "Tongyi-MAI/Z-Image-Turbo")
 
     def translate_tag_cn(self, tag: str) -> str:
@@ -66,21 +64,12 @@ class ZImageTurboGenerator:
 
     def build_prompt(self, card_name: str, faction: str, tags: list, dp: int) -> str:
         # Use LLM as AI Art Director to conceive cinematic scene prompts
-        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        cfg_path = os.path.join(root_dir, "llm_config.json")
-        saved_cfg = {}
-        if os.path.exists(cfg_path):
-            try:
-                with open(cfg_path, "r", encoding="utf-8") as f:
-                    saved_cfg = json.load(f)
-            except Exception:
-                pass
-
-        ds_key = saved_cfg.get("deepseek_api_key") or os.getenv("DEEPSEEK_API_KEY", "")
+        saved_cfg = load_llm_config(_ROOT_DIR)
+        ds_key = clean_secret(saved_cfg.get("deepseek_api_key")) or clean_secret(os.getenv("DEEPSEEK_API_KEY", ""))
         if ds_key:
             llm_api_key = ds_key
-            llm_base_url = saved_cfg.get("base_url") or "https://api.deepseek.com"
-            llm_model = "deepseek-flash"
+            llm_base_url = get_base_url(_ROOT_DIR)
+            llm_model = get_model_name(_ROOT_DIR)
         elif self.siliconflow_key:
             llm_api_key = self.siliconflow_key
             llm_base_url = "https://api.siliconflow.cn/v1"
@@ -180,20 +169,8 @@ class ZImageTurboGenerator:
                     break
                     
             if updated:
-                tmp_path = config_path + ".tmp"
-                try:
-                    with open(tmp_path, "w", encoding="utf-8") as f:
-                        json.dump(cards_config, f, indent=4, ensure_ascii=False)
-                    os.replace(tmp_path, config_path)
-                except Exception:
-                    with open(config_path, "w", encoding="utf-8") as f:
-                        json.dump(cards_config, f, indent=4, ensure_ascii=False)
-                    if os.path.exists(tmp_path):
-                        try:
-                            os.remove(tmp_path)
-                        except OSError:
-                            pass
-                    
+                atomic_write_json(config_path, cards_config, indent=4, ensure_ascii=False)
+
                 # Also refresh ui_export_data.json
                 try:
                     from export_ui_data import export_ui_data
@@ -310,8 +287,7 @@ class ZImageTurboGenerator:
 
             if updated:
                 try:
-                    with open(config_path, "w", encoding="utf-8") as f:
-                        json.dump(data, f, indent=2, ensure_ascii=False)
+                    atomic_write_json(config_path, data, indent=4, ensure_ascii=False)
                 except Exception:
                     pass
         return missing

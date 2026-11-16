@@ -157,12 +157,12 @@ class LLMConfigRequest(BaseModel):
     image_model: Optional[str] = "Tongyi-MAI/Z-Image-Turbo"
     # Legacy fallbacks
     api_key: Optional[str] = ""
-    base_url: Optional[str] = "https://api.deepseek.com"
-    model: Optional[str] = "deepseek-flash"
+    base_url: Optional[str] = None
+    model: Optional[str] = None
 
 @app.get("/api/config/llm")
 def get_llm_config():
-    root_dir = os.path.dirname(os.path.dirname(__file__))
+    root_dir = _root_dir
     cfg_file = os.path.join(root_dir, "llm_config.json")
     saved_cfg = {}
     if os.path.exists(cfg_file):
@@ -196,7 +196,8 @@ def get_llm_config():
 
 @app.post("/api/config/llm")
 def save_llm_config(req: LLMConfigRequest):
-    root_dir = os.path.dirname(os.path.dirname(__file__))
+    from tcg_common import atomic_write_json
+    root_dir = _root_dir
     cfg_file = os.path.join(root_dir, "llm_config.json")
     
     saved_cfg = {}
@@ -238,17 +239,19 @@ def save_llm_config(req: LLMConfigRequest):
     except Exception:
         pass
 
+    base_url = (req.base_url or "").strip() or saved_cfg.get("base_url") or "https://api.deepseek.com"
+    ds_model = (req.model or "").strip() or saved_cfg.get("model") or saved_cfg.get("deepseek_model") or "deepseek-flash"
+
     new_cfg = {
         "deepseek_api_key": ds_key,
         "image_api_key": img_key,
         "image_model": img_model,
-        "base_url": saved_cfg.get("base_url") or "https://api.deepseek.com",
-        "model": "deepseek-flash",
-        "deepseek_model": "deepseek-flash",
+        "base_url": base_url,
+        "model": ds_model,
+        "deepseek_model": ds_model,
         "api_key": ds_key
     }
-    with open(cfg_file, "w", encoding="utf-8") as f:
-        json.dump(new_cfg, f, indent=4, ensure_ascii=False)
+    atomic_write_json(cfg_file, new_cfg, indent=4, ensure_ascii=False)
 
     return {
         "success": True, 

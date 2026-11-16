@@ -16,7 +16,7 @@ class PipelineRunner:
         self.mode = "tune_only"
         self.start_time: Optional[float] = None
         self.subscribers: List[Callable[[str], None]] = []
-        self.root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        self.root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
     def subscribe(self, callback: Callable[[str], None]):
         if callback not in self.subscribers:
@@ -48,22 +48,10 @@ class PipelineRunner:
         script_path = os.path.join(self.root_dir, "pipeline_orchestrator.py")
         cmd = [sys.executable, script_path]
 
-        # Check if DeepSeek API Key is configured before starting
-        cfg_path = os.path.join(self.root_dir, "llm_config.json")
-        has_ds = False
-        env_ds = (os.environ.get("DEEPSEEK_API_KEY") or "").strip()
-        if env_ds and not env_ds.startswith("sk-•••") and not env_ds.startswith("••••"):
-            has_ds = True
-        elif os.path.exists(cfg_path):
-            try:
-                with open(cfg_path, "r", encoding="utf-8") as f:
-                    c = json.load(f)
-                    k = (c.get("deepseek_api_key") or c.get("api_key") or "").strip()
-                    if k and not k.startswith("sk-•••") and not k.startswith("••••"):
-                        has_ds = True
-            except Exception:
-                pass
-        if not has_ds:
+        if self.root_dir not in sys.path:
+            sys.path.insert(0, self.root_dir)
+        from tcg_common import get_api_key
+        if not get_api_key(self.root_dir):
             self.is_running = False
             return {
                 "success": False,

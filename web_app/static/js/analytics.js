@@ -41,6 +41,13 @@ function initAnalytics() {
     }
 }
 
+function getSelectFloat(id, fallback) {
+    const el = document.getElementById(id);
+    if (!el) return fallback;
+    const val = parseFloat(el.value);
+    return Number.isNaN(val) ? fallback : val;
+}
+
 // Update Metric Cards
 function updateMetricCards(data) {
     if (!data || !data.faction_stats) return;
@@ -76,7 +83,7 @@ function updateMetricCards(data) {
     if (maxDevEl) maxDevEl.textContent = `±${maxDev.toFixed(1)}%`;
 
     // 动态获取当前配置的目标容差与警戒线
-    const targetTol = parseFloat(document.getElementById('pipe-target')?.value) || 5.0;
+    const targetTol = getSelectFloat('pipe-target', 5.0);
     const warnTol = parseFloat((targetTol * 1.6).toFixed(1));
 
     if (badgeEl) {
@@ -101,7 +108,7 @@ function updateMetricCards(data) {
     }
     if (maxPairwiseDev == null) maxPairwiseDev = 0.0;
 
-    const targetPairTol = parseFloat(document.getElementById('pipe-pairwise-target')?.value) || 5.0;
+    const targetPairTol = getSelectFloat('pipe-pairwise-target', 8.0);
     const warnPairTol = parseFloat((targetPairTol * 1.6).toFixed(1));
 
     const pairDevEl = document.getElementById('stat-pairwise-dev');
@@ -109,7 +116,10 @@ function updateMetricCards(data) {
     if (pairDevEl) pairDevEl.textContent = `±${maxPairwiseDev.toFixed(1)}%`;
     if (pairBadgeEl) {
         pairBadgeEl.className = 'metric-sub status-pill';
-        if (maxPairwiseDev <= targetPairTol) {
+        if (targetPairTol <= 0) {
+            pairBadgeEl.classList.add('healthy');
+            pairBadgeEl.textContent = '两两不约束';
+        } else if (maxPairwiseDev <= targetPairTol) {
             pairBadgeEl.classList.add('healthy');
             pairBadgeEl.textContent = `两两均 ≤${targetPairTol}%`;
         } else if (maxPairwiseDev <= warnPairTol) {
@@ -263,8 +273,8 @@ function renderMatchupMatrix(data) {
         if (!factionColors[f]) factionColors[f] = palette[idx % palette.length];
     });
 
-    const targetPairTol = parseFloat(document.getElementById('pipe-pairwise-target')?.value) || 5.0;
-    const severePairTol = parseFloat((targetPairTol * 1.6).toFixed(1));
+    const targetPairTol = getSelectFloat('pipe-pairwise-target', 8.0);
+    const severePairTol = targetPairTol > 0 ? parseFloat((targetPairTol * 1.6).toFixed(1)) : Infinity;
 
     let maxPairwiseDev = 0;
     const matrix = {};
@@ -336,18 +346,20 @@ function renderMatchupMatrix(data) {
                 let badgeBg = 'rgba(16, 185, 129, 0.15)';
                 let badgeColor = '#10b981';
 
-                if (dev > severePairTol) {
+                if (targetPairTol > 0 && dev > severePairTol) {
                     bg = wr > 50 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)';
                     color = wr > 50 ? '#34d399' : '#f87171';
                     badgeText = wr > 50 ? `优势 +${dev.toFixed(1)}%` : `劣势 -${dev.toFixed(1)}%`;
                     badgeBg = 'rgba(239, 68, 68, 0.2)';
                     badgeColor = wr > 50 ? '#34d399' : '#f87171';
-                } else if (dev > targetPairTol) {
+                } else if (targetPairTol > 0 && dev > targetPairTol) {
                     bg = 'rgba(245, 158, 11, 0.08)';
                     color = '#fbbf24';
                     badgeText = `偏离 ±${dev.toFixed(1)}%`;
                     badgeBg = 'rgba(245, 158, 11, 0.2)';
                     badgeColor = '#f59e0b';
+                } else if (targetPairTol <= 0) {
+                    badgeText = `参考 ±${dev.toFixed(1)}%`;
                 }
 
                 html += `<td style="background: ${bg}; border:1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 6px; transition: all 0.2s;">
@@ -361,11 +373,12 @@ function renderMatchupMatrix(data) {
     });
     html += '</table></div>';
 
-    const statusColor = maxPairwiseDev <= targetPairTol ? '#10b981' : (maxPairwiseDev <= severePairTol ? '#f59e0b' : '#ef4444');
-    const statusIcon = maxPairwiseDev <= targetPairTol ? '达标' : '需调优';
+    const statusColor = (targetPairTol <= 0 || maxPairwiseDev <= targetPairTol) ? '#10b981' : (maxPairwiseDev <= severePairTol ? '#f59e0b' : '#ef4444');
+    const statusIcon = targetPairTol <= 0 ? '不约束' : (maxPairwiseDev <= targetPairTol ? '达标' : '需调优');
+    const targetDesc = targetPairTol <= 0 ? '两两不约束 · 仅考核总胜率' : `目标约束 ≤ ±${targetPairTol.toFixed(1)}%`;
     html += `<div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center; font-size:0.78rem; color:#94a3b8; border-top:1px solid rgba(255,255,255,0.06); padding-top:8px;">
         <span>双向实机合并战报 (对局数已合并先手与后手)</span>
-        <span>两两最大偏离: <strong style="color:${statusColor}; font-size:0.85rem;">±${maxPairwiseDev.toFixed(1)}%</strong> (${statusIcon} · 目标约束 ≤ ±${targetPairTol.toFixed(1)}%)</span>
+        <span>两两最大偏离: <strong style="color:${statusColor}; font-size:0.85rem;">±${maxPairwiseDev.toFixed(1)}%</strong> (${statusIcon} · ${targetDesc})</span>
     </div>`;
 
     matrixContainer.innerHTML = html;

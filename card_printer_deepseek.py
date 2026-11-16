@@ -1,6 +1,4 @@
 import os
-from dotenv import load_dotenv
-load_dotenv()
 import re
 import sys
 import json
@@ -13,155 +11,24 @@ import numpy as np
 from openai import OpenAI
 from sandbox import DuelEnv, Faction
 from agent import CardNet
+from tcg_common import (
+    LEGAL_TAG_PATTERNS,
+    atomic_write_json,
+    clean_json_response,
+    enforce_temp_mana_cost,
+    extract_valid_tags,
+    get_api_key,
+    get_base_url,
+    get_model_name,
+    is_legal_tag,
+    load_json,
+)
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-def get_api_key() -> str:
-    key = os.environ.get("DEEPSEEK_API_KEY", "") or os.environ.get("SILICONFLOW_API_KEY", "")
-    if not key:
-        cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_config.json")
-        if os.path.exists(cfg_path):
-            try:
-                with open(cfg_path, "r", encoding="utf-8") as f:
-                    cfg = json.load(f)
-                    key = cfg.get("deepseek_api_key") or cfg.get("api_key", "")
-            except Exception:
-                pass
-    if not key and sys.platform == "win32":
-        try:
-            import winreg
-            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment") as env_key:
-                key, _ = winreg.QueryValueEx(env_key, "DEEPSEEK_API_KEY")
-        except Exception:
-            pass
-    return key
-
-def get_base_url() -> str:
-    url = os.environ.get("DEEPSEEK_BASE_URL", "")
-    if not url:
-        cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_config.json")
-        if os.path.exists(cfg_path):
-            try:
-                with open(cfg_path, "r", encoding="utf-8") as f:
-                    cfg = json.load(f)
-                    url = cfg.get("base_url", "")
-            except Exception:
-                pass
-    return url or "https://api.deepseek.com"
-
-def get_model_name() -> str:
-    model = os.environ.get("DEEPSEEK_MODEL", "")
-    if not model:
-        cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "llm_config.json")
-        if os.path.exists(cfg_path):
-            try:
-                with open(cfg_path, "r", encoding="utf-8") as f:
-                    cfg = json.load(f)
-                    model = cfg.get("model") or cfg.get("deepseek_model", "")
-            except Exception:
-                pass
-    if not model:
-        base_url = get_base_url()
-        model = "deepseek-ai/DeepSeek-V3" if "siliconflow" in base_url.lower() else "deepseek-flash"
-    return model
-
 MODEL_NAME = get_model_name()
-
 DEEPSEEK_API_KEY = get_api_key()
-
-# 沙盒已完整支持的核心词条规则定义
-LEGAL_TAG_PATTERNS = [
-    r"^RUSH$",
-    r"^FORTIFY_\d+$",
-    r"^DEGRADE_\d+$",
-    r"^SUPPORT_ATK_\d+$",
-    r"^BONUS_SCORE_\d+$",
-    r"^SPAWN_\d+_\d+$",
-    r"^DEATH_DRAW_\d+$",
-    r"^DEATH_MANA_\d+$",
-    r"^SACRIFICE_1_KILL_1$",
-    r"^ATTACK_ONLY$",
-    r"^DRAW_\d+$",
-    r"^RAMP_\d+$",
-    r"^TEMP_MANA_\d+$",
-    r"^DISCARD_\d+$",
-]
-
-def is_legal_tag(tag: str) -> bool:
-    if not isinstance(tag, str):
-        return False
-    return any(re.match(pattern, tag.strip().upper()) for pattern in LEGAL_TAG_PATTERNS)
-
-def extract_valid_tags(c: dict) -> List[str]:
-    raw_tags = c.get("tags")
-    if raw_tags is None:
-        raw_tags = c.get("keywords") or c.get("tag") or []
-    if isinstance(raw_tags, str):
-        raw_tags = [raw_tags]
-    elif not isinstance(raw_tags, list):
-        raw_tags = []
-
-    kw_values = c.get("keyword_values", {})
-    valid_tags = []
-    default_sub_map = {
-        "FORTIFY_X": "FORTIFY_2",
-        "DEGRADE_X": "DEGRADE_1",
-        "SUPPORT_ATK_X": "SUPPORT_ATK_1",
-        "BONUS_SCORE_X": "BONUS_SCORE_1",
-        "SPAWN_X_Y": "SPAWN_1_1",
-        "DEATH_DRAW_X": "DEATH_DRAW_1",
-        "DEATH_MANA_X": "DEATH_MANA_1",
-        "DRAW_X": "DRAW_1",
-        "RAMP_X": "RAMP_1",
-        "TEMP_MANA_X": "TEMP_MANA_1",
-        "DISCARD_X": "DISCARD_1",
-    }
-
-    for t in raw_tags:
-        if not isinstance(t, str):
-            continue
-        t_clean = t.strip().upper()
-        if is_legal_tag(t_clean):
-            if t_clean not in valid_tags:
-                valid_tags.append(t_clean)
-            continue
-        if "_X" in t_clean or "_Y" in t_clean:
-            val = None
-            if isinstance(kw_values, dict):
-                for k, v in kw_values.items():
-                    if k.strip().upper() in t_clean or t_clean.startswith(k.strip().upper()):
-                        val = v
-                        break
-            if val is not None:
-                sub_tag = re.sub(r"_[XY]", f"_{val}", t_clean)
-                if is_legal_tag(sub_tag) and sub_tag not in valid_tags:
-                    valid_tags.append(sub_tag)
-                    continue
-            if t_clean in default_sub_map and is_legal_tag(default_sub_map[t_clean]):
-                cand = default_sub_map[t_clean]
-                if cand not in valid_tags:
-                    valid_tags.append(cand)
-
-    return valid_tags
-
-def load_json(filepath: str) -> dict:
-    if not os.path.exists(filepath):
-        return {}
-    with open(filepath, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-def clean_json_response(raw_text: str) -> str:
-    """提取 Markdown 代码块中的纯 JSON 内容"""
-    if not raw_text:
-        return "{}"
-    match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw_text, re.DOTALL)
-    if match:
-        return match.group(1).strip()
-    match = re.search(r"(\{.*\})", raw_text, re.DOTALL)
-    if match:
-        return match.group(1).strip()
-    return raw_text.strip()
 
 SYSTEM_RESERVED_IDS = {996, 997, 998, 999}
 
@@ -482,7 +349,8 @@ def main():
                         help="印卡完成后自动启动后台队列生成原画插图")
     args = parser.parse_args()
 
-    if not DEEPSEEK_API_KEY:
+    api_key = DEEPSEEK_API_KEY or get_api_key()
+    if not api_key:
         print("未检测到 DEEPSEEK_API_KEY 环境变量，请先配置：")
         print("  Windows PowerShell: $env:DEEPSEEK_API_KEY=\"你的API_KEY\"")
         print("  Linux / macOS:     export DEEPSEEK_API_KEY=\"你的API_KEY\"")
@@ -493,7 +361,7 @@ def main():
     current_pool = load_json(base_path)
 
     client = OpenAI(
-        api_key=DEEPSEEK_API_KEY,
+        api_key=api_key,
         base_url=get_base_url()
     )
 
@@ -525,7 +393,7 @@ def main():
         print(f"设计主题: {f_theme}")
 
         prompt = build_prompt(expanded_pool, f_name, f_count, f_theme)
-        extra = {"thinking": {"type": "disabled"}} if "deepseek.com" in get_base_url() else {}
+        extra = {"thinking": {"type": "disabled"}} if "deepseek.com" in get_base_url().lower() else {}
         response = client.chat.completions.create(
             model=get_model_name(),
             messages=[
@@ -538,7 +406,7 @@ def main():
             extra_body=extra if extra else None
         )
 
-        raw_output = response.choices[0].message.content
+        raw_output = response.choices[0].message.content or ""
         cleaned = clean_json_response(raw_output)
 
         try:
@@ -566,6 +434,13 @@ def main():
                 c["base_dp"] = max(0, int(c.get("base_dp", 0)))
                 c["atk_spell_val"] = max(0, int(c.get("atk_spell_val", 0)))
                 c["def_spell_val"] = max(0, int(c.get("def_spell_val", 0)))
+                c_type = str(c.get("card_type", "MINION")).upper()
+                c["card_type"] = c_type
+                if c_type == "SPELL":
+                    c["base_dp"] = 0
+                c["cost"], _ = enforce_temp_mana_cost(
+                    c_type, c["cost"], c["atk_spell_val"], c["def_spell_val"], c["tags"]
+                )
 
                 # 防重名校验与自动去重修饰
                 orig_name = c.get("name", f"{f_name}新卡_{allocated_id}").strip()
@@ -600,8 +475,7 @@ def main():
 
     # 写入文件
     output_file = args.output
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(expanded_pool, f, indent=2, ensure_ascii=False)
+    atomic_write_json(output_file, expanded_pool, indent=2, ensure_ascii=False)
     print(f"扩充后卡池已保存至: {output_file}")
 
     # 统计卡池总数
@@ -613,8 +487,7 @@ def main():
 
     # 若指定了合并写入
     if args.merge_into:
-        with open(args.merge_into, "w", encoding="utf-8") as f:
-            json.dump(expanded_pool, f, indent=2, ensure_ascii=False)
+        atomic_write_json(args.merge_into, expanded_pool, indent=2, ensure_ascii=False)
         print(f"已同步更新至卡池: {args.merge_into}")
 
     # 自动启动后台生图队列

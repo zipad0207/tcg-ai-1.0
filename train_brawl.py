@@ -5,30 +5,14 @@ TCG-AI 多阵营自博弈强化学习训练脚本
 
 import os
 import sys
+from tcg_common import set_low_priority_and_threads
 
 # 必须在导入 torch / numpy 之前设定并发限制与被动等待策略，防止线程池暴增与自旋占用 100% CPU
-os.environ["OMP_NUM_THREADS"] = "2"
-os.environ["MKL_NUM_THREADS"] = "2"
-os.environ["OPENBLAS_NUM_THREADS"] = "2"
-os.environ["VECLIB_MAXIMUM_THREADS"] = "2"
-os.environ["NUMEXPR_NUM_THREADS"] = "2"
-os.environ["TORCH_NUM_THREADS"] = "2"
-os.environ["OMP_WAIT_POLICY"] = "PASSIVE"
-os.environ["KMP_BLOCKTIME"] = "0"
+set_low_priority_and_threads(2)
 
 if sys.platform == "win32":
     try:
         sys.stdout.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
-    try:
-        import ctypes
-        from ctypes import wintypes
-        k32 = ctypes.WinDLL("kernel32", use_last_error=True)
-        k32.GetCurrentProcess.restype = wintypes.HANDLE
-        k32.SetPriorityClass.argtypes = [wintypes.HANDLE, wintypes.DWORD]
-        k32.SetPriorityClass.restype = wintypes.BOOL
-        k32.SetPriorityClass(k32.GetCurrentProcess(), 0x00004000)  # BELOW_NORMAL_PRIORITY_CLASS
     except Exception:
         pass
 
@@ -109,18 +93,6 @@ else:
     else:
         DEVICE = torch.device("cpu")
         print("[运算设备] 未检测到可用 CUDA GPU，自动采用 CPU 模式运行。")
-
-if sys.platform == "win32":
-    try:
-        import ctypes
-        from ctypes import wintypes
-        k32 = ctypes.WinDLL("kernel32", use_last_error=True)
-        k32.GetCurrentProcess.restype = wintypes.HANDLE
-        k32.SetPriorityClass.argtypes = [wintypes.HANDLE, wintypes.DWORD]
-        k32.SetPriorityClass.restype = wintypes.BOOL
-        k32.SetPriorityClass(k32.GetCurrentProcess(), 0x00004000)  # BELOW_NORMAL_PRIORITY_CLASS
-    except Exception:
-        pass
 
 if DEVICE.type == "cpu":
     torch.set_num_threads(2)
